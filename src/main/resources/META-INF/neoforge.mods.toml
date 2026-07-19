@@ -31,8 +31,7 @@ side = "BOTH"
 [[dependencies.${mod_id}]]
 modId = "create"
 type = "required"
-# Require at least the Create version we target. Adjust the upper bound if you
-# validate against newer Create builds.
-versionRange = "[${create_version},)"
+# Matches the Create MOD version (6.0.10), not the maven build-suffixed artifact.
+versionRange = "${create_mod_version_range}"
 ordering = "AFTER"
 side = "BOTH"
