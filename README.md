@@ -147,7 +147,9 @@ easy to follow and maintain:
    bearings, topped by a raised copper emitter cap with a teal aperture,
    and the bolt emblem embossed half a pixel proud of both side faces (the
    raised geometry samples the same texture pixels as the flat art, so the
-   two always line up). The SU Resistor is shaped like its namesake: two
+   two always line up). A little gold lightning bolt stands on the cap as
+   a finial, built from two crossed cutout quads like a vanilla plant and
+   placed towards the cap corner so the mode value box stays clear. The SU Resistor is shaped like its namesake: two
    andesite collar flanges at the shaft ends with the banded ceramic body
    suspended between them; the bands read brown-black-red with a gold
    tolerance band, which is 1000 in the resistor color code and also its

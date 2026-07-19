@@ -47,12 +47,16 @@ public class ModBlockStateProvider extends BlockStateProvider {
      * 4..16 hold the 12x12 top face.
      */
     private void registerWeatherInducer() {
+        // Cutout is needed for the finial's transparent texture; every other
+        // face is fully opaque, so the layer switch changes nothing there.
         BlockModelBuilder inducer = models().getBuilder("weather_inducer")
                 .parent(models().getExistingFile(mcLoc("block/block")))
+                .renderType("cutout")
                 .texture("side", modLoc("block/weather_inducer_side"))
                 .texture("end", modLoc("block/weather_inducer_end"))
                 .texture("bottom", modLoc("block/weather_inducer_bottom"))
                 .texture("cap", modLoc("block/weather_inducer_cap"))
+                .texture("finial", modLoc("block/weather_inducer_finial"))
                 .texture("particle", modLoc("block/weather_inducer_side"));
         inducer.element()
                 .from(0, 0, 0).to(16, 13, 16)
@@ -75,6 +79,22 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .face(Direction.SOUTH).texture("#cap").uvs(2, 0, 14, 3).end()
                 .face(Direction.EAST).texture("#cap").uvs(2, 0, 14, 3).end()
                 .face(Direction.WEST).texture("#cap").uvs(2, 0, 14, 3).end()
+                .end();
+
+        // Finial: a little lightning bolt standing on the cap, two crossed
+        // flat quads like a vanilla plant. It sits towards the cap corner so
+        // the mode value box in the middle of the top face stays clear.
+        inducer.element()
+                .from(10, 16, 12).to(14, 21, 12)
+                .shade(false)
+                .face(Direction.NORTH).texture("#finial").uvs(0, 0, 4, 5).end()
+                .face(Direction.SOUTH).texture("#finial").uvs(0, 0, 4, 5).end()
+                .end();
+        inducer.element()
+                .from(12, 16, 10).to(12, 21, 14)
+                .shade(false)
+                .face(Direction.EAST).texture("#finial").uvs(0, 0, 4, 5).end()
+                .face(Direction.WEST).texture("#finial").uvs(0, 0, 4, 5).end()
                 .end();
 
         // Embossed bolt: one thin box per texture row, on both side faces.

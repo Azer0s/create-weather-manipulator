@@ -75,6 +75,72 @@
     },
     {
       "faces": {
+        "north": {
+          "texture": "#finial",
+          "uv": [
+            0.0,
+            0.0,
+            4.0,
+            5.0
+          ]
+        },
+        "south": {
+          "texture": "#finial",
+          "uv": [
+            0.0,
+            0.0,
+            4.0,
+            5.0
+          ]
+        }
+      },
+      "from": [
+        10,
+        16,
+        12
+      ],
+      "shade": false,
+      "to": [
+        14,
+        21,
+        12
+      ]
+    },
+    {
+      "faces": {
+        "east": {
+          "texture": "#finial",
+          "uv": [
+            0.0,
+            0.0,
+            4.0,
+            5.0
+          ]
+        },
+        "west": {
+          "texture": "#finial",
+          "uv": [
+            0.0,
+            0.0,
+            4.0,
+            5.0
+          ]
+        }
+      },
+      "from": [
+        12,
+        16,
+        10
+      ],
+      "shade": false,
+      "to": [
+        12,
+        21,
+        14
+      ]
+    },
+    {
+      "faces": {
         "down": {
           "texture": "#side",
           "uv": [
@@ -1028,10 +1094,12 @@
       ]
     }
   ],
+  "render_type": "minecraft:cutout",
   "textures": {
     "bottom": "weatherinducer:block/weather_inducer_bottom",
     "cap": "weatherinducer:block/weather_inducer_cap",
     "end": "weatherinducer:block/weather_inducer_end",
+    "finial": "weatherinducer:block/weather_inducer_finial",
     "particle": "weatherinducer:block/weather_inducer_side",
     "side": "weatherinducer:block/weather_inducer_side"
   }
