@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "weatherinducer:block/weather_inducer",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "weatherinducer:block/weather_inducer"
+    },
+    "facing=south": {
+      "model": "weatherinducer:block/weather_inducer",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "weatherinducer:block/weather_inducer",
+      "y": 270
+    }
+  }
+}

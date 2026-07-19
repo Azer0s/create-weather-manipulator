@@ -1,7 +1,0 @@
-{
-    "parent": "minecraft:block/cube_column",
-    "textures": {
-        "end": "create:block/brass_casing",
-        "side": "create:block/andesite_casing"
-    }
-}

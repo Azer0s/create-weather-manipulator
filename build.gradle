@@ -13,6 +13,9 @@ base {
     archivesName = mod_id
 }
 
+// Datagen output (produced by `./gradlew runData`) is part of the mod resources.
+sourceSets.main.resources.srcDir 'src/generated/resources'
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(java_version as int)
@@ -57,6 +60,16 @@ neoForge {
             programArgument '--nogui'
             systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
         }
+        data {
+            data()
+            programArguments.addAll(
+                    '--mod', mod_id,
+                    '--all',
+                    '--output', file('src/generated/resources').absolutePath,
+                    '--existing', file('src/main/resources').absolutePath,
+                    // Load Create's assets so model/texture validation can see them.
+                    '--existing-mod', 'create')
+        }
         gameTestServer {
             type = 'gameTestServer'
             systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
@@ -89,8 +102,10 @@ dependencies {
 
     implementation "dev.engine-room.flywheel:flywheel-neoforge-${create_minecraft_version}:${flywheel_version}"
     implementation "com.tterrag.registrate:Registrate:${registrate_version}"
+    // Ponder bundles Catnip (net.createmod.catnip.*) directly, so we do NOT
+    // declare Catnip separately — doing so produces a split-package / duplicate
+    // JPMS module conflict at runtime.
     implementation "net.createmod.ponder:ponder-neoforge:${ponder_version}"
-    implementation "net.createmod.catnip:Catnip-NeoForge-${create_minecraft_version}:${catnip_version}"
 
     // Optional: JEI for dev runtime (uncomment if you want it in-dev).
     // compileOnly  "mezz.jei:jei-1.21.1-neoforge-api:19.+"
