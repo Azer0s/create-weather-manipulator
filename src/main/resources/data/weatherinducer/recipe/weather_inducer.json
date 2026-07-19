@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "LCL",
+        "EPE",
+        "BSB"
+    ],
+    "key": {
+        "L": { "item": "minecraft:lightning_rod" },
+        "C": { "item": "minecraft:copper_block" },
+        "E": { "item": "create:electron_tube" },
+        "P": { "item": "create:precision_mechanism" },
+        "B": { "item": "create:brass_sheet" },
+        "S": { "item": "create:shaft" }
+    },
+    "result": {
+        "id": "weatherinducer:weather_inducer",
+        "count": 1
+    }
+}

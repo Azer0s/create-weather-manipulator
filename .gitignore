@@ -1,0 +1,27 @@
+# Gradle
+.gradle/
+build/
+run/
+runs/
+run-data/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.eclipse/
+.settings/
+.classpath
+.project
+.vscode/
+eclipse/
+bin/
+
+# NeoForge / ModDevGradle
+.neoform/
+repo/
+
+# OS
+.DS_Store
+Thumbs.db

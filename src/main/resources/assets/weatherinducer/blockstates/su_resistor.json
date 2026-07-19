@@ -1,0 +1,7 @@
+{
+    "variants": {
+        "axis=y": { "model": "weatherinducer:block/su_resistor" },
+        "axis=z": { "model": "weatherinducer:block/su_resistor", "x": 90 },
+        "axis=x": { "model": "weatherinducer:block/su_resistor", "x": 90, "y": 90 }
+    }
+}

@@ -1,0 +1,134 @@
+plugins {
+    id 'java'
+    id 'eclipse'
+    id 'idea'
+    // ModDevGradle — the officially recommended NeoForge build plugin.
+    id 'net.neoforged.moddev' version '2.0.78'
+}
+
+version = "${mod_version}-mc${minecraft_version}"
+group = mod_group_id
+
+base {
+    archivesName = mod_id
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(java_version as int)
+    }
+}
+
+repositories {
+    mavenCentral()
+    // Create, Ponder, Catnip, Flywheel are published here.
+    maven {
+        name = 'Create'
+        url = 'https://maven.createmod.net'
+    }
+    // Registrate (Create's registration helper) + some transitive deps.
+    maven {
+        name = 'tterrag'
+        url = 'https://maven.tterrag.com/'
+    }
+    // JEI (optional compile-time integration; not required to build the mod).
+    maven {
+        name = 'BlameJared'
+        url = 'https://maven.blamejared.com/'
+    }
+}
+
+neoForge {
+    version = neo_version
+
+    // Optional but recommended: Parchment human-readable parameter names.
+    parchment {
+        minecraftVersion = '1.21.1'
+        mappingsVersion = '2024.11.17'
+    }
+
+    runs {
+        client {
+            client()
+            systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
+        }
+        server {
+            server()
+            programArgument '--nogui'
+            systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
+        }
+        gameTestServer {
+            type = 'gameTestServer'
+            systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
+        }
+        configureEach {
+            gameDirectory = project.file('run')
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Create + its dependency stack.
+//
+// NOTE: maven.createmod.net was blocked by egress policy in the environment
+// where these files were written, so the exact artifact classifiers/versions
+// below could NOT be verified against the live repository. Before the first
+// build, cross-check these coordinates against Create 6.0.10's published
+// artifacts (the Create wiki "Setting up an addon" page lists the current
+// coordinates for each MC/NeoForge combo). The `:slim` classifier pulls Create
+// without its bundled dependencies; those are then declared explicitly so the
+// dev runtime resolves them.
+// ---------------------------------------------------------------------------
+dependencies {
+    implementation("com.simibubi.create:create-${create_minecraft_version}:${create_version}:slim") {
+        transitive = false
+    }
+
+    // Create 6.x runtime dependency stack (split out of the monolithic jar).
+    // Versions here are best-effort; adjust to whatever Create 6.0.10 was
+    // published against.
+    implementation "dev.engine_room.flywheel:flywheel-neoforge-${create_minecraft_version}:1.0.4"
+    implementation "com.tterrag.registrate:Registrate:MC1.21.1-1.3.+"
+    implementation "net.createmod.ponder:Ponder-NeoForge-${create_minecraft_version}:1.0.+"
+    implementation "net.createmod.catnip:Catnip-NeoForge-${create_minecraft_version}:1.+"
+
+    // Optional: JEI for dev runtime (uncomment if you want it in-dev).
+    // compileOnly  "mezz.jei:jei-1.21.1-neoforge-api:19.+"
+    // runtimeOnly  "mezz.jei:jei-1.21.1-neoforge:19.+"
+}
+
+// Interpolate mod metadata into neoforge.mods.toml.
+final Map<String, String> replaceProperties = [
+        minecraft_version      : minecraft_version,
+        minecraft_version_range: minecraft_version_range,
+        neo_version            : neo_version,
+        neo_version_range      : neo_version_range,
+        loader_version_range   : loader_version_range,
+        mod_id                 : mod_id,
+        mod_name               : mod_name,
+        mod_license            : mod_license,
+        mod_version            : mod_version,
+        mod_authors            : mod_authors,
+        mod_description        : mod_description,
+        create_version         : create_version,
+]
+
+tasks.withType(ProcessResources).configureEach {
+    var replaceProps = replaceProperties
+    inputs.properties replaceProps
+    filesMatching(['META-INF/neoforge.mods.toml', 'pack.mcmeta']) {
+        expand replaceProps + [project: project]
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = java_version as int
+}

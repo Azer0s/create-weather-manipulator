@@ -1,0 +1,33 @@
+package at.simulevski.weatherinducer.client;
+
+import at.simulevski.weatherinducer.WeatherInducerMod;
+import at.simulevski.weatherinducer.registry.ModBlockEntities;
+import com.simibubi.create.content.kinetics.base.ShaftRenderer;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+
+/**
+ * Client-only setup: registers Create's rotating {@link ShaftRenderer} for both
+ * blocks so the shaft visibly spins. The block models themselves are the casing
+ * only (no shaft geometry); the renderer draws the spinning shaft on the
+ * connecting faces.
+ *
+ * <p>Verify note: if {@code ShaftRenderer} is not generic in your Create build,
+ * change {@code new ShaftRenderer<>(context)} to the appropriate constructor.
+ */
+@EventBusSubscriber(modid = WeatherInducerMod.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+public final class WeatherInducerClient {
+
+    private WeatherInducerClient() {
+    }
+
+    @SubscribeEvent
+    public static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerBlockEntityRenderer(ModBlockEntities.WEATHER_INDUCER.get(),
+                context -> new ShaftRenderer<>(context));
+        event.registerBlockEntityRenderer(ModBlockEntities.SU_RESISTOR.get(),
+                context -> new ShaftRenderer<>(context));
+    }
+}
