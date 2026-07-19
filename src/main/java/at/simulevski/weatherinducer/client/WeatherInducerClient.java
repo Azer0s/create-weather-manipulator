@@ -1,11 +1,14 @@
 package at.simulevski.weatherinducer.client;
 
 import at.simulevski.weatherinducer.WeatherInducerMod;
+import at.simulevski.weatherinducer.content.ponder.ModPonderPlugin;
 import at.simulevski.weatherinducer.registry.ModBlockEntities;
 import com.simibubi.create.content.kinetics.base.ShaftRenderer;
+import net.createmod.ponder.foundation.PonderIndex;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
 /**
@@ -29,5 +32,10 @@ public final class WeatherInducerClient {
                 context -> new ShaftRenderer<>(context));
         event.registerBlockEntityRenderer(ModBlockEntities.SU_RESISTOR.get(),
                 context -> new ShaftRenderer<>(context));
+    }
+
+    @SubscribeEvent
+    public static void onClientSetup(FMLClientSetupEvent event) {
+        event.enqueueWork(() -> PonderIndex.addPlugin(new ModPonderPlugin()));
     }
 }
