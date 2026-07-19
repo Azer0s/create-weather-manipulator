@@ -18,6 +18,12 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> SU_RESISTOR = ITEMS.registerSimpleBlockItem(
             "su_resistor", ModBlocks.SU_RESISTOR, new Item.Properties());
 
+    public static final DeferredItem<BlockItem> WEATHER_SENSOR = ITEMS.registerSimpleBlockItem(
+            "weather_sensor", ModBlocks.WEATHER_SENSOR, new Item.Properties());
+
+    public static final DeferredItem<BlockItem> SU_CHARGER = ITEMS.registerSimpleBlockItem(
+            "su_charger", ModBlocks.SU_CHARGER, new Item.Properties());
+
     private ModItems() {
     }
 

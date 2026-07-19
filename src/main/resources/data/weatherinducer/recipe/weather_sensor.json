@@ -1,0 +1,19 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "GGG",
+        "CEC",
+        "AAA"
+    ],
+    "key": {
+        "G": { "item": "minecraft:glass" },
+        "C": { "item": "create:copper_sheet" },
+        "E": { "item": "create:electron_tube" },
+        "A": { "item": "create:andesite_alloy" }
+    },
+    "result": {
+        "id": "weatherinducer:weather_sensor",
+        "count": 1
+    }
+}

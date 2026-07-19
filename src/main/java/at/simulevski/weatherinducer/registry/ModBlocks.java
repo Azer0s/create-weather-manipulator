@@ -1,8 +1,10 @@
 package at.simulevski.weatherinducer.registry;
 
 import at.simulevski.weatherinducer.WeatherInducerMod;
+import at.simulevski.weatherinducer.content.charger.SUChargerBlock;
 import at.simulevski.weatherinducer.content.inducer.WeatherInducerBlock;
 import at.simulevski.weatherinducer.content.resistor.SUResistorBlock;
+import at.simulevski.weatherinducer.content.sensor.WeatherSensorBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -35,6 +37,21 @@ public final class ModBlocks {
                     .sound(SoundType.NETHERITE_BLOCK)
                     // Flanged resistor silhouette, not a full cube.
                     .noOcclusion()
+                    .requiresCorrectToolForDrops()));
+
+    public static final DeferredBlock<WeatherSensorBlock> WEATHER_SENSOR = BLOCKS.register(
+            "weather_sensor",
+            () -> new WeatherSensorBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_BLUE)
+                    .strength(1.0f)
+                    .sound(SoundType.WOOD)));
+
+    public static final DeferredBlock<SUChargerBlock> SU_CHARGER = BLOCKS.register(
+            "su_charger",
+            () -> new SUChargerBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.PODZOL)
+                    .strength(3.0f, 6.0f)
+                    .sound(SoundType.NETHERITE_BLOCK)
                     .requiresCorrectToolForDrops()));
 
     private ModBlocks() {

@@ -22,7 +22,7 @@ public class ModLootTableProvider extends LootTableProvider {
                 registries);
     }
 
-    /** Both blocks simply drop themselves. */
+    /** All blocks simply drop themselves. */
     public static class ModBlockLoot extends BlockLootSubProvider {
         public ModBlockLoot(HolderLookup.Provider registries) {
             super(Set.<Item>of(), FeatureFlags.REGISTRY.allFlags(), registries);
@@ -32,11 +32,14 @@ public class ModLootTableProvider extends LootTableProvider {
         protected void generate() {
             dropSelf(ModBlocks.WEATHER_INDUCER.get());
             dropSelf(ModBlocks.SU_RESISTOR.get());
+            dropSelf(ModBlocks.WEATHER_SENSOR.get());
+            dropSelf(ModBlocks.SU_CHARGER.get());
         }
 
         @Override
         protected Iterable<Block> getKnownBlocks() {
-            return List.of(ModBlocks.WEATHER_INDUCER.get(), ModBlocks.SU_RESISTOR.get());
+            return List.of(ModBlocks.WEATHER_INDUCER.get(), ModBlocks.SU_RESISTOR.get(),
+                    ModBlocks.WEATHER_SENSOR.get(), ModBlocks.SU_CHARGER.get());
         }
     }
 }

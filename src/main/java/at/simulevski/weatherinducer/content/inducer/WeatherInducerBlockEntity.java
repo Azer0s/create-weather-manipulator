@@ -106,9 +106,11 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
 
         // Charge from the network's SU, but only while the shaft is turning and
         // we are not already full. The inducer takes what the network (and any
-        // inline resistor) allows, up to its own intake ceiling.
+        // inline resistor or discharging charger) allows, up to its own intake
+        // ceiling.
         if (getSpeed() != 0 && charge < MAX_CHARGE) {
-            double intake = Math.min(SUNetwork.intakeThisTick(this), MAX_INTAKE_PER_TICK);
+            double wanted = Math.min(MAX_INTAKE_PER_TICK, MAX_CHARGE - charge);
+            double intake = SUNetwork.drawSU(this, wanted, null);
             if (intake > 0) {
                 double before = charge;
                 charge = Math.min(MAX_CHARGE, charge + intake);

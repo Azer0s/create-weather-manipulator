@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "weatherinducer:block/weather_sensor"
+    }
+  }
+}

@@ -22,6 +22,8 @@ public final class ModCreativeTabs {
                     .displayItems((params, output) -> {
                         output.accept(ModItems.WEATHER_INDUCER.get());
                         output.accept(ModItems.SU_RESISTOR.get());
+                        output.accept(ModItems.SU_CHARGER.get());
+                        output.accept(ModItems.WEATHER_SENSOR.get());
                     })
                     .build());
 

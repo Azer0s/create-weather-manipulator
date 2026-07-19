@@ -1,8 +1,10 @@
 package at.simulevski.weatherinducer.registry;
 
 import at.simulevski.weatherinducer.WeatherInducerMod;
+import at.simulevski.weatherinducer.content.charger.SUChargerBlockEntity;
 import at.simulevski.weatherinducer.content.inducer.WeatherInducerBlockEntity;
 import at.simulevski.weatherinducer.content.resistor.SUResistorBlockEntity;
+import at.simulevski.weatherinducer.content.sensor.WeatherSensorBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
@@ -33,6 +35,20 @@ public final class ModBlockEntities {
                             (pos, state) -> new SUResistorBlockEntity(
                                     ModBlockEntities.SU_RESISTOR.get(), pos, state),
                             ModBlocks.SU_RESISTOR.get()).build(null));
+
+    public static final Supplier<BlockEntityType<WeatherSensorBlockEntity>> WEATHER_SENSOR =
+            BLOCK_ENTITIES.register("weather_sensor",
+                    () -> BlockEntityType.Builder.of(
+                            (pos, state) -> new WeatherSensorBlockEntity(
+                                    ModBlockEntities.WEATHER_SENSOR.get(), pos, state),
+                            ModBlocks.WEATHER_SENSOR.get()).build(null));
+
+    public static final Supplier<BlockEntityType<SUChargerBlockEntity>> SU_CHARGER =
+            BLOCK_ENTITIES.register("su_charger",
+                    () -> BlockEntityType.Builder.of(
+                            (pos, state) -> new SUChargerBlockEntity(
+                                    ModBlockEntities.SU_CHARGER.get(), pos, state),
+                            ModBlocks.SU_CHARGER.get()).build(null));
 
     private ModBlockEntities() {
     }

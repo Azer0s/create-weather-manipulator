@@ -5,6 +5,7 @@ import at.simulevski.weatherinducer.content.resistor.SUResistorBlock;
 import at.simulevski.weatherinducer.registry.ModBlocks;
 import net.minecraft.core.Direction;
 import net.minecraft.data.PackOutput;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.client.model.generators.BlockModelBuilder;
 import net.neoforged.neoforge.client.model.generators.BlockStateProvider;
 import net.neoforged.neoforge.client.model.generators.ConfiguredModel;
@@ -32,6 +33,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
     protected void registerStatesAndModels() {
         registerWeatherInducer();
         registerSuResistor();
+        registerWeatherSensor();
+        registerSuCharger();
     }
 
     /**
@@ -166,6 +169,54 @@ public class ModBlockStateProvider extends BlockStateProvider {
             }
             return ConfiguredModel.builder().modelFile(model).rotationX(x).rotationY(y).build();
         });
+    }
+
+    /**
+     * The Weather Sensor borrows the daylight detector's form factor: a 6px
+     * slab whose sensor face is the top. The side texture carries its art in
+     * rows 10..16 so UVs stay 1:1 with world pixels. One model serves all 16
+     * power values.
+     */
+    private void registerWeatherSensor() {
+        BlockModelBuilder sensor = models().getBuilder("weather_sensor")
+                .parent(models().getExistingFile(mcLoc("block/block")))
+                .texture("top", modLoc("block/weather_sensor_top"))
+                .texture("side", modLoc("block/weather_sensor_side"))
+                .texture("bottom", modLoc("block/weather_sensor_bottom"))
+                .texture("particle", modLoc("block/weather_sensor_side"));
+        sensor.element()
+                .from(0, 0, 0).to(16, 6, 16)
+                .face(Direction.UP).texture("#top").uvs(0, 0, 16, 16).end()
+                .face(Direction.DOWN).texture("#bottom").uvs(0, 0, 16, 16)
+                .cullface(Direction.DOWN).end()
+                .face(Direction.NORTH).texture("#side").uvs(0, 10, 16, 16)
+                .cullface(Direction.NORTH).end()
+                .face(Direction.SOUTH).texture("#side").uvs(0, 10, 16, 16)
+                .cullface(Direction.SOUTH).end()
+                .face(Direction.EAST).texture("#side").uvs(0, 10, 16, 16)
+                .cullface(Direction.EAST).end()
+                .face(Direction.WEST).texture("#side").uvs(0, 10, 16, 16)
+                .cullface(Direction.WEST).end()
+                .end();
+        getVariantBuilder(ModBlocks.WEATHER_SENSOR.get())
+                .partialState().setModels(new ConfiguredModel(sensor));
+    }
+
+    /**
+     * The SU Charger is a full cube in the encased-block family. The model's
+     * north face is the output (marked with a teal discharge ring), south the
+     * input; the top and bottom reuse the shared brass plate texture.
+     */
+    private void registerSuCharger() {
+        ResourceLocation side = modLoc("block/su_charger_side");
+        ResourceLocation plate = modLoc("block/weather_inducer_bottom");
+        ModelFile charger = models().cube("su_charger",
+                        plate, plate,
+                        modLoc("block/su_charger_out"),
+                        modLoc("block/su_charger_in"),
+                        side, side)
+                .texture("particle", side);
+        horizontalBlock(ModBlocks.SU_CHARGER.get(), charger);
     }
 
     /** One collar flange; the face towards the block edge gets the cullface. */

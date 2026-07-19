@@ -1,0 +1,19 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "BCB",
+        "SES",
+        "BCB"
+    ],
+    "key": {
+        "B": { "item": "create:brass_sheet" },
+        "C": { "item": "minecraft:copper_block" },
+        "S": { "item": "create:shaft" },
+        "E": { "item": "create:electron_tube" }
+    },
+    "result": {
+        "id": "weatherinducer:su_charger",
+        "count": 1
+    }
+}

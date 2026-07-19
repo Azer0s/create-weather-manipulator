@@ -16,5 +16,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         // Item models simply inherit the block model.
         withExistingParent("weather_inducer", modLoc("block/weather_inducer"));
         withExistingParent("su_resistor", modLoc("block/su_resistor"));
+        withExistingParent("weather_sensor", modLoc("block/weather_sensor"));
+        withExistingParent("su_charger", modLoc("block/su_charger"));
     }
 }

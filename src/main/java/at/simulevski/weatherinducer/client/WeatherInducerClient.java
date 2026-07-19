@@ -32,6 +32,8 @@ public final class WeatherInducerClient {
                 context -> new ShaftRenderer<>(context));
         event.registerBlockEntityRenderer(ModBlockEntities.SU_RESISTOR.get(),
                 context -> new ShaftRenderer<>(context));
+        event.registerBlockEntityRenderer(ModBlockEntities.SU_CHARGER.get(),
+                context -> new ShaftRenderer<>(context));
     }
 
     @SubscribeEvent

@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "weatherinducer:block/weather_inducer_bottom",
+    "east": "weatherinducer:block/su_charger_side",
+    "north": "weatherinducer:block/su_charger_out",
+    "particle": "weatherinducer:block/su_charger_side",
+    "south": "weatherinducer:block/su_charger_in",
+    "up": "weatherinducer:block/weather_inducer_bottom",
+    "west": "weatherinducer:block/su_charger_side"
+  }
+}
