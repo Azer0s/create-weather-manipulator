@@ -47,16 +47,13 @@ public class ModBlockStateProvider extends BlockStateProvider {
      * 4..16 hold the 12x12 top face.
      */
     private void registerWeatherInducer() {
-        // Cutout is needed for the finial's transparent texture; every other
-        // face is fully opaque, so the layer switch changes nothing there.
         BlockModelBuilder inducer = models().getBuilder("weather_inducer")
                 .parent(models().getExistingFile(mcLoc("block/block")))
-                .renderType("cutout")
                 .texture("side", modLoc("block/weather_inducer_side"))
                 .texture("end", modLoc("block/weather_inducer_end"))
                 .texture("bottom", modLoc("block/weather_inducer_bottom"))
                 .texture("cap", modLoc("block/weather_inducer_cap"))
-                .texture("finial", modLoc("block/weather_inducer_finial"))
+                .texture("rod", modLoc("block/weather_inducer_rod"))
                 .texture("particle", modLoc("block/weather_inducer_side"));
         inducer.element()
                 .from(0, 0, 0).to(16, 13, 16)
@@ -81,19 +78,23 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .face(Direction.WEST).texture("#cap").uvs(2, 0, 14, 3).end()
                 .end();
 
-        // Finial: a little lightning bolt standing centered on the cap, two
-        // crossed flat quads like a vanilla plant, rising out of the aperture.
+        // Lightning rod, centered on the cap and plugged into the aperture:
+        // a 2x2 copper pole with the vanilla rod's thicker 4x4 tip.
         inducer.element()
-                .from(6, 16, 8).to(10, 21, 8)
-                .shade(false)
-                .face(Direction.NORTH).texture("#finial").uvs(0, 0, 4, 5).end()
-                .face(Direction.SOUTH).texture("#finial").uvs(0, 0, 4, 5).end()
+                .from(7, 16, 7).to(9, 20, 9)
+                .face(Direction.NORTH).texture("#rod").uvs(6, 0, 8, 4).end()
+                .face(Direction.SOUTH).texture("#rod").uvs(6, 0, 8, 4).end()
+                .face(Direction.EAST).texture("#rod").uvs(6, 0, 8, 4).end()
+                .face(Direction.WEST).texture("#rod").uvs(6, 0, 8, 4).end()
                 .end();
         inducer.element()
-                .from(8, 16, 6).to(8, 21, 10)
-                .shade(false)
-                .face(Direction.EAST).texture("#finial").uvs(0, 0, 4, 5).end()
-                .face(Direction.WEST).texture("#finial").uvs(0, 0, 4, 5).end()
+                .from(6, 20, 6).to(10, 23, 10)
+                .face(Direction.UP).texture("#rod").uvs(0, 4, 4, 8).end()
+                .face(Direction.DOWN).texture("#rod").uvs(0, 4, 4, 8).end()
+                .face(Direction.NORTH).texture("#rod").uvs(0, 0, 4, 3).end()
+                .face(Direction.SOUTH).texture("#rod").uvs(0, 0, 4, 3).end()
+                .face(Direction.EAST).texture("#rod").uvs(0, 0, 4, 3).end()
+                .face(Direction.WEST).texture("#rod").uvs(0, 0, 4, 3).end()
                 .end();
 
         // Embossed bolt: one thin box per texture row, on both side faces.
