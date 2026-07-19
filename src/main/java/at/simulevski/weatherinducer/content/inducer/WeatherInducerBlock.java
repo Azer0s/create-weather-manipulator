@@ -6,10 +6,15 @@ import com.simibubi.create.foundation.block.IBE;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * The Weather Inducer block. A horizontally-facing kinetic block: its shaft
@@ -20,8 +25,19 @@ import net.minecraft.world.level.block.state.BlockState;
 public class WeatherInducerBlock extends HorizontalKineticBlock
         implements IBE<WeatherInducerBlockEntity> {
 
+    /** Casing base with the raised emitter cap; same for every facing. */
+    private static final VoxelShape SHAPE = Shapes.or(
+            Block.box(0, 0, 0, 16, 13, 16),
+            Block.box(2, 13, 2, 14, 16, 14));
+
     public WeatherInducerBlock(Properties properties) {
         super(properties);
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos,
+                               CollisionContext context) {
+        return SHAPE;
     }
 
     @Override

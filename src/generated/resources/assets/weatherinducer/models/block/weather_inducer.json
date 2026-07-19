@@ -1,12 +1,84 @@
 {
-  "parent": "minecraft:block/cube",
+  "parent": "minecraft:block/block",
+  "elements": [
+    {
+      "faces": {
+        "down": {
+          "cullface": "down",
+          "texture": "#bottom"
+        },
+        "east": {
+          "cullface": "east",
+          "texture": "#side"
+        },
+        "north": {
+          "cullface": "north",
+          "texture": "#end"
+        },
+        "south": {
+          "cullface": "south",
+          "texture": "#end"
+        },
+        "up": {
+          "texture": "#bottom"
+        },
+        "west": {
+          "cullface": "west",
+          "texture": "#side"
+        }
+      },
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        13,
+        16
+      ]
+    },
+    {
+      "faces": {
+        "east": {
+          "texture": "#cap"
+        },
+        "north": {
+          "texture": "#cap"
+        },
+        "south": {
+          "texture": "#cap"
+        },
+        "up": {
+          "texture": "#cap",
+          "uv": [
+            2.0,
+            4.0,
+            14.0,
+            16.0
+          ]
+        },
+        "west": {
+          "texture": "#cap"
+        }
+      },
+      "from": [
+        2,
+        13,
+        2
+      ],
+      "to": [
+        14,
+        16,
+        14
+      ]
+    }
+  ],
   "textures": {
-    "down": "weatherinducer:block/weather_inducer_bottom",
-    "east": "weatherinducer:block/weather_inducer_side",
-    "north": "weatherinducer:block/weather_inducer_end",
+    "bottom": "weatherinducer:block/weather_inducer_bottom",
+    "cap": "weatherinducer:block/weather_inducer_cap",
+    "end": "weatherinducer:block/weather_inducer_end",
     "particle": "weatherinducer:block/weather_inducer_side",
-    "south": "weatherinducer:block/weather_inducer_end",
-    "up": "weatherinducer:block/weather_inducer_top",
-    "west": "weatherinducer:block/weather_inducer_side"
+    "side": "weatherinducer:block/weather_inducer_side"
   }
 }

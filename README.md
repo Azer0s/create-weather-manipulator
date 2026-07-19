@@ -138,13 +138,16 @@ easy to follow and maintain:
    generic `ShaftRenderer<>`. Block models are casing-only by design; the
    renderer draws the spinning shaft on the connecting faces.
 
-4. **Textures**: the mod ships its own 16x16 pixel art under
+4. **Models and textures**: the mod ships its own 16x16 pixel art under
    `assets/weatherinducer/textures/block/`, styled after Create's brass and
-   andesite casings. The inducer is a brass casing with a copper emitter plate
-   on top and a bolt emblem on the sides; the resistor is an andesite frame
-   around a ceramic resistor body whose color bands read brown-black-red with
-   a gold tolerance band, which is 1000 in the resistor color code and also
-   its default SU/tick cap.
+   andesite casings (frame bars with corner brackets, plank interiors, a
+   top-left light source and light dithering). The Weather Inducer is a
+   stepped machine rather than a full cube: a 13px casing base with shaft
+   bearings, topped by a raised copper emitter cap with a teal aperture
+   (element model built in datagen, matching voxel shape, noOcclusion). The
+   SU Resistor stays a full cube like Create's encased shafts; its ceramic
+   body wears brown-black-red bands with a gold tolerance band, which is
+   1000 in the resistor color code and also its default SU/tick cap.
 
 ### The custom SU model, in short
 Create has no built-in battery/drain mechanic, so "SU" here is a thin custom

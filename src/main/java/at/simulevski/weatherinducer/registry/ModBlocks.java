@@ -22,6 +22,9 @@ public final class ModBlocks {
                     .mapColor(MapColor.PODZOL)
                     .strength(3.0f, 6.0f)
                     .sound(SoundType.NETHERITE_BLOCK)
+                    // The model is a stepped machine (casing base + raised
+                    // emitter cap), not a full cube.
+                    .noOcclusion()
                     .requiresCorrectToolForDrops()));
 
     public static final DeferredBlock<SUResistorBlock> SU_RESISTOR = BLOCKS.register(

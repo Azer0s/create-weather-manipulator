@@ -19,18 +19,44 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
     @Override
     protected void registerStatesAndModels() {
-        // Weather Inducer: brass casing with a copper emitter plate on top and
-        // shaft bearings on the two faces along the facing axis. The spinning
-        // shaft itself is drawn by the block entity renderer, so the model is
-        // casing only.
-        ResourceLocation inducerSide = modLoc("block/weather_inducer_side");
-        ResourceLocation inducerEnd = modLoc("block/weather_inducer_end");
-        ModelFile inducer = models().cube("weather_inducer",
-                        modLoc("block/weather_inducer_bottom"),
-                        modLoc("block/weather_inducer_top"),
-                        inducerEnd, inducerEnd,
-                        inducerSide, inducerSide)
-                .texture("particle", inducerSide);
+        // Weather Inducer: a stepped machine. A 13px casing base carries the
+        // shaft bearings on the two faces along the facing axis, with a raised
+        // 12x12 copper emitter cap on top. The spinning shaft itself is drawn
+        // by the block entity renderer, so the model is casing only.
+        //
+        // UVs are mapped 1:1 to world pixels: the base faces are 13px tall, so
+        // they sample texture rows 3..16 (the textures are drawn for that
+        // crop). The cap texture is a tiny atlas: rows 0..3 hold the side
+        // band, rows 4..16 hold the 12x12 top face.
+        ModelFile inducer = models().getBuilder("weather_inducer")
+                .parent(models().getExistingFile(mcLoc("block/block")))
+                .texture("side", modLoc("block/weather_inducer_side"))
+                .texture("end", modLoc("block/weather_inducer_end"))
+                .texture("bottom", modLoc("block/weather_inducer_bottom"))
+                .texture("cap", modLoc("block/weather_inducer_cap"))
+                .texture("particle", modLoc("block/weather_inducer_side"))
+                .element()
+                .from(0, 0, 0).to(16, 13, 16)
+                .face(Direction.DOWN).texture("#bottom").uvs(0, 0, 16, 16)
+                .cullface(Direction.DOWN).end()
+                .face(Direction.UP).texture("#bottom").uvs(0, 0, 16, 16).end()
+                .face(Direction.NORTH).texture("#end").uvs(0, 3, 16, 16)
+                .cullface(Direction.NORTH).end()
+                .face(Direction.SOUTH).texture("#end").uvs(0, 3, 16, 16)
+                .cullface(Direction.SOUTH).end()
+                .face(Direction.EAST).texture("#side").uvs(0, 3, 16, 16)
+                .cullface(Direction.EAST).end()
+                .face(Direction.WEST).texture("#side").uvs(0, 3, 16, 16)
+                .cullface(Direction.WEST).end()
+                .end()
+                .element()
+                .from(2, 13, 2).to(14, 16, 14)
+                .face(Direction.UP).texture("#cap").uvs(2, 4, 14, 16).end()
+                .face(Direction.NORTH).texture("#cap").uvs(2, 0, 14, 3).end()
+                .face(Direction.SOUTH).texture("#cap").uvs(2, 0, 14, 3).end()
+                .face(Direction.EAST).texture("#cap").uvs(2, 0, 14, 3).end()
+                .face(Direction.WEST).texture("#cap").uvs(2, 0, 14, 3).end()
+                .end();
         horizontalBlock(ModBlocks.WEATHER_INDUCER.get(), inducer);
 
         // SU Resistor: andesite frame with a banded ceramic resistor body along
