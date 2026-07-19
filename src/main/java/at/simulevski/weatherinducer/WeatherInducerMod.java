@@ -22,8 +22,9 @@ import net.neoforged.fml.common.Mod;
  *   <li><b>SU Resistor</b> &mdash; an inline shaft block that caps how much
  *       SU whatever is hooked up through it may draw.</li>
  *   <li><b>SU Charger</b> &mdash; a kinetic capacitor: passes rotation but
- *       never SU, fills a buffer from its input side, and discharges it to
- *       consumers on its output side while redstone powered.</li>
+ *       never SU, fills a buffer from its input side while the shaft turns,
+ *       discharges it to consumers on its output side once the input stops,
+ *       and emits a redstone signal proportional to its fill level.</li>
  *   <li><b>Weather Sensor</b> &mdash; a daylight-detector-shaped slab whose
  *       redstone signal reflects the weather (0 clear, 7 rain, 15
  *       thunder).</li>

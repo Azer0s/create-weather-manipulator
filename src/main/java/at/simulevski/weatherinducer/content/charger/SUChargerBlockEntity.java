@@ -10,6 +10,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -18,13 +19,14 @@ import java.util.List;
 /**
  * Buffer logic for the SU Charger.
  *
- * <p>Unpowered, the charger is in charge mode: while the shaft turns it draws
- * SU from whatever feeds its input face (respecting resistors) into an
- * internal buffer, up to {@link #MAX_RATE_PER_TICK} per tick. Redstone power
- * flips it to discharge mode: charging stops, and consumers reachable through
- * the output face may drain the buffer (see
- * {@link SUNetwork#drawSU}). In neither mode does raw network SU
- * pass through the block.
+ * <p>While the shaft turns, the charger is in charge mode: it draws SU from
+ * whatever feeds its input face (respecting resistors) into an internal
+ * buffer, up to {@link #MAX_RATE_PER_TICK} per tick. Once the input stops
+ * (the shaft stands still), it flips to discharge mode: consumers reachable
+ * through the output face may drain the buffer (see
+ * {@link SUNetwork#drawSU}). In neither mode does raw network SU pass through
+ * the block. The buffer fill is also published as a 0..15 redstone signal via
+ * {@link SUChargerBlock#POWER}.
  */
 public class SUChargerBlockEntity extends KineticBlockEntity implements IHaveGoggleInformation {
 
@@ -46,9 +48,18 @@ public class SUChargerBlockEntity extends KineticBlockEntity implements IHaveGog
         if (level == null || level.isClientSide) {
             return;
         }
-        // Powered means discharge mode; the buffer only fills while unpowered
-        // and the shaft is turning.
-        if (isPowered() || getSpeed() == 0 || buffer >= MAX_BUFFER) {
+        // Publish the fill level as redstone; setBlock also fires the
+        // neighbour updates wires need.
+        BlockState state = getBlockState();
+        int power = getComparatorOutput();
+        if (state.getValue(SUChargerBlock.POWER) != power) {
+            level.setBlock(worldPosition, state.setValue(SUChargerBlock.POWER, power),
+                    Block.UPDATE_ALL);
+        }
+
+        // A turning shaft means charge mode; discharge only happens while the
+        // input is stopped (consumers pull, nothing to do here).
+        if (getSpeed() == 0 || buffer >= MAX_BUFFER) {
             return;
         }
         double wanted = Math.min(MAX_RATE_PER_TICK, MAX_BUFFER - buffer);
@@ -68,13 +79,9 @@ public class SUChargerBlockEntity extends KineticBlockEntity implements IHaveGog
         return getOutputFace().getOpposite();
     }
 
-    public boolean isPowered() {
-        return level != null && level.hasNeighborSignal(worldPosition);
-    }
-
-    /** Discharging = redstone powered with something left in the buffer. */
+    /** Discharging = the input shaft stands still and the buffer is not empty. */
     public boolean isDischarging() {
-        return isPowered() && buffer > 0;
+        return getSpeed() == 0 && buffer > 0;
     }
 
     /** SU a consumer on the output side may pull from this charger right now. */
@@ -146,7 +153,7 @@ public class SUChargerBlockEntity extends KineticBlockEntity implements IHaveGog
                         String.format("%,.0f", buffer), String.format("%,.0f", MAX_BUFFER), percent)
                         .withStyle(buffer >= MAX_BUFFER ? ChatFormatting.GREEN : ChatFormatting.AQUA)));
 
-        String modeKey = isDischarging() ? "discharging" : (isPowered() ? "drained" : "charging");
+        String modeKey = getSpeed() != 0 ? "charging" : (buffer > 0 ? "discharging" : "idle");
         tooltip.add(Component.literal("    ").append(
                 Component.translatable("weatherinducer.tooltip.charger_mode",
                         Component.translatable("weatherinducer.charger_mode." + modeKey))

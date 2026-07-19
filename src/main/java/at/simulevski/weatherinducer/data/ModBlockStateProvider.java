@@ -1,6 +1,7 @@
 package at.simulevski.weatherinducer.data;
 
 import at.simulevski.weatherinducer.WeatherInducerMod;
+import at.simulevski.weatherinducer.content.charger.SUChargerBlock;
 import at.simulevski.weatherinducer.content.resistor.SUResistorBlock;
 import at.simulevski.weatherinducer.registry.ModBlocks;
 import net.minecraft.core.Direction;
@@ -205,7 +206,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
     /**
      * The SU Charger is a full cube in the encased-block family. The model's
      * north face is the output (marked with a teal discharge ring), south the
-     * input; the top and bottom reuse the shared brass plate texture.
+     * input; the top and bottom reuse the shared brass plate texture. The
+     * POWER property (its redstone output) is visual-neutral, so the variants
+     * only follow the facing.
      */
     private void registerSuCharger() {
         ResourceLocation side = modLoc("block/su_charger_side");
@@ -216,7 +219,13 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/su_charger_in"),
                         side, side)
                 .texture("particle", side);
-        horizontalBlock(ModBlocks.SU_CHARGER.get(), charger);
+        getVariantBuilder(ModBlocks.SU_CHARGER.get()).forAllStatesExcept(state ->
+                        ConfiguredModel.builder()
+                                .modelFile(charger)
+                                .rotationY(((int) state.getValue(SUChargerBlock.HORIZONTAL_FACING)
+                                        .toYRot() + 180) % 360)
+                                .build(),
+                SUChargerBlock.POWER);
     }
 
     /** One collar flange; the face towards the block edge gets the cullface. */

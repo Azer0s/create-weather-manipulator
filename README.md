@@ -8,7 +8,7 @@ A [Create](https://github.com/Creators-of-Create/Create) addon for **Minecraft 1
 | ----- | ------------ |
 | **Weather Inducer** | Charges from the connected kinetic network's Stress Units (SU) up to **1,000,000 SU**, drawing whatever the network offers at up to **100,000 SU per tick**. When fully charged and pulsed with redstone, it applies the selected weather effect: **rain**, **clear**, or **lightning** at a configurable position, provided it can see the sky. |
 | **SU Resistor** | An inline shaft block that caps the **maximum SU draw** of whatever is hooked up through it. Put one in front of an inducer to slow its charging below the inducer's native 100k SU per tick. |
-| **SU Charger** | A kinetic capacitor. Rotation passes through it, **SU never does**. Unpowered, it fills a **1,000,000 SU** buffer from its input side; redstone power flips it to discharge mode, letting machines on its output side drain the buffer. |
+| **SU Charger** | A kinetic capacitor. Rotation passes through it, **SU never does**. While the shaft turns it fills a **1,000,000 SU** buffer from its input side; once the input stops, machines on its output side drain the buffer. Emits a redstone signal proportional to its fill level. |
 | **Weather Sensor** | A daylight-detector-shaped slab that reads the sky: redstone **0** when clear, **7** in rain, **15** in a thunderstorm. Covered, it reads 0. |
 
 ---
@@ -31,9 +31,9 @@ A [Create](https://github.com/Creators-of-Create/Create) addon for **Minecraft 1
 
 ### SU Charger
 - **Inline shaft with a direction:** rotation passes through along the facing axis, but SU never crosses the block. Placed dropper-style, the output face points away from you.
-- **Charge mode (no redstone):** while the shaft turns, the charger draws SU from whatever feeds its **input** face (respecting resistors) into a 1,000,000 SU buffer, at up to 100,000 SU per tick.
-- **Discharge mode (redstone powered):** charging stops, and consumers on the **output** face may drain the buffer at up to 100,000 SU per tick. An inducer fed only by a charger fires exactly once per buffer fill.
-- **Comparator:** emits 0 to 15 proportional to the buffer fill; goggles show the exact numbers and the current mode.
+- **Charge mode (shaft turning):** the charger draws SU from whatever feeds its **input** face (respecting resistors) into a 1,000,000 SU buffer, at up to 100,000 SU per tick.
+- **Discharge mode (shaft stopped):** stop the input (a clutch works nicely) and consumers on the **output** face may drain the buffer at up to 100,000 SU per tick. An inducer fed only by a charger fires exactly once per buffer fill.
+- **Redstone output:** the block itself emits a signal of 0 to 15 proportional to the buffer fill, so wires (or the clutch feeding it) can react to the charge level directly. A comparator reads the same value, and goggles show the exact numbers and the current mode.
 
 ### Weather Sensor
 - **Daylight detector, but for weather:** a 6px slab that must see the sky.
@@ -125,8 +125,9 @@ Runtime game tests cover the Weather Inducer's fire logic. Run them headlessly:
 They verify: full-charge + sky + redstone fires and discharges; lightning mode
 spawns a bolt; a blocked sky prevents firing; firing below full charge is a
 no-op; the Weather Sensor's signal follows thunder and clear skies (in its own
-test batch, since weather is global); and the SU Charger only offers its
-buffer while redstone powered, draining exactly what is taken.
+test batch, since weather is global); and the SU Charger offers its buffer
+only while its input is stopped, publishes the fill level as redstone, and
+drains exactly what is taken.
 
 ---
 

@@ -39,7 +39,7 @@ public class ModLanguageProvider extends LanguageProvider {
         add("weatherinducer.tooltip.charger_mode", "Mode: %s");
         add("weatherinducer.charger_mode.charging", "Charging");
         add("weatherinducer.charger_mode.discharging", "Discharging");
-        add("weatherinducer.charger_mode.drained", "Powered, empty");
+        add("weatherinducer.charger_mode.idle", "Idle");
 
         // Ponder
         add("weatherinducer.ponder.weather_inducer.header", "Controlling the weather with the Weather Inducer");
@@ -60,9 +60,9 @@ public class ModLanguageProvider extends LanguageProvider {
                         + "signal 0 under clear skies, 7 in rain and 15 during a thunderstorm. It needs to see "
                         + "the sky; covered, it reads 0.");
         add("weatherinducer.info.su_charger",
-                "The SU Charger is a kinetic capacitor. Rotation passes through it, SU never does. Unpowered, "
-                        + "it fills a 1,000,000 SU buffer from its input side at up to 100,000 SU per tick. "
-                        + "Give it a redstone signal and machines on its output side may drain the buffer "
-                        + "instead. A comparator reads the fill level.");
+                "The SU Charger is a kinetic capacitor. Rotation passes through it, SU never does. While the "
+                        + "shaft turns it fills a 1,000,000 SU buffer from its input side at up to 100,000 SU "
+                        + "per tick. Stop the input, and machines on its output side may drain the buffer "
+                        + "instead. It emits a redstone signal proportional to its fill level.");
     }
 }

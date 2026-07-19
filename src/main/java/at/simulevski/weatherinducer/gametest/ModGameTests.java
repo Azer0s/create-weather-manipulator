@@ -1,6 +1,7 @@
 package at.simulevski.weatherinducer.gametest;
 
 import at.simulevski.weatherinducer.WeatherInducerMod;
+import at.simulevski.weatherinducer.content.charger.SUChargerBlock;
 import at.simulevski.weatherinducer.content.charger.SUChargerBlockEntity;
 import at.simulevski.weatherinducer.content.inducer.WeatherInducerBlockEntity;
 import at.simulevski.weatherinducer.content.inducer.WeatherMode;
@@ -134,33 +135,47 @@ public class ModGameTests {
                 .thenSucceed();
     }
 
-    /** The SU Charger only offers its buffer while redstone powered. */
+    /**
+     * With no rotation in the arena the charger's input counts as stopped, so
+     * a filled buffer is on offer, its level shows as redstone, and draining
+     * it empties both.
+     */
     @GameTest(template = "empty")
-    public static void chargerGatesDischargeOnRedstone(GameTestHelper helper) {
+    public static void chargerDischargesWhenInputStopped(GameTestHelper helper) {
         helper.startSequence()
                 .thenExecute(() -> {
                     placeFloor(helper);
                     helper.setBlock(INDUCER, ModBlocks.SU_CHARGER.get());
                     SUChargerBlockEntity be = helper.getBlockEntity(INDUCER);
                     be.setBufferForTesting(SUChargerBlockEntity.MAX_BUFFER);
-                    helper.assertTrue(be.availableDischarge() == 0,
-                            "An unpowered charger must not offer any SU");
                 })
-                .thenExecute(() -> helper.setBlock(REDSTONE, Blocks.REDSTONE_BLOCK))
-                .thenIdle(2)
+                .thenIdle(2) // let a tick publish the redstone level
                 .thenExecute(() -> {
                     SUChargerBlockEntity be = helper.getBlockEntity(INDUCER);
                     helper.assertTrue(be.isDischarging(),
-                            "A powered charger with a full buffer must be discharging");
+                            "A stopped charger with a full buffer must be discharging");
                     helper.assertTrue(
                             be.availableDischarge() == SUChargerBlockEntity.MAX_RATE_PER_TICK,
                             "Discharge offer should be capped at the per-tick rate");
+                    helper.assertBlockState(INDUCER,
+                            state -> state.getValue(SUChargerBlock.POWER) == 15,
+                            () -> "A full charger should emit redstone 15");
                     double taken = be.drain(1234);
                     helper.assertTrue(taken == 1234,
                             "Draining should hand out the requested amount");
                     helper.assertTrue(
                             be.getBuffer() == SUChargerBlockEntity.MAX_BUFFER - 1234,
                             "The buffer should shrink by exactly the drained amount");
+                    be.drain(SUChargerBlockEntity.MAX_BUFFER);
+                })
+                .thenIdle(2)
+                .thenExecute(() -> {
+                    SUChargerBlockEntity be = helper.getBlockEntity(INDUCER);
+                    helper.assertTrue(!be.isDischarging(),
+                            "An empty charger has nothing to discharge");
+                    helper.assertBlockState(INDUCER,
+                            state -> state.getValue(SUChargerBlock.POWER) == 0,
+                            () -> "An empty charger should emit no redstone");
                 })
                 .thenSucceed();
     }
