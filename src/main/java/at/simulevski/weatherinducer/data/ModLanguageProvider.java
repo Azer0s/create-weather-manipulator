@@ -36,5 +36,16 @@ public class ModLanguageProvider extends LanguageProvider {
         // Ponder
         add("weatherinducer.ponder.weather_inducer.header", "Controlling the weather with the Weather Inducer");
         add("weatherinducer.ponder.su_resistor.header", "Throttling SU with the SU Resistor");
+
+        // JEI / EMI information pages
+        add("weatherinducer.info.weather_inducer",
+                "The Weather Inducer charges from the Stress Units flowing through its shaft, up to 100,000 SU. "
+                        + "While it can see the sky, a redstone pulse then applies the selected weather - rain, clear, "
+                        + "or a lightning strike at a configurable offset - and discharges it. Use SU Resistors to slow "
+                        + "how fast it charges.");
+        add("weatherinducer.info.su_resistor",
+                "The SU Resistor sits inline on a shaft and caps how many Stress Units per tick may pass through it "
+                        + "toward a Weather Inducer. Set the limit with a value box. Without a resistor, an Inducer "
+                        + "drains the whole network in a single tick.");
     }
 }

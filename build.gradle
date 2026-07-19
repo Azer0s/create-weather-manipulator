@@ -39,6 +39,26 @@ repositories {
         name = 'BlameJared'
         url = 'https://maven.blamejared.com/'
     }
+    // EMI
+    maven {
+        name = 'TerraformersMC'
+        url = 'https://maven.terraformersmc.com/releases'
+    }
+    // ComputerCraft: Tweaked
+    maven {
+        name = 'SquidDev'
+        url = 'https://maven.squiddev.cc'
+    }
+    // KubeJS + Rhino
+    maven {
+        name = 'Saps'
+        url = 'https://maven.saps.dev/releases'
+    }
+    // Architectury (KubeJS transitive)
+    maven {
+        name = 'Architectury'
+        url = 'https://maven.architectury.dev/'
+    }
 }
 
 neoForge {
@@ -107,9 +127,15 @@ dependencies {
     // JPMS module conflict at runtime.
     implementation "net.createmod.ponder:ponder-neoforge:${ponder_version}"
 
-    // Optional: JEI for dev runtime (uncomment if you want it in-dev).
-    // compileOnly  "mezz.jei:jei-1.21.1-neoforge-api:19.+"
-    // runtimeOnly  "mezz.jei:jei-1.21.1-neoforge:19.+"
+    // --- Optional mod integrations (compile-only APIs) ------------------
+    // The mod runs fine without any of these installed; integration classes
+    // are guarded so they only load when the corresponding mod is present.
+    compileOnly "mezz.jei:jei-1.21.1-neoforge-api:${jei_version}"
+    compileOnly "dev.emi:emi-neoforge:${emi_version}:api"
+    compileOnly "cc.tweaked:cc-tweaked-1.21.1-forge-api:${cc_version}"
+    compileOnly("dev.latvian.mods:kubejs-neoforge:${kubejs_version}") {
+        transitive = false
+    }
 }
 
 // Interpolate mod metadata into neoforge.mods.toml.

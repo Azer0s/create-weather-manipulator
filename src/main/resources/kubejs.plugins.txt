@@ -1,0 +1,1 @@
+at.simulevski.weatherinducer.integration.kubejs.WeatherInducerKubeJSPlugin

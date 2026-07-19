@@ -119,39 +119,51 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
 
         boolean powered = level.hasNeighborSignal(worldPosition);
         if (powered && !wasPowered) {
-            tryFire((ServerLevel) level);
+            fire();
         }
         wasPowered = powered;
     }
 
-    /** Fires the selected weather effect if charged and the sky is visible. */
-    private void tryFire(ServerLevel server) {
-        if (charge < MAX_CHARGE) {
-            return;
+    /**
+     * Attempts to fire the selected weather effect. Succeeds only if fully
+     * charged and the sky is visible; on success the effect is applied and the
+     * block discharges to 0. Server-side only.
+     *
+     * @return {@code true} if the inducer fired.
+     */
+    public boolean fire() {
+        if (level == null || level.isClientSide) {
+            return false;
         }
+        if (charge < MAX_CHARGE) {
+            return false;
+        }
+        ServerLevel server = (ServerLevel) level;
         // Line of sight to the sky: the column directly above must be open.
         if (!server.canSeeSky(worldPosition.above())) {
-            return;
+            return false;
         }
 
-        WeatherMode mode = WeatherMode.fromIndex(modeScroll.getValue());
-        switch (mode) {
-            case RAIN -> server.setWeatherParameters(0, RAIN_TIME, true, false);
-            case CLEAR -> server.setWeatherParameters(CLEAR_TIME, 0, false, false);
-            case LIGHTNING -> summonLightning(server);
-        }
+        applyWeather(server, getMode());
 
         // Discharge: the capacitor is spent and must recharge before firing again.
         charge = 0;
         setChanged();
         sendData();
         level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
+        return true;
+    }
+
+    private void applyWeather(ServerLevel server, WeatherMode mode) {
+        switch (mode) {
+            case RAIN -> server.setWeatherParameters(0, RAIN_TIME, true, false);
+            case CLEAR -> server.setWeatherParameters(CLEAR_TIME, 0, false, false);
+            case LIGHTNING -> summonLightning(server);
+        }
     }
 
     private void summonLightning(ServerLevel server) {
-        int dx = offsetXScroll.getValue();
-        int dz = offsetZScroll.getValue();
-        BlockPos target = worldPosition.offset(dx, 0, dz);
+        BlockPos target = worldPosition.offset(getLightningOffsetX(), 0, getLightningOffsetZ());
         BlockPos surface = server.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, target);
 
         LightningBolt bolt = EntityType.LIGHTNING_BOLT.create(server);
@@ -159,6 +171,39 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
             bolt.moveTo(Vec3.atBottomCenterOf(surface));
             server.addFreshEntity(bolt);
         }
+    }
+
+    // --- Public API (used by ComputerCraft / KubeJS integrations) -----------
+
+    public WeatherMode getMode() {
+        return WeatherMode.fromIndex(modeScroll.getValue());
+    }
+
+    public void setMode(WeatherMode mode) {
+        modeScroll.setValue(mode.ordinal());
+        setChanged();
+    }
+
+    public boolean isCharged() {
+        return charge >= MAX_CHARGE;
+    }
+
+    public boolean hasSkyAccess() {
+        return level != null && level.canSeeSky(worldPosition.above());
+    }
+
+    public int getLightningOffsetX() {
+        return offsetXScroll.getValue();
+    }
+
+    public int getLightningOffsetZ() {
+        return offsetZScroll.getValue();
+    }
+
+    public void setLightningOffset(int x, int z) {
+        offsetXScroll.setValue(x);
+        offsetZScroll.setValue(z);
+        setChanged();
     }
 
     /** 0..15 comparator output scaling with charge fraction. */

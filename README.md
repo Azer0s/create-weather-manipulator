@@ -45,6 +45,57 @@ N B N
 
 ---
 
+## Mod integrations
+
+All integrations are optional — the mod runs with none of them installed, and each
+integration class only loads when its mod is present.
+
+### Ponder
+Both blocks ship in-game Ponder scenes (see them from the item tooltip's "Ponder"
+key or in JEI/EMI). They demonstrate a creative motor → shaft → SU Resistor →
+Weather Inducer setup and explain SU charging, the sky requirement, redstone
+firing, and the resistor throttle.
+
+### JEI & EMI
+Both recipe viewers show the crafting recipes automatically, plus an **information
+page** for each block describing its mechanics.
+
+### ComputerCraft: Tweaked
+A Weather Inducer exposes a `weather_inducer` peripheral:
+```lua
+local w = peripheral.find("weather_inducer")
+print(w.getCharge() .. " / " .. w.getMaxCharge() .. " SU")
+w.setMode("lightning")          -- "rain", "clear" or "lightning"
+w.setLightningOffset(10, -4)    -- X/Z offset from the inducer
+if w.isCharged() and w.canSeeSky() then w.fire() end
+```
+
+### KubeJS
+A `WeatherInducer` binding is available to scripts:
+```js
+// server script
+BlockEvents.rightClicked("minecraft:stick", event => {
+  const pos = event.block.pos
+  if (WeatherInducer.isCharged(event.level, pos)) {
+    WeatherInducer.setMode(event.level, pos, "lightning")
+    WeatherInducer.fire(event.level, pos)
+  }
+})
+```
+
+---
+
+## Testing
+
+Runtime game tests cover the Weather Inducer's fire logic. Run them headlessly:
+```bash
+./gradlew runGameTestServer
+```
+They verify: full-charge + sky + redstone fires and discharges; lightning mode
+spawns a bolt; a blocked sky prevents firing; and firing below 100k SU is a no-op.
+
+---
+
 ## Building
 
 ```bash

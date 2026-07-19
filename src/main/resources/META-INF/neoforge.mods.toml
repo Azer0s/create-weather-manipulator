@@ -35,3 +35,33 @@ type = "required"
 versionRange = "${create_mod_version_range}"
 ordering = "AFTER"
 side = "BOTH"
+
+# --- Optional integrations -------------------------------------------------
+
+[[dependencies.${mod_id}]]
+modId = "jei"
+type = "optional"
+versionRange = "*"
+ordering = "AFTER"
+side = "CLIENT"
+
+[[dependencies.${mod_id}]]
+modId = "emi"
+type = "optional"
+versionRange = "*"
+ordering = "AFTER"
+side = "CLIENT"
+
+[[dependencies.${mod_id}]]
+modId = "computercraft"
+type = "optional"
+versionRange = "*"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "kubejs"
+type = "optional"
+versionRange = "*"
+ordering = "AFTER"
+side = "BOTH"
