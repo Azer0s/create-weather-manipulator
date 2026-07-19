@@ -173,6 +173,19 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
         return charge;
     }
 
+    // --- Test hooks (used by the game tests; harmless in normal play) --------
+
+    public void setChargeForTesting(double value) {
+        this.charge = Math.max(0, Math.min(MAX_CHARGE, value));
+        setChanged();
+    }
+
+    public void setModeForTesting(int mode) {
+        if (modeScroll != null) {
+            modeScroll.setValue(mode);
+        }
+    }
+
     // The Weather Inducer is a pure consumer: it applies stress to the network.
     @Override
     public float calculateStressApplied() {
