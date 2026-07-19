@@ -6,8 +6,8 @@ A [Create](https://github.com/Creators-of-Create/Create) addon for **Minecraft 1
 
 | Block | What it does |
 | ----- | ------------ |
-| **Weather Inducer** | Charges from the connected kinetic network's Stress Units (SU) up to **100,000 SU**. When fully charged and pulsed with redstone, it applies the selected weather effect: **rain**, **clear**, or **lightning** at a configurable position, provided it can see the sky. |
-| **SU Resistor** | An inline shaft block with a configurable **SU/tick** cap. It throttles how fast an inducer sitting downstream of it can charge. Without a resistor, the inducer fills in a single tick. |
+| **Weather Inducer** | Charges from the connected kinetic network's Stress Units (SU) up to **1,000,000 SU**, drawing whatever the network offers at up to **100,000 SU per tick**. When fully charged and pulsed with redstone, it applies the selected weather effect: **rain**, **clear**, or **lightning** at a configurable position, provided it can see the sky. |
+| **SU Resistor** | An inline shaft block that caps the **maximum SU draw** of whatever is hooked up through it. Put one in front of an inducer to slow its charging below the inducer's native 100k SU per tick. |
 
 ---
 
@@ -15,7 +15,7 @@ A [Create](https://github.com/Creators-of-Create/Create) addon for **Minecraft 1
 
 ### Weather Inducer
 - **Kinetic input:** a shaft on the front/back faces (the facing axis).
-- **Charging:** while the shaft is turning, the inducer absorbs SU from its kinetic network each tick, up to 100,000 SU. Charge rate = `min(network capacity, inline resistor cap)`. With no inline resistor it charges instantly.
+- **Charging:** while the shaft is turning, the inducer absorbs SU from its kinetic network each tick until it holds 1,000,000 SU. It takes whatever it can get: `min(network capacity, inline resistor cap, 100,000)`. With no inline resistor, a big enough network fills it in ten ticks.
 - **Sky line-of-sight:** the block directly above must be able to see the sky, or firing is blocked.
 - **Mode (top value box):** scroll to pick `Rain` / `Clear` / `Lightning`.
 - **Lightning offset (side value boxes):** two scrolls set the X/Z offset (-64 to +64) of the lightning strike, measured from the inducer. The strike lands on the surface at that column.
@@ -24,8 +24,8 @@ A [Create](https://github.com/Creators-of-Create/Create) addon for **Minecraft 1
 
 ### SU Resistor
 - **Inline shaft:** rotation passes straight through along its axis, exactly like a shaft.
-- **SU/tick cap (value box on the four side faces):** scroll to set the limit (0 to 1,000,000, default 1,000).
-- Place one (or several) on the shaft feeding an inducer to throttle its charge rate. In series the tightest resistor wins; in parallel the caps add.
+- **SU draw cap (value box on the four side faces):** scroll to set the limit (0 to 1,000,000, default 1,000). Whatever is hooked up behind the resistor can draw at most this much SU from the network, regardless of what the network could deliver.
+- Place one (or several) on the shaft feeding an inducer to throttle its charging. In series the tightest resistor wins; in parallel the caps add.
 
 ---
 
@@ -94,7 +94,8 @@ Runtime game tests cover the Weather Inducer's fire logic. Run them headlessly:
 ./gradlew runGameTestServer
 ```
 They verify: full-charge + sky + redstone fires and discharges; lightning mode
-spawns a bolt; a blocked sky prevents firing; and firing below 100k SU is a no-op.
+spawns a bolt; a blocked sky prevents firing; and firing below full charge is a
+no-op.
 
 ---
 
@@ -147,22 +148,24 @@ easy to follow and maintain:
    bearings, topped by a raised copper emitter cap with a teal aperture,
    and the bolt emblem embossed half a pixel proud of both side faces (the
    raised geometry samples the same texture pixels as the flat art, so the
-   two always line up). A little gold lightning bolt stands on the cap as
-   a finial, built from two crossed cutout quads like a vanilla plant and
-   placed towards the cap corner so the mode value box stays clear. The SU Resistor is shaped like its namesake: two
+   two always line up). A little gold lightning bolt stands centered on
+   the cap as a finial, built from two crossed cutout quads like a vanilla
+   plant, rising out of the emitter aperture. The SU Resistor is shaped like its namesake: two
    andesite collar flanges at the shaft ends with the banded ceramic body
    suspended between them; the bands read brown-black-red with a gold
    tolerance band, which is 1000 in the resistor color code and also its
-   default SU/tick cap.
+   default SU draw cap.
 
 ### The custom SU model, in short
 Create has no built-in battery/drain mechanic, so "SU" here is a thin custom
 layer: the inducer treats its network's stress capacity as a pool it absorbs
-from each tick. "Strictly inline upstream" resistor scope is implemented as a
-barrier-BFS over network members (6-neighbour adjacency): a resistor caps its
-branch and stops expansion; if any branch reaches a source ungated, the inducer
-fills in one tick. This matches the design: *unthrottled means instant; add
-resistors to slow it down.*
+from each tick, at most 100,000 SU at a time. A resistor caps the maximum SU
+draw of whatever is hooked up through it. "Strictly inline upstream" resistor
+scope is implemented as a barrier-BFS over network members (6-neighbour
+adjacency): a resistor caps its branch and stops expansion; if any branch
+reaches a source ungated, only the inducer's own intake ceiling applies. So:
+*unthrottled, a large network fills the 1M charge in ten ticks; add resistors
+to slow the draw down.*
 
 ## License
 MIT

@@ -16,10 +16,10 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * The SU Resistor: an inline shaft block (rotation passes straight through
- * along its axis, exactly like a shaft) that carries a configurable SU/tick
- * cap. It does not itself alter Create's kinetics; instead a Weather Inducer
- * that sits downstream reads any resistor found inline upstream of it and uses
- * the tightest cap to throttle how fast it charges (see
+ * along its axis, exactly like a shaft) that caps how much SU whatever is
+ * hooked up through it may draw. It does not itself alter Create's kinetics;
+ * instead a Weather Inducer that sits downstream reads any resistor found
+ * inline upstream of it and applies the tightest cap to its own draw (see
  * {@code at.simulevski.weatherinducer.network.SUNetwork}).
  */
 public class SUResistorBlock extends RotatedPillarKineticBlock

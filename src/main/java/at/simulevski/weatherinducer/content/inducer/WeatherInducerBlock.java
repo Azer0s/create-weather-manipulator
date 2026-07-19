@@ -75,7 +75,7 @@ public class WeatherInducerBlock extends HorizontalKineticBlock
         return true;
     }
 
-    /** Comparator output scales 0..15 with charge fraction (0..100k SU). */
+    /** Comparator output scales 0..15 with charge fraction (0..1M SU). */
     @Override
     @SuppressWarnings("deprecation")
     public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {

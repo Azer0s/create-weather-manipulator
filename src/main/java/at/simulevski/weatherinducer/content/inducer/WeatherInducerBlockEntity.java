@@ -27,7 +27,9 @@ import java.util.List;
  * Drives the Weather Inducer:
  * <ul>
  *   <li>charges from the kinetic network's SU (see {@link SUNetwork}) up to
- *       {@link #MAX_CHARGE}, but only while the shaft is turning;</li>
+ *       {@link #MAX_CHARGE}, but only while the shaft is turning. Each tick it
+ *       takes whatever the network offers, up to {@link #MAX_INTAKE_PER_TICK};
+ *       an inline SU Resistor lowers that draw further;</li>
  *   <li>when fully charged, a rising redstone edge fires the selected weather
  *       effect, provided the block above can see the sky;</li>
  *   <li>exposes three scroll value boxes: mode (top), and the lightning X/Z
@@ -37,7 +39,10 @@ import java.util.List;
 public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHaveGoggleInformation {
 
     /** The Weather Inducer must accumulate this many SU before it can fire. */
-    public static final double MAX_CHARGE = 100_000.0;
+    public static final double MAX_CHARGE = 1_000_000.0;
+
+    /** The most SU the inducer itself can pull in per tick, resistors aside. */
+    public static final double MAX_INTAKE_PER_TICK = 100_000.0;
 
     /** Weather effect durations (ticks). 6000 ticks = 5 in-game minutes. */
     private static final int RAIN_TIME = 6000;
@@ -100,9 +105,10 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
         }
 
         // Charge from the network's SU, but only while the shaft is turning and
-        // we are not already full.
+        // we are not already full. The inducer takes what the network (and any
+        // inline resistor) allows, up to its own intake ceiling.
         if (getSpeed() != 0 && charge < MAX_CHARGE) {
-            double intake = SUNetwork.intakeThisTick(this);
+            double intake = Math.min(SUNetwork.intakeThisTick(this), MAX_INTAKE_PER_TICK);
             if (intake > 0) {
                 double before = charge;
                 charge = Math.min(MAX_CHARGE, charge + intake);

@@ -15,14 +15,13 @@ import net.neoforged.fml.common.Mod;
  * <p>Adds two kinetic blocks:
  * <ul>
  *   <li><b>Weather Inducer</b> &mdash; charges from the connected kinetic
- *       network's stress units (SU) up to 100,000 SU. When fully charged and
- *       pulsed with redstone it applies the selected weather effect
- *       (rain / clear / lightning at a configurable offset), provided it has
- *       line of sight to the sky.</li>
- *   <li><b>SU Resistor</b> &mdash; an inline shaft block with a configurable
- *       SU/tick cap. The Weather Inducer respects any resistor that sits
- *       inline upstream of it, so without a resistor it charges in a single
- *       tick.</li>
+ *       network's stress units (SU) up to 1,000,000 SU, drawing at most
+ *       100,000 SU per tick. When fully charged and pulsed with redstone it
+ *       applies the selected weather effect (rain / clear / lightning at a
+ *       configurable offset), provided it has line of sight to the sky.</li>
+ *   <li><b>SU Resistor</b> &mdash; an inline shaft block that caps how much
+ *       SU whatever is hooked up through it may draw. The Weather Inducer
+ *       respects any resistor that sits inline upstream of it.</li>
  * </ul>
  */
 @Mod(WeatherInducerMod.MOD_ID)

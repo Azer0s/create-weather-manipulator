@@ -81,17 +81,16 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .face(Direction.WEST).texture("#cap").uvs(2, 0, 14, 3).end()
                 .end();
 
-        // Finial: a little lightning bolt standing on the cap, two crossed
-        // flat quads like a vanilla plant. It sits towards the cap corner so
-        // the mode value box in the middle of the top face stays clear.
+        // Finial: a little lightning bolt standing centered on the cap, two
+        // crossed flat quads like a vanilla plant, rising out of the aperture.
         inducer.element()
-                .from(10, 16, 12).to(14, 21, 12)
+                .from(6, 16, 8).to(10, 21, 8)
                 .shade(false)
                 .face(Direction.NORTH).texture("#finial").uvs(0, 0, 4, 5).end()
                 .face(Direction.SOUTH).texture("#finial").uvs(0, 0, 4, 5).end()
                 .end();
         inducer.element()
-                .from(12, 16, 10).to(12, 21, 14)
+                .from(8, 16, 6).to(8, 21, 10)
                 .shade(false)
                 .face(Direction.EAST).texture("#finial").uvs(0, 0, 4, 5).end()
                 .face(Direction.WEST).texture("#finial").uvs(0, 0, 4, 5).end()

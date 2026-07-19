@@ -123,7 +123,7 @@ public class ModGameTests {
                 .thenExecute(() -> helper.setBlock(REDSTONE, Blocks.REDSTONE_BLOCK))
                 .thenIdle(3)
                 .thenExecute(() -> helper.assertTrue(inducer(helper).getCharge() == half,
-                        "Inducer below 100k SU must not fire"))
+                        "Inducer below full charge must not fire"))
                 .thenSucceed();
     }
 }

@@ -28,13 +28,16 @@ import java.util.Set;
  *       network's sources provide.</li>
  *   <li>{@code KineticNetwork.members} / {@code KineticNetwork.sources}
  *       &mdash; the public maps of member and source block entities, used for
- *       the inline-resistor traversal. (Adjust {@link #inlineCapPerTick} if the
+ *       the inline-resistor traversal. (Adjust {@link #inlineDrawCap} if the
  *       field names changed.)</li>
  * </ul>
  */
 public final class SUNetwork {
 
-    /** Sentinel meaning "no inline resistor gates this inducer" -> fills in one tick. */
+    /**
+     * Sentinel meaning "no inline resistor gates this inducer": the draw is
+     * then limited only by the consumer's own intake ceiling.
+     */
     public static final double UNLIMITED = Double.MAX_VALUE;
 
     private SUNetwork() {
@@ -55,8 +58,10 @@ public final class SUNetwork {
     }
 
     /**
-     * Computes the SU/tick the inducer is allowed to draw, given the resistors
-     * that sit inline upstream of it.
+     * Computes the maximum SU the inducer is allowed to draw from the network,
+     * given the resistors that sit inline upstream of it. A resistor caps the
+     * draw of whatever is hooked up through it, full stop; it does not meter
+     * SU over time.
      *
      * <p>Algorithm ("strictly inline upstream"): breadth-first traversal over
      * the kinetic network members starting at the inducer, using 6-neighbour
@@ -64,8 +69,8 @@ public final class SUNetwork {
      * acts as a <em>barrier</em>: its branch is capped at the resistor's
      * configured limit and the traversal does not expand past it. If any branch
      * reaches a network <em>source</em> without first passing through a
-     * resistor, the inducer is ungated and can absorb everything in a single
-     * tick ({@link #UNLIMITED}). Otherwise the cap is the sum of the gating
+     * resistor, the inducer is ungated ({@link #UNLIMITED}) and only its own
+     * intake ceiling applies. Otherwise the cap is the sum of the gating
      * resistors (so parallel feeds add, and a tighter resistor in series wins
      * because it is the first barrier hit on its branch).
      *
@@ -75,7 +80,7 @@ public final class SUNetwork {
      * "source -&gt; shaft -&gt; resistor -&gt; shaft -&gt; inducer" layout the
      * feature targets.
      */
-    public static double inlineCapPerTick(KineticBlockEntity inducer) {
+    public static double inlineDrawCap(KineticBlockEntity inducer) {
         KineticNetwork network = inducer.getOrCreateNetwork();
         if (network == null) {
             return 0;
@@ -131,14 +136,15 @@ public final class SUNetwork {
 
     /**
      * SU the inducer may add to its charge this tick: the network capacity,
-     * clamped by whatever inline resistors allow.
+     * clamped by whatever inline resistors allow. The caller applies its own
+     * intake ceiling on top.
      */
     public static double intakeThisTick(KineticBlockEntity inducer) {
         double available = availableSU(inducer);
         if (available <= 0) {
             return 0;
         }
-        double cap = inlineCapPerTick(inducer);
+        double cap = inlineDrawCap(inducer);
         return Math.min(available, cap);
     }
 }

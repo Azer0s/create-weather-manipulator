@@ -41,7 +41,7 @@ public final class ModPonderScenes {
         scene.idle(90);
 
         scene.overlay().showText(90)
-                .text("Once charged to 100,000 SU, a redstone pulse applies the selected weather: rain, clear, or a lightning strike")
+                .text("Once charged to 1,000,000 SU, a redstone pulse applies the selected weather: rain, clear, or a lightning strike")
                 .placeNearTarget()
                 .pointAt(util.vector().blockSurface(inducer, Direction.UP));
         scene.idle(100);
@@ -63,14 +63,14 @@ public final class ModPonderScenes {
         BlockPos inducer = util.grid().at(4, 1, 2);
 
         scene.overlay().showText(90)
-                .text("The SU Resistor sits inline on a shaft and caps how many SU per tick can pass through it")
+                .text("The SU Resistor sits inline on a shaft and caps how much SU whatever it feeds may draw")
                 .attachKeyFrame()
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(resistor));
         scene.idle(100);
 
         scene.overlay().showText(90)
-                .text("Its limit is set with a value box. Without a resistor, an Inducer drains the whole network in a single tick")
+                .text("Its limit is set with a value box. Without a resistor, an Inducer draws up to 100,000 SU every tick")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(inducer));
         scene.idle(100);

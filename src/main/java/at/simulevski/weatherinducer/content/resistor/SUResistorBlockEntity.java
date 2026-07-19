@@ -14,13 +14,14 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.List;
 
 /**
- * Holds the SU/tick cap for one SU Resistor. The value is stored and synced by
- * the {@link ScrollValueBehaviour} itself; this block entity just exposes it so
- * a downstream Weather Inducer can read it.
+ * Holds the SU draw cap for one SU Resistor: the most SU whatever is hooked up
+ * through this resistor may pull from the network. The value is stored and
+ * synced by the {@link ScrollValueBehaviour} itself; this block entity just
+ * exposes it so a downstream Weather Inducer can read it.
  */
 public class SUResistorBlockEntity extends KineticBlockEntity implements IHaveGoggleInformation {
 
-    /** Default cap in SU/tick. */
+    /** Default draw cap in SU. */
     public static final int DEFAULT_LIMIT = 1_000;
     /** Upper bound of the configurable cap. */
     public static final int MAX_LIMIT = 1_000_000;
@@ -45,7 +46,7 @@ public class SUResistorBlockEntity extends KineticBlockEntity implements IHaveGo
         behaviours.add(suLimit);
     }
 
-    /** The configured SU/tick cap this resistor allows to pass. */
+    /** The configured SU draw cap this resistor allows to pass. */
     public int getSuLimit() {
         return suLimit != null ? suLimit.getValue() : DEFAULT_LIMIT;
     }
