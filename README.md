@@ -141,13 +141,17 @@ easy to follow and maintain:
 4. **Models and textures**: the mod ships its own 16x16 pixel art under
    `assets/weatherinducer/textures/block/`, styled after Create's brass and
    andesite casings (frame bars with corner brackets, plank interiors, a
-   top-left light source and light dithering). The Weather Inducer is a
-   stepped machine rather than a full cube: a 13px casing base with shaft
-   bearings, topped by a raised copper emitter cap with a teal aperture
-   (element model built in datagen, matching voxel shape, noOcclusion). The
-   SU Resistor stays a full cube like Create's encased shafts; its ceramic
-   body wears brown-black-red bands with a gold tolerance band, which is
-   1000 in the resistor color code and also its default SU/tick cap.
+   top-left light source and light dithering). Both blocks use element
+   models built in datagen, with matching voxel shapes and noOcclusion. The
+   Weather Inducer is a stepped machine: a 13px casing base with shaft
+   bearings, topped by a raised copper emitter cap with a teal aperture,
+   and the bolt emblem embossed half a pixel proud of both side faces (the
+   raised geometry samples the same texture pixels as the flat art, so the
+   two always line up). The SU Resistor is shaped like its namesake: two
+   andesite collar flanges at the shaft ends with the banded ceramic body
+   suspended between them; the bands read brown-black-red with a gold
+   tolerance band, which is 1000 in the resistor color code and also its
+   default SU/tick cap.
 
 ### The custom SU model, in short
 Create has no built-in battery/drain mechanic, so "SU" here is a thin custom

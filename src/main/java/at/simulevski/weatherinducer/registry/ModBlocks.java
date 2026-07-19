@@ -33,6 +33,8 @@ public final class ModBlocks {
                     .mapColor(MapColor.PODZOL)
                     .strength(2.0f, 4.0f)
                     .sound(SoundType.NETHERITE_BLOCK)
+                    // Flanged resistor silhouette, not a full cube.
+                    .noOcclusion()
                     .requiresCorrectToolForDrops()));
 
     private ModBlocks() {
