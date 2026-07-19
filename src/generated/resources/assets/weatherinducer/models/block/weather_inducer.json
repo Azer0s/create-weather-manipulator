@@ -1,8 +1,12 @@
 {
-  "parent": "minecraft:block/cube_bottom_top",
+  "parent": "minecraft:block/cube",
   "textures": {
-    "bottom": "create:block/brass_casing",
-    "side": "create:block/brass_casing",
-    "top": "minecraft:block/copper_block"
+    "down": "weatherinducer:block/weather_inducer_bottom",
+    "east": "weatherinducer:block/weather_inducer_side",
+    "north": "weatherinducer:block/weather_inducer_end",
+    "particle": "weatherinducer:block/weather_inducer_side",
+    "south": "weatherinducer:block/weather_inducer_end",
+    "up": "weatherinducer:block/weather_inducer_top",
+    "west": "weatherinducer:block/weather_inducer_side"
   }
 }

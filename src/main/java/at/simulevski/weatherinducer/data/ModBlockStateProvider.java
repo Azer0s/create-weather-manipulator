@@ -19,18 +19,25 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
     @Override
     protected void registerStatesAndModels() {
-        // Weather Inducer: brass casing body with a copper top; the shaft is
-        // drawn by the block entity renderer, so the model is casing only.
-        ModelFile inducer = models().cubeBottomTop("weather_inducer",
-                ResourceLocation.parse("create:block/brass_casing"),
-                ResourceLocation.parse("create:block/brass_casing"),
-                ResourceLocation.parse("minecraft:block/copper_block"));
+        // Weather Inducer: brass casing with a copper emitter plate on top and
+        // shaft bearings on the two faces along the facing axis. The spinning
+        // shaft itself is drawn by the block entity renderer, so the model is
+        // casing only.
+        ResourceLocation inducerSide = modLoc("block/weather_inducer_side");
+        ResourceLocation inducerEnd = modLoc("block/weather_inducer_end");
+        ModelFile inducer = models().cube("weather_inducer",
+                        modLoc("block/weather_inducer_bottom"),
+                        modLoc("block/weather_inducer_top"),
+                        inducerEnd, inducerEnd,
+                        inducerSide, inducerSide)
+                .texture("particle", inducerSide);
         horizontalBlock(ModBlocks.WEATHER_INDUCER.get(), inducer);
 
-        // SU Resistor: andesite casing column with brass ends, oriented on AXIS.
+        // SU Resistor: andesite frame with a banded ceramic resistor body along
+        // the shaft, bearings on the two ends, oriented on AXIS.
         ModelFile resistor = models().cubeColumn("su_resistor",
-                ResourceLocation.parse("create:block/andesite_casing"),
-                ResourceLocation.parse("create:block/brass_casing"));
+                modLoc("block/su_resistor_side"),
+                modLoc("block/su_resistor_end"));
         getVariantBuilder(ModBlocks.SU_RESISTOR.get()).forAllStates(state -> {
             Direction.Axis axis = state.getValue(SUResistorBlock.AXIS);
             int x = 0;

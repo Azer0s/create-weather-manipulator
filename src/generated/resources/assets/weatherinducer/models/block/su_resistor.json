@@ -1,7 +1,7 @@
 {
   "parent": "minecraft:block/cube_column",
   "textures": {
-    "end": "create:block/brass_casing",
-    "side": "create:block/andesite_casing"
+    "end": "weatherinducer:block/su_resistor_end",
+    "side": "weatherinducer:block/su_resistor_side"
   }
 }
