@@ -2,7 +2,7 @@ plugins {
     id 'java'
     id 'eclipse'
     id 'idea'
-    // ModDevGradle — the officially recommended NeoForge build plugin.
+    // ModDevGradle, the officially recommended NeoForge build plugin.
     id 'net.neoforged.moddev' version '2.0.78'
 }
 
@@ -123,7 +123,7 @@ dependencies {
     implementation "dev.engine-room.flywheel:flywheel-neoforge-${create_minecraft_version}:${flywheel_version}"
     implementation "com.tterrag.registrate:Registrate:${registrate_version}"
     // Ponder bundles Catnip (net.createmod.catnip.*) directly, so we do NOT
-    // declare Catnip separately — doing so produces a split-package / duplicate
+    // declare Catnip separately; doing so produces a split-package / duplicate
     // JPMS module conflict at runtime.
     implementation "net.createmod.ponder:ponder-neoforge:${ponder_version}"
 

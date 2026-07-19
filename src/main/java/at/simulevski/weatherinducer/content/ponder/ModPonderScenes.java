@@ -7,7 +7,7 @@ import net.minecraft.core.Direction;
 
 /**
  * Ponder storyboards. Both scenes reveal the shared schematic
- * {@code assets/weatherinducer/ponder/weather_devices.nbt} — a creative motor
+ * {@code assets/weatherinducer/ponder/weather_devices.nbt}: a creative motor
  * driving a shaft through an SU Resistor into a Weather Inducer.
  */
 public final class ModPonderScenes {
