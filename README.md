@@ -50,56 +50,42 @@ N B N
 ```bash
 ./gradlew build
 ```
-The built jar lands in `build/libs/`. To launch a dev client/server:
+The built jar lands in `build/libs/` (`weatherinducer-<version>-mc1.21.1.jar`).
+To launch a dev client/server:
 ```bash
 ./gradlew runClient
 ./gradlew runServer
 ```
 
-> **Heads-up on dependencies:** the buildscript pulls Create (and its split-out
-> runtime deps — Flywheel, Registrate, Ponder, Catnip) from
-> `https://maven.createmod.net` and `https://maven.tterrag.com`. These hosts
-> were **blocked by egress policy in the environment this addon was authored
-> in**, so the exact artifact coordinates in `build.gradle` could not be
-> resolved live. Before your first build, cross-check the coordinates in
-> `build.gradle` (search for the "Create + its dependency stack" comment)
-> against Create 6.0.10's published artifacts. The Create wiki's
-> "Setting up an addon workspace" page lists the current coordinates per
-> MC/NeoForge version.
+This project **compiles cleanly against Create `6.0.10-281`** (the last 6.0.10
+build) and its runtime stack. The exact coordinates are pinned in
+`gradle.properties`; the repositories that serve them are declared in
+`build.gradle`:
+- Create, Flywheel, Ponder, Catnip → `https://maven.createmod.net`
+- Registrate (`MC1.21-1.3.0+67`) → `https://maven.ithundxr.dev/snapshots`
 
 ---
 
-## Implementation notes & verify-points
+## Implementation notes
 
-Because the build environment could not reach Create/NeoForge Maven, the code
-could not be compiled here. It is written to Create 6.0.x conventions, and the
-**version-sensitive Create API touchpoints are deliberately isolated** so a
-first local compile has few, obvious places to adjust:
+The **Create API touchpoints are deliberately isolated** so the integration is
+easy to follow and maintain:
 
 1. **`network/SUNetwork.java`** — the only class that reads Create's kinetic
-   internals:
-   - `KineticBlockEntity#getOrCreateNetwork()`
-   - `KineticNetwork#getCapacity()` (total provided SU)
-   - `KineticNetwork.members` / `KineticNetwork.sources` (public maps used for
-     the inline-resistor traversal)
-   If any of these were renamed, this is the single file to fix.
+   internals: `KineticBlockEntity#getOrCreateNetwork()`,
+   `KineticNetwork#calculateCapacity()` (total provided SU), and the public
+   `KineticNetwork.members` / `KineticNetwork.sources` maps used for the
+   inline-resistor traversal.
 
-2. **Value boxes** — `ScrollValueBehaviour` fluent calls (`between`,
-   `withFormatter`, `setValue`, `getValue`) in
-   `WeatherInducerBlockEntity` / `SUResistorBlockEntity`, and the
-   `CenteredSideValueBoxTransform(BiPredicate)` constructor in
-   `content/util/SideValueBoxTransform.java`.
+2. **Value boxes** — `ScrollValueBehaviour` (`between`, `withFormatter`,
+   `getValue`, `setValue`) in the two block entities, positioned via
+   `CenteredSideValueBoxTransform` (`content/util/SideValueBoxTransform.java`).
 
 3. **Rendering** — `client/WeatherInducerClient.java` registers Create's
-   `ShaftRenderer<>`. If `ShaftRenderer` is non-generic in your build, adjust
-   the constructor call. Block models are casing-only by design; the renderer
-   draws the spinning shaft.
+   generic `ShaftRenderer<>`. Block models are casing-only by design; the
+   renderer draws the spinning shaft on the connecting faces.
 
-4. **Base classes / interfaces** — `HorizontalKineticBlock`,
-   `RotatedPillarKineticBlock`, `IBE`, and
-   `IHaveGoggleInformation` (`content.equipment.goggles`) package paths.
-
-5. **Textures** are borrowed from Create/vanilla (`create:block/brass_casing`,
+4. **Textures** are borrowed from Create/vanilla (`create:block/brass_casing`,
    `create:block/andesite_casing`, `minecraft:block/copper_block`) so nothing
    renders as a missing texture. Replace them under
    `assets/weatherinducer/textures/` for custom art.

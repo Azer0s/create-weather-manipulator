@@ -1,8 +1,8 @@
 package at.simulevski.weatherinducer.network;
 
 import at.simulevski.weatherinducer.content.resistor.SUResistorBlockEntity;
+import com.simibubi.create.content.kinetics.KineticNetwork;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
-import com.simibubi.create.content.kinetics.network.KineticNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 
@@ -24,9 +24,8 @@ import java.util.Set;
  * <ul>
  *   <li>{@link KineticBlockEntity#getOrCreateNetwork()} &mdash; obtain the
  *       network a block entity belongs to.</li>
- *   <li>{@link KineticNetwork#getCapacity()} &mdash; total SU the network's
- *       sources provide. (If this method was renamed, adjust
- *       {@link #availableSU}.)</li>
+ *   <li>{@link KineticNetwork#calculateCapacity()} &mdash; total SU the
+ *       network's sources provide.</li>
  *   <li>{@code KineticNetwork.members} / {@code KineticNetwork.sources}
  *       &mdash; the public maps of member and source block entities, used for
  *       the inline-resistor traversal. (Adjust {@link #inlineCapPerTick} if the
@@ -51,9 +50,8 @@ public final class SUNetwork {
         if (network == null) {
             return 0;
         }
-        // Create exposes the network's provided capacity in SU. If this getter
-        // was renamed in your Create build, point it at the current accessor.
-        return Math.max(0, network.getCapacity());
+        // calculateCapacity() returns the network's total provided capacity in SU.
+        return Math.max(0, network.calculateCapacity());
     }
 
     /**

@@ -2,7 +2,7 @@ package at.simulevski.weatherinducer.content.inducer;
 
 import at.simulevski.weatherinducer.content.util.SideValueBoxTransform;
 import at.simulevski.weatherinducer.network.SUNetwork;
-import com.simibubi.create.content.equipment.goggles.IHaveGoggleInformation;
+import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.content.kinetics.base.HorizontalKineticBlock;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;

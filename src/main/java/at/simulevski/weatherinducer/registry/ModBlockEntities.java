@@ -15,16 +15,23 @@ public final class ModBlockEntities {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, WeatherInducerMod.MOD_ID);
 
+    // Create's KineticBlockEntity uses a 3-arg constructor
+    // (BlockEntityType, BlockPos, BlockState), so we wrap it in the 2-arg
+    // BlockEntitySupplier the vanilla builder expects, passing the (deferred)
+    // block entity type in. The lambda runs lazily, after registration, so the
+    // self-reference to the type holder is safe.
     public static final Supplier<BlockEntityType<WeatherInducerBlockEntity>> WEATHER_INDUCER =
             BLOCK_ENTITIES.register("weather_inducer",
                     () -> BlockEntityType.Builder.of(
-                            WeatherInducerBlockEntity::new,
+                            (pos, state) -> new WeatherInducerBlockEntity(
+                                    ModBlockEntities.WEATHER_INDUCER.get(), pos, state),
                             ModBlocks.WEATHER_INDUCER.get()).build(null));
 
     public static final Supplier<BlockEntityType<SUResistorBlockEntity>> SU_RESISTOR =
             BLOCK_ENTITIES.register("su_resistor",
                     () -> BlockEntityType.Builder.of(
-                            SUResistorBlockEntity::new,
+                            (pos, state) -> new SUResistorBlockEntity(
+                                    ModBlockEntities.SU_RESISTOR.get(), pos, state),
                             ModBlocks.SU_RESISTOR.get()).build(null));
 
     private ModBlockEntities() {
