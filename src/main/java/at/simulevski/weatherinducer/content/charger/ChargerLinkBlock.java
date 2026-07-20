@@ -12,6 +12,7 @@ import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
@@ -126,6 +127,18 @@ public class ChargerLinkBlock extends Block implements EntityBlock {
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level,
                                               BlockPos pos, Player player, InteractionHand hand,
                                               BlockHitResult hit) {
+        // A named name tag names the link; the goggles then say which
+        // charger holds the discharge lead by that name.
+        if (stack.is(Items.NAME_TAG) && stack.has(DataComponents.CUSTOM_NAME)) {
+            if (!level.isClientSide
+                    && level.getBlockEntity(pos) instanceof ChargerLinkBlockEntity link) {
+                String name = stack.getHoverName().getString();
+                link.setCustomName(name);
+                player.displayClientMessage(
+                        Component.translatable("weatherinducer.message.link_named", name), true);
+            }
+            return ItemInteractionResult.sidedSuccess(level.isClientSide);
+        }
         if (!stack.is(ModItems.CHARGER_LINK.get())) {
             return super.useItemOn(stack, state, level, pos, player, hand, hit);
         }
@@ -151,10 +164,11 @@ public class ChargerLinkBlock extends Block implements EntityBlock {
     @Nullable
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state,
                                                                   BlockEntityType<T> type) {
-        if (level.isClientSide || type != ModBlockEntities.CHARGER_LINK.get()) {
+        if (type != ModBlockEntities.CHARGER_LINK.get()) {
             return null;
         }
-        return (lvl, pos, st, be) -> ChargerLinkBlockEntity.tick(lvl, pos, st,
-                (ChargerLinkBlockEntity) be);
+        // Both sides, every tick: the server runs the network upkeep and
+        // heartbeat pulses, the client animates the bulb glow.
+        return (lvl, pos, st, be) -> ((ChargerLinkBlockEntity) be).tick();
     }
 }

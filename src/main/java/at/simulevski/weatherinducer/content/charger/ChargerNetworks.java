@@ -73,4 +73,48 @@ public final class ChargerNetworks {
         KineticChargerBlockEntity leader = dischargeLeader(network);
         return leader != null ? leader.getBlockPos() : null;
     }
+
+    /**
+     * Total stored SU-seconds across the loaded members. Server-side
+     * aggregation for the synced goggle stats; energy never moves, this
+     * only adds up what each member holds.
+     */
+    public static double totalEnergy(UUID network) {
+        return members(network).stream().mapToDouble(KineticChargerBlockEntity::getBuffer).sum();
+    }
+
+    /** Total capacity in SU-seconds across the loaded members. */
+    public static double totalCapacity(UUID network) {
+        return members(network).stream().mapToDouble(KineticChargerBlockEntity::getMaxBuffer).sum();
+    }
+
+    // --- Link blocks, tracked for the automatic numbering ----------------
+
+    private static final Map<UUID, Set<ChargerLinkBlockEntity>> LINKS =
+            new ConcurrentHashMap<>();
+
+    public static void registerLink(UUID network, ChargerLinkBlockEntity link) {
+        LINKS.computeIfAbsent(network, id -> new CopyOnWriteArraySet<>()).add(link);
+    }
+
+    public static void unregisterLink(UUID network, ChargerLinkBlockEntity link) {
+        Set<ChargerLinkBlockEntity> links = LINKS.get(network);
+        if (links != null) {
+            links.remove(link);
+            if (links.isEmpty()) {
+                LINKS.remove(network);
+            }
+        }
+    }
+
+    /**
+     * The next free number for an unnamed link joining the network: one
+     * past the highest already handed out, so numbers never repeat even
+     * after links break. Runs on the single server thread only.
+     */
+    public static int nextLinkNumber(UUID network) {
+        Set<ChargerLinkBlockEntity> links = LINKS.getOrDefault(network, Set.of());
+        links.removeIf(ChargerLinkBlockEntity::isRemoved);
+        return 1 + links.stream().mapToInt(ChargerLinkBlockEntity::getNumber).max().orElse(0);
+    }
 }

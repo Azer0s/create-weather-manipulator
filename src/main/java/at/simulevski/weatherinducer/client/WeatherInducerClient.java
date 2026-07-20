@@ -55,6 +55,8 @@ public final class WeatherInducerClient {
                 context -> new SplitShaftRenderer(context));
         event.registerBlockEntityRenderer(ModBlockEntities.LIGHTNING_MEDIUM.get(),
                 LightningMediumRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.CHARGER_LINK.get(),
+                ChargerLinkRenderer::new);
         event.registerEntityRenderer(ModEntityTypes.THROWN_BOTTLE_O_LIGHTNING.get(),
                 ThrownItemRenderer::new);
     }

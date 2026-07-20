@@ -76,29 +76,29 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .transform(ItemDisplayContext.FIRST_PERSON_LEFT_HAND)
                 .rotation(0, 90, -25).translation(1.13f, 3.2f, 1.13f).scale(0.68f).end()
                 .end();
-        // Pommel, slightly wider than the grip, capped top and bottom.
-        blade.element()
-                .from(6.5f, -2, 7).to(9.5f, -0.5f, 9)
+        // Katana anatomy, hilt to tip: kashira cap, long two-hand tsuka
+        // with the diamond wrap, small oval tsuba, then a slender
+        // single-edged blade whose segments step sideways toward the
+        // spine for the curve and close in an angled kissaki.
+        blade.element() // kashira, the small end cap
+                .from(7.3f, -4, 7.3f).to(8.7f, -3.4f, 8.7f)
                 .rotation().angle(-45).axis(Direction.Axis.Z).origin(8, 8, 8).end()
-                .face(Direction.NORTH).texture("#blade").uvs(4, 12, 7, 14).end()
-                .face(Direction.SOUTH).texture("#blade").uvs(4, 12, 7, 14).end()
-                .face(Direction.EAST).texture("#blade").uvs(4, 12, 6, 14).end()
-                .face(Direction.WEST).texture("#blade").uvs(4, 12, 6, 14).end()
-                .face(Direction.UP).texture("#blade").uvs(4, 12, 7, 14).end()
-                .face(Direction.DOWN).texture("#blade").uvs(4, 12, 7, 14).end()
+                .face(Direction.NORTH).texture("#blade").uvs(4, 12, 5, 13).end()
+                .face(Direction.SOUTH).texture("#blade").uvs(4, 12, 5, 13).end()
+                .face(Direction.EAST).texture("#blade").uvs(4, 12, 5, 13).end()
+                .face(Direction.WEST).texture("#blade").uvs(4, 12, 5, 13).end()
+                .face(Direction.DOWN).texture("#blade").uvs(4, 12, 5, 13).end()
                 .end();
-        // Grip, long enough for the whole fist.
-        blade.element()
-                .from(7.25f, -0.5f, 7.4f).to(8.75f, 4, 8.6f)
+        blade.element() // tsuka, the wrapped grip
+                .from(7.4f, -3.4f, 7.4f).to(8.6f, 4, 8.6f)
                 .rotation().angle(-45).axis(Direction.Axis.Z).origin(8, 8, 8).end()
                 .face(Direction.NORTH).texture("#blade").uvs(12, 12, 14, 16).end()
                 .face(Direction.SOUTH).texture("#blade").uvs(12, 12, 14, 16).end()
                 .face(Direction.EAST).texture("#blade").uvs(12, 12, 14, 16).end()
                 .face(Direction.WEST).texture("#blade").uvs(12, 12, 14, 16).end()
                 .end();
-        // Cross guard.
-        blade.element()
-                .from(5, 4, 6.8f).to(11, 5.5f, 9.2f)
+        blade.element() // tsuba, the small oval guard
+                .from(6.9f, 4, 7.1f).to(9.1f, 4.75f, 8.9f)
                 .rotation().angle(-45).axis(Direction.Axis.Z).origin(8, 8, 8).end()
                 .face(Direction.NORTH).texture("#blade").uvs(4, 12, 10, 14).end()
                 .face(Direction.SOUTH).texture("#blade").uvs(4, 12, 10, 14).end()
@@ -107,15 +107,14 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .face(Direction.UP).texture("#blade").uvs(4, 12, 10, 14).end()
                 .face(Direction.DOWN).texture("#blade").uvs(4, 12, 10, 14).end()
                 .end();
-        // The blade, wearing the animated arc texture. Four segments
-        // stepping down in width and thickness, so the silhouette tapers
-        // to a fine point instead of ending in a blunt nub. Every
-        // segment's up face is drawn: the exposed rim of each step stays
-        // closed and the next segment covers the rest.
-        bladeSegment(blade, 7, 5.5f, 12.5f, 0.8f, 0, 7);
-        bladeSegment(blade, 7.25f, 12.5f, 14.5f, 0.7f, 7, 9);
-        bladeSegment(blade, 7.5f, 14.5f, 16, 0.6f, 9, 10);
-        bladeSegment(blade, 7.75f, 16, 17.25f, 0.4f, 10, 10.75f);
+        // The blade: each segment shifts a quarter pixel toward the spine
+        // so the whole edge sweeps in a shallow curve, and the kissaki
+        // narrows onto the spine line the way a real tip does.
+        bladeSegment(blade, 7.3f, 8.7f, 4.75f, 9.5f, 0.5f, 0, 4.75f);
+        bladeSegment(blade, 7.05f, 8.45f, 9.5f, 13.5f, 0.46f, 4.75f, 8.75f);
+        bladeSegment(blade, 6.8f, 8.2f, 13.5f, 16, 0.42f, 8.75f, 11.25f);
+        bladeSegment(blade, 6.65f, 7.75f, 16, 17, 0.38f, 11.25f, 12.25f);
+        bladeSegment(blade, 6.55f, 7.15f, 17, 17.6f, 0.34f, 12.25f, 12.85f);
 
         getBuilder("lightning_sword")
                 .customLoader(SeparateTransformsModelBuilder::begin)
@@ -127,24 +126,26 @@ public class ModItemModelProvider extends ItemModelProvider {
     }
 
     /**
-     * One taper step of the blade: centered on x=8, {@code width} taken
-     * from {@code xMin}, running {@code y1..y2}, {@code thick} deep, faces
-     * sampling texture rows {@code v1..v2} of the animated strip. Carries
-     * the same shared -45 degree roll as the rest of the sword.
+     * One segment of the katana blade running {@code y1..y2} between
+     * {@code x1..x2}, {@code thick} deep, flats sampling texture rows
+     * {@code v1..v2} of the animated strip (body and bright edge
+     * columns), the west face the dark spine column, the east face the
+     * edge glow. Carries the same shared -45 degree roll as the rest of
+     * the sword, and caps its up face so each step's exposed rim stays
+     * closed.
      */
-    private void bladeSegment(ItemModelBuilder blade, float xMin, float y1, float y2,
-                              float thick, float v1, float v2) {
-        float xMax = 16 - xMin;
+    private void bladeSegment(ItemModelBuilder blade, float x1, float x2,
+                              float y1, float y2, float thick, float v1, float v2) {
         float z1 = 8 - thick / 2;
         float z2 = 8 + thick / 2;
         blade.element()
-                .from(xMin, y1, z1).to(xMax, y2, z2)
+                .from(x1, y1, z1).to(x2, y2, z2)
                 .rotation().angle(-45).axis(Direction.Axis.Z).origin(8, 8, 8).end()
-                .face(Direction.NORTH).texture("#blade").uvs(0, v1, xMax - xMin, v2).end()
-                .face(Direction.SOUTH).texture("#blade").uvs(0, v1, xMax - xMin, v2).end()
-                .face(Direction.EAST).texture("#blade").uvs(2, v1, 3, v2).end()
+                .face(Direction.NORTH).texture("#blade").uvs(0.5f, v1, 2, v2).end()
+                .face(Direction.SOUTH).texture("#blade").uvs(0.5f, v1, 2, v2).end()
+                .face(Direction.EAST).texture("#blade").uvs(3, v1, 4, v2).end()
                 .face(Direction.WEST).texture("#blade").uvs(2, v1, 3, v2).end()
-                .face(Direction.UP).texture("#blade").uvs(0, v1, xMax - xMin, v1 + 0.5f).end()
+                .face(Direction.UP).texture("#blade").uvs(0.5f, v1, 2, v1 + 0.4f).end()
                 .end();
     }
 }

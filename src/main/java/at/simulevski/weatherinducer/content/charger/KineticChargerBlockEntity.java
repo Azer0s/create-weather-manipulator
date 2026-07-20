@@ -105,8 +105,27 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
     /** True while this charger won the right to generate (cached, synced). */
     private boolean electedLeader = true;
 
+    /**
+     * SU-seconds leaving the buffer per second right now (stress share
+     * plus neutral drain), synced so the goggles can say how long the
+     * charge lasts at the current draw.
+     */
+    private double drainPerSecond;
+
     /** The charger link network this block belongs to, if a link is attached. */
     private UUID linkNetwork;
+
+    // Group stats, aggregated server-side once a second and synced so the
+    // goggles can show the whole link network's state on any member and
+    // on dedicated servers too. Sentinel for "no lead": Long.MAX_VALUE.
+    private double groupEnergy;
+    private double groupCapacity;
+    private int groupSize;
+    private long groupLead = Long.MAX_VALUE;
+    private String groupLeadName = "";
+
+    /** This charger's own link name, pushed over by the attached link. */
+    private String linkName = "";
 
     public KineticChargerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -297,6 +316,9 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         }
         if (linkNetwork != null) {
             ChargerNetworks.register(linkNetwork, this);
+            if (level.getGameTime() % 20 == 0) {
+                refreshGroupStats();
+            }
         }
 
         // Neutral drain: a spinning bank is never free. Five SU-seconds
@@ -338,6 +360,7 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
                 setChanged();
                 level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
             }
+            drainPerSecond = buffer > 0 ? NEUTRAL_DRAIN_PER_SECOND : 0;
             return;
         }
 
@@ -352,13 +375,11 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
             double used = network == null ? 0 : Math.max(0, network.calculateStress());
             if (used > 0) {
                 int coDrivers = 1;
-                if (network != null) {
-                    for (KineticBlockEntity source : network.sources.keySet()) {
-                        if (source != this
-                                && source instanceof KineticChargerBlockEntity other
-                                && other.isGenerating() && !other.hasSource()) {
-                            coDrivers++;
-                        }
+                for (KineticBlockEntity source : network.sources.keySet()) {
+                    if (source != this
+                            && source instanceof KineticChargerBlockEntity other
+                            && other.isGenerating() && !other.hasSource()) {
+                        coDrivers++;
                     }
                 }
                 buffer = Math.max(0, buffer - used / 20.0 / coDrivers);
@@ -367,8 +388,11 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
                 if (buffer <= 0) {
                     reActivateSource = true;
                 }
+                drainPerSecond = used / coDrivers + NEUTRAL_DRAIN_PER_SECOND;
+                return;
             }
         }
+        drainPerSecond = buffer > 0 ? NEUTRAL_DRAIN_PER_SECOND : 0;
     }
 
     /** True while the battery itself spins the network. */
@@ -444,6 +468,79 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
     /** Battery mode with charge left in the buffer. */
     public boolean isDischarging() {
         return isGenerating();
+    }
+
+    /** Re-aggregates and syncs the link network's stats when they moved. */
+    private void refreshGroupStats() {
+        double energy = ChargerNetworks.totalEnergy(linkNetwork);
+        double capacity = ChargerNetworks.totalCapacity(linkNetwork);
+        int size = ChargerNetworks.members(linkNetwork).size();
+        KineticChargerBlockEntity lead = ChargerNetworks.dischargeLeader(linkNetwork);
+        long leadLong = lead == null ? Long.MAX_VALUE : lead.getBlockPos().asLong();
+        String leadName = lead == null ? "" : lead.getLinkDisplayName();
+        if (size != groupSize || leadLong != groupLead
+                || !leadName.equals(groupLeadName)
+                || Math.abs(energy - groupEnergy) > 1
+                || Math.abs(capacity - groupCapacity) > 0.5) {
+            groupEnergy = energy;
+            groupCapacity = capacity;
+            groupSize = size;
+            groupLead = leadLong;
+            groupLeadName = leadName;
+            sendData();
+        }
+    }
+
+    public double getGroupEnergy() {
+        return groupEnergy;
+    }
+
+    public double getGroupCapacity() {
+        return groupCapacity;
+    }
+
+    public int getGroupSize() {
+        return groupSize;
+    }
+
+    /** The synced discharge lead position, or null while the group is empty. */
+    public BlockPos getGroupLeadPos() {
+        return groupLead == Long.MAX_VALUE ? null : BlockPos.of(groupLead);
+    }
+
+    /** The synced name of the discharge lead's link, or empty. */
+    public String getGroupLeadName() {
+        return groupLeadName;
+    }
+
+    /** Wired up by the attached link alongside the network id. */
+    public void setLinkDisplayName(String name) {
+        linkName = name != null ? name : "";
+    }
+
+    /** The name this charger's own link carries, or the position fallback. */
+    public String getLinkDisplayName() {
+        return linkName.isEmpty() ? worldPosition.toShortString() : linkName;
+    }
+
+    /** Readable duration: seconds under two minutes, then m and h. */
+    private static String formatSeconds(double seconds) {
+        long s = (long) Math.floor(seconds);
+        if (s < 120) {
+            return s + " s";
+        }
+        if (s < 7200) {
+            return (s / 60) + " min " + (s % 60) + " s";
+        }
+        return (s / 3600) + " h " + (s % 3600 / 60) + " min";
+    }
+
+    /** The mode word the goggle tooltip and display sources share. */
+    public String modeKey() {
+        return isGenerating() ? "discharging"
+                : externallyPowered && getSpeed() != 0 && buffer < getMaxBuffer() ? "charging"
+                : linkNetwork != null && buffer > 0 && !electedLeader ? "standby"
+                : "idle";
     }
 
     /** SU-seconds a consumer may pull from this charger right now. */
@@ -525,6 +622,13 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         compound.putInt("Flywheels", flywheels);
         compound.putBoolean("ExternallyPowered", externallyPowered);
         compound.putBoolean("ElectedLeader", electedLeader);
+        compound.putDouble("DrainPerSecond", drainPerSecond);
+        compound.putDouble("GroupEnergy", groupEnergy);
+        compound.putDouble("GroupCapacity", groupCapacity);
+        compound.putInt("GroupSize", groupSize);
+        compound.putLong("GroupLead", groupLead);
+        compound.putString("GroupLeadName", groupLeadName);
+        compound.putString("LinkName", linkName);
     }
 
     @Override
@@ -535,6 +639,13 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         flywheels = compound.getInt("Flywheels");
         externallyPowered = compound.getBoolean("ExternallyPowered");
         electedLeader = compound.getBoolean("ElectedLeader");
+        drainPerSecond = compound.getDouble("DrainPerSecond");
+        groupEnergy = compound.getDouble("GroupEnergy");
+        groupCapacity = compound.getDouble("GroupCapacity");
+        groupSize = compound.getInt("GroupSize");
+        groupLead = compound.contains("GroupLead") ? compound.getLong("GroupLead") : Long.MAX_VALUE;
+        groupLeadName = compound.getString("GroupLeadName");
+        linkName = compound.getString("LinkName");
     }
 
     // @Override intentionally present: if Create ever changes this signature,
@@ -560,30 +671,58 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
                 Component.translatable("weatherinducer.tooltip.buffer",
                         String.format("%,.0f", buffer), String.format("%,.0f", getMaxBuffer()), percent)
                         .withStyle(buffer >= getMaxBuffer() ? ChatFormatting.GREEN : ChatFormatting.AQUA)));
+        // How long the charge lasts at what the network draws right now.
+        // Meaningless mid-charge, where the flow runs the other way.
+        if (buffer > 0 && drainPerSecond > 0 && !"charging".equals(modeKey())) {
+            tooltip.add(Component.literal("    ").append(
+                    Component.translatable("weatherinducer.tooltip.remaining",
+                            formatSeconds(buffer / drainPerSecond),
+                            String.format("%,.0f", drainPerSecond))
+                            .withStyle(ChatFormatting.GRAY)));
+        }
         tooltip.add(Component.literal("    ").append(
                 Component.translatable("weatherinducer.tooltip.flywheels",
                         flywheels, MAX_FLYWHEELS)
                         .withStyle(ChatFormatting.GRAY)));
         if (linkNetwork != null) {
-            BlockPos lead = ChargerNetworks.leaderPos(linkNetwork);
+            // The whole link network: its own fill bar, the pooled numbers
+            // (display only, energy never moves between members) and who
+            // holds the discharge lead, by link name.
+            double groupFraction = groupCapacity > 0
+                    ? Math.min(1.0, groupEnergy / groupCapacity) : 0;
+            int groupFilled = (int) Math.round(BAR_SEGMENTS * groupFraction);
+            tooltip.add(Component.literal("    ")
+                    .append(Component.literal("|".repeat(groupFilled))
+                            .withStyle(groupEnergy >= groupCapacity && groupCapacity > 0
+                                    ? ChatFormatting.GREEN : ChatFormatting.BLUE))
+                    .append(Component.literal("|".repeat(BAR_SEGMENTS - groupFilled))
+                            .withStyle(ChatFormatting.DARK_GRAY)));
+            tooltip.add(Component.literal("    ").append(
+                    Component.translatable("weatherinducer.tooltip.network_buffer",
+                            String.format("%,.0f", groupEnergy),
+                            String.format("%,.0f", groupCapacity),
+                            (int) Math.floor(100.0 * groupFraction))
+                            .withStyle(ChatFormatting.BLUE)));
+            BlockPos lead = getGroupLeadPos();
+            Component leadComponent;
+            if (lead == null) {
+                leadComponent = Component.translatable("weatherinducer.tooltip.link_lead_none");
+            } else if (lead.equals(worldPosition)) {
+                leadComponent = Component.translatable("weatherinducer.tooltip.link_lead_self",
+                        getLinkDisplayName());
+            } else {
+                leadComponent = Component.literal(groupLeadName.isEmpty()
+                        ? lead.toShortString() : groupLeadName);
+            }
             tooltip.add(Component.literal("    ").append(
                     Component.translatable("weatherinducer.tooltip.link_network",
-                            ChargerNetworks.members(linkNetwork).size(),
-                            lead == null
-                                    ? Component.translatable("weatherinducer.tooltip.link_lead_none")
-                                    : lead.equals(worldPosition)
-                                    ? Component.translatable("weatherinducer.tooltip.link_lead_self")
-                                    : Component.literal(lead.toShortString()))
+                            groupSize, leadComponent)
                             .withStyle(ChatFormatting.AQUA)));
         }
 
-        String modeKey = isGenerating() ? "discharging"
-                : externallyPowered && getSpeed() != 0 && buffer < getMaxBuffer() ? "charging"
-                : linkNetwork != null && buffer > 0 && !electedLeader ? "standby"
-                : "idle";
         tooltip.add(Component.literal("    ").append(
                 Component.translatable("weatherinducer.tooltip.charger_mode",
-                        Component.translatable("weatherinducer.charger_mode." + modeKey))
+                        Component.translatable("weatherinducer.charger_mode." + modeKey()))
                         .withStyle(ChatFormatting.GRAY)));
 
         return true;

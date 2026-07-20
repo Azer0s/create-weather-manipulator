@@ -1,0 +1,76 @@
+{
+  "elements": [
+    {
+      "faces": {
+        "down": {
+          "texture": "#glass",
+          "uv": [
+            13.5,
+            5.0,
+            16.0,
+            7.5
+          ]
+        },
+        "east": {
+          "texture": "#glass",
+          "uv": [
+            16.0,
+            2.5,
+            13.5,
+            5.0
+          ]
+        },
+        "north": {
+          "texture": "#glass",
+          "uv": [
+            16.0,
+            2.5,
+            13.5,
+            5.0
+          ]
+        },
+        "south": {
+          "texture": "#glass",
+          "uv": [
+            13.5,
+            2.5,
+            16.0,
+            5.0
+          ]
+        },
+        "up": {
+          "texture": "#glass",
+          "uv": [
+            13.5,
+            0.0,
+            16.0,
+            2.5
+          ]
+        },
+        "west": {
+          "texture": "#glass",
+          "uv": [
+            13.5,
+            2.5,
+            16.0,
+            5.0
+          ]
+        }
+      },
+      "from": [
+        8,
+        6.5,
+        2
+      ],
+      "to": [
+        14,
+        12.5,
+        8
+      ]
+    }
+  ],
+  "textures": {
+    "glass": "weatherinducer:block/charger_link_details",
+    "particle": "weatherinducer:block/charger_link_details"
+  }
+}

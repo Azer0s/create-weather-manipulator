@@ -21,6 +21,13 @@ public final class ModPartialModels {
     public static final PartialModel INNER_SHAFT =
             PartialModel.of(WeatherInducerMod.asResource("block/inner_shaft"));
 
+    /**
+     * The Charger Link's bulb, inflated half a pixel, drawn fullbright by
+     * the link renderer for the periodic heartbeat flash.
+     */
+    public static final PartialModel CHARGER_LINK_GLOW =
+            PartialModel.of(WeatherInducerMod.asResource("block/charger_link_glow"));
+
     private ModPartialModels() {
     }
 

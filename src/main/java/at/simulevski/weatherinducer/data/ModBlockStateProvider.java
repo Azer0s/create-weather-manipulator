@@ -573,6 +573,22 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .transform(ItemDisplayContext.FIXED)
                 .rotation(270, 0, 0).translation(0, 0, -4).scale(0.5f).end();
         directionalBlock(ModBlocks.CHARGER_LINK.get(), link);
+
+        // The heartbeat glow: the bulb inflated half a pixel, drawn
+        // fullbright into the additive layer by the link renderer while a
+        // pulse runs. Baked as a Flywheel partial, never as a blockstate.
+        models().getBuilder("charger_link_glow")
+                .texture("glass", modLoc("block/charger_link_details"))
+                .texture("particle", modLoc("block/charger_link_details"))
+                .element()
+                .from(8, 6.5f, 2).to(14, 12.5f, 8)
+                .face(Direction.NORTH).texture("#glass").uvs(16, 2.5f, 13.5f, 5).end()
+                .face(Direction.EAST).texture("#glass").uvs(16, 2.5f, 13.5f, 5).end()
+                .face(Direction.SOUTH).texture("#glass").uvs(13.5f, 2.5f, 16, 5).end()
+                .face(Direction.WEST).texture("#glass").uvs(13.5f, 2.5f, 16, 5).end()
+                .face(Direction.UP).texture("#glass").uvs(13.5f, 0, 16, 2.5f).end()
+                .face(Direction.DOWN).texture("#glass").uvs(13.5f, 5, 16, 7.5f).end()
+                .end();
     }
 
     /** The Lightning Medium: beacon and end crystal encased in glass. */
