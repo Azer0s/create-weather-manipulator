@@ -11,7 +11,7 @@ A [Create](https://github.com/Creators-of-Create/Create) addon for **Minecraft 1
 | **Stress Gate** | An inline shaft block that stays **locked** until the kinetic network provides at least a set amount of total SU. Use it to keep contraptions dormant until the power plant is big enough. |
 | **SU Charger** | A kinetic capacitor. Rotation passes through it, **SU never does**. While the shaft turns it fills a **1,048,576 SU** buffer from its input side; once the input stops, machines on its output side drain the buffer. Emits a redstone signal proportional to its fill level. |
 | **Weather Sensor** | A daylight-detector-shaped slab that reads the sky: redstone **0** when clear, **7** in rain, **15** in a thunderstorm. Covered, it reads 0. |
-| **Lightning Medium** | A beacon and an end crystal encased in glass. Struck by lightning, it shatters into a **Bottle o' Lightning**, the base of the lightning gear. |
+| **Lightning Medium** | A beacon and an end crystal encased in glass; the crystal bobs and spins inside the shell like a real end crystal. Struck by lightning, it shatters into a **Bottle o' Lightning**, the base of the lightning gear. |
 
 ---
 
@@ -130,7 +130,9 @@ A . .
 
 **Lightning tools and armor**: vanilla shapes with Lightning Bolts as the
 material; tools take stripped logs (any kind) instead of sticks, and the
-chestplate takes an elytra in its centre slot.
+chestplate takes an elytra in its centre slot. Worn, the armor uses its own
+3D model: a winged, crested helm with a gold brow, shoulder pauldrons, a
+raised chest emblem, a belt, a cape plate, knee guards, and trimmed boots.
 
 ---
 

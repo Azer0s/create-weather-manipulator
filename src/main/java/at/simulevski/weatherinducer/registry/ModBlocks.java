@@ -70,7 +70,12 @@ public final class ModBlocks {
             () -> new LightningMediumBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_LIGHT_BLUE)
                     .strength(1.5f)
-                    .sound(SoundType.GLASS)));
+                    .sound(SoundType.GLASS)
+                    // The faces are mostly transparent glass; without this the
+                    // neighbouring blocks' faces get culled away behind it.
+                    .noOcclusion()
+                    // The crystal inside sheds a bit of light.
+                    .lightLevel(state -> 7)));
 
     private ModBlocks() {
     }

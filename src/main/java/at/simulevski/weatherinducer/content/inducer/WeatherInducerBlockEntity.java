@@ -1,5 +1,7 @@
 package at.simulevski.weatherinducer.content.inducer;
 
+import at.simulevski.weatherinducer.content.util.KeyedScrollOptionBehaviour;
+import at.simulevski.weatherinducer.content.util.KeyedScrollValueBehaviour;
 import at.simulevski.weatherinducer.content.util.SideValueBoxTransform;
 import at.simulevski.weatherinducer.network.SUNetwork;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
@@ -70,13 +72,19 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
         super.addBehaviours(behaviours);
 
-        modeScroll = new ScrollOptionBehaviour<>(WeatherMode.class,
+        // Three boxes on one block entity: Create keeps behaviours in a map
+        // keyed by type, and its stock scroll behaviours all share a single
+        // type, so plain ones would silently replace each other (only the
+        // last would exist; the mode selector was unreachable). The keyed
+        // variants get a type and packet id each, so all three coexist and
+        // clicks route to the box that was actually hit.
+        modeScroll = new KeyedScrollOptionBehaviour<>("Mode", 1, WeatherMode.class,
                 Component.translatable("weatherinducer.value.mode"),
                 this,
                 new SideValueBoxTransform((state, dir) -> dir == Direction.UP));
         behaviours.add(modeScroll);
 
-        offsetXScroll = new ScrollValueBehaviour(
+        offsetXScroll = new KeyedScrollValueBehaviour("OffsetX", 2,
                 Component.translatable("weatherinducer.value.offset_x"),
                 this,
                 new SideValueBoxTransform((state, dir) ->
@@ -84,7 +92,7 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
         offsetXScroll.between(-OFFSET_RANGE, OFFSET_RANGE);
         behaviours.add(offsetXScroll);
 
-        offsetZScroll = new ScrollValueBehaviour(
+        offsetZScroll = new KeyedScrollValueBehaviour("OffsetZ", 3,
                 Component.translatable("weatherinducer.value.offset_z"),
                 this,
                 new SideValueBoxTransform((state, dir) ->

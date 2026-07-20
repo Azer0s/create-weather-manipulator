@@ -435,9 +435,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
     /** The Lightning Medium: beacon and end crystal encased in glass. */
     private void registerLightningMedium() {
         ModelFile medium = models().cubeBottomTop("lightning_medium",
-                modLoc("block/lightning_medium_side"),
-                modLoc("block/lightning_medium_bottom"),
-                modLoc("block/lightning_medium_top"));
+                        modLoc("block/lightning_medium_side"),
+                        modLoc("block/lightning_medium_bottom"),
+                        modLoc("block/lightning_medium_top"))
+                // The glass shell is mostly transparent pixels.
+                .renderType("cutout");
         simpleBlock(ModBlocks.LIGHTNING_MEDIUM.get(), medium);
     }
 

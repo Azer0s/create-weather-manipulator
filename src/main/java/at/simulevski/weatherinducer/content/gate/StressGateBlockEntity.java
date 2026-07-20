@@ -1,5 +1,6 @@
 package at.simulevski.weatherinducer.content.gate;
 
+import at.simulevski.weatherinducer.content.util.SUScrollValueBehaviour;
 import at.simulevski.weatherinducer.content.util.SUValueLadder;
 import at.simulevski.weatherinducer.content.util.SideValueBoxTransform;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
@@ -43,13 +44,14 @@ public class StressGateBlockEntity extends SplitShaftBlockEntity implements IHav
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
         super.addBehaviours(behaviours);
 
-        // Value box on the four faces perpendicular to the shaft axis.
-        threshold = new ScrollValueBehaviour(
+        // Value box on the four faces perpendicular to the shaft axis, at
+        // depth 11.5 so it sits on the flanged body's surface (see the
+        // resistor for the reasoning).
+        threshold = new SUScrollValueBehaviour(
                 Component.translatable("weatherinducer.value.threshold"),
                 this,
-                new SideValueBoxTransform((state, dir) -> dir.getAxis() != state.getValue(StressGateBlock.AXIS)));
-        threshold.between(0, SUValueLadder.STEPS.length - 1);
-        threshold.withFormatter(SUValueLadder::format);
+                new SideValueBoxTransform((state, dir) -> dir.getAxis() != state.getValue(StressGateBlock.AXIS),
+                        11.5f));
         threshold.setValue(DEFAULT_INDEX);
         behaviours.add(threshold);
     }

@@ -1,5 +1,6 @@
 package at.simulevski.weatherinducer.content.resistor;
 
+import at.simulevski.weatherinducer.content.util.SUScrollValueBehaviour;
 import at.simulevski.weatherinducer.content.util.SUValueLadder;
 import at.simulevski.weatherinducer.content.util.SideValueBoxTransform;
 import at.simulevski.weatherinducer.network.SUNetwork;
@@ -50,13 +51,15 @@ public class SUResistorBlockEntity extends SplitShaftBlockEntity implements IHav
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
         super.addBehaviours(behaviours);
 
-        // Value box on the four faces perpendicular to the shaft axis.
-        suLimit = new ScrollValueBehaviour(
+        // Value box on the four faces perpendicular to the shaft axis. The
+        // body of the flanged model stops at 12 of 16, so the box sits at
+        // depth 11.5 (on the surface) instead of the full-cube 15.5, where
+        // it would be buried and nearly unclickable.
+        suLimit = new SUScrollValueBehaviour(
                 Component.translatable("weatherinducer.value.su_limit"),
                 this,
-                new SideValueBoxTransform((state, dir) -> dir.getAxis() != state.getValue(SUResistorBlock.AXIS)));
-        suLimit.between(0, SUValueLadder.STEPS.length - 1);
-        suLimit.withFormatter(SUValueLadder::format);
+                new SideValueBoxTransform((state, dir) -> dir.getAxis() != state.getValue(SUResistorBlock.AXIS),
+                        11.5f));
         suLimit.setValue(5); // 1,024 SU
         behaviours.add(suLimit);
     }

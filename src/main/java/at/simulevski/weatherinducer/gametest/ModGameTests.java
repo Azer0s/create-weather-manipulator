@@ -17,6 +17,9 @@ import at.simulevski.weatherinducer.registry.ModEntityTypes;
 import at.simulevski.weatherinducer.registry.ModItems;
 import com.simibubi.create.content.kinetics.base.DirectionalKineticBlock;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
+import com.simibubi.create.foundation.blockEntity.behaviour.ValueSettingsBehaviour;
+import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -32,6 +35,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+
+import java.util.List;
 
 /**
  * Runtime tests for the Weather Inducer's fire logic, exercised headlessly with
@@ -236,6 +241,105 @@ public class ModGameTests {
                             "Expected a tripped resistor with the fan cut off");
                 })
                 .thenSucceed();
+    }
+
+    /**
+     * The breaker latch: a tripped resistor closes again on its own once its
+     * limit is raised to cover the demand recorded at break time, and the
+     * downstream machines spin back up.
+     */
+    @GameTest(template = "empty", timeoutTicks = 200)
+    public static void resistorReclosesWhenLimitRaised(GameTestHelper helper) {
+        BlockPos motorPos = new BlockPos(2, 2, 3);
+        BlockPos resistorPos = new BlockPos(3, 2, 3);
+        BlockPos fanPos = new BlockPos(4, 2, 3);
+        helper.startSequence()
+                .thenExecute(() -> {
+                    placeFloor(helper);
+                    Block motor = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:creative_motor"));
+                    Block fan = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:encased_fan"));
+                    helper.setBlock(motorPos, motor.defaultBlockState()
+                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
+                    helper.setBlock(resistorPos, ModBlocks.SU_RESISTOR.get().defaultBlockState()
+                            .setValue(SUResistorBlock.AXIS, Direction.Axis.X));
+                    helper.setBlock(fanPos, fan.defaultBlockState()
+                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
+                    SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
+                    resistor.setLimitIndexForTesting(0); // cap: 0 SU, guaranteed trip
+                })
+                .thenWaitUntil(() -> {
+                    SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
+                    helper.assertTrue(resistor.isTripped(),
+                            "The resistor should trip when downstream draw exceeds the cap");
+                })
+                .thenExecute(() -> {
+                    SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
+                    // Highest rung: 1,048,576 SU, far above the recorded demand.
+                    resistor.setLimitIndexForTesting(SUValueLadder.STEPS.length - 1);
+                })
+                .thenWaitUntil(() -> {
+                    KineticBlockEntity fanBe = helper.getBlockEntity(fanPos);
+                    SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
+                    helper.assertTrue(!resistor.isTripped() && fanBe.getSpeed() != 0,
+                            "Expected the breaker to close and the fan to spin again");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * Guards the value box plumbing the player actually clicks, which an
+     * earlier version broke without any server-logic test noticing: Create
+     * keeps behaviours in a type-keyed map, so the inducer's three scroll
+     * boxes must register under distinct types (and distinct packet ids for
+     * click routing), and each box must accept a click on the face it sits
+     * on. The hit test only tolerates a quarter block, so the recessed
+     * resistor body needs its box on the actual surface, not at full-cube
+     * depth.
+     */
+    @GameTest(template = "empty")
+    public static void valueBoxesAreDistinctAndClickable(GameTestHelper helper) {
+        BlockPos inducerPos = new BlockPos(3, 2, 3);
+        BlockPos resistorPos = new BlockPos(2, 2, 2);
+        helper.setBlock(inducerPos, ModBlocks.WEATHER_INDUCER.get().defaultBlockState());
+        helper.setBlock(resistorPos, ModBlocks.SU_RESISTOR.get().defaultBlockState()
+                .setValue(SUResistorBlock.AXIS, Direction.Axis.X));
+
+        WeatherInducerBlockEntity inducer = helper.getBlockEntity(inducerPos);
+        List<ScrollValueBehaviour> boxes = inducer.getAllBehaviours().stream()
+                .filter(ScrollValueBehaviour.class::isInstance)
+                .map(ScrollValueBehaviour.class::cast)
+                .toList();
+        helper.assertTrue(boxes.size() == 3,
+                "Expected 3 value boxes on the inducer, found " + boxes.size());
+        long distinctIds = boxes.stream().map(ValueSettingsBehaviour::netId).distinct().count();
+        helper.assertTrue(distinctIds == 3, "Value box packet ids must be distinct");
+
+        // A click on the middle of the top cap must land in the mode selector.
+        boolean modeHit = boxes.stream().anyMatch(box ->
+                hits(helper, box, inducerPos, Direction.UP, new Vec3(0.5, 1.0, 0.5)));
+        helper.assertTrue(modeHit, "No value box catches a click on the inducer top");
+
+        // Same for the resistor: its body surface sits at 12 of 16.
+        SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
+        boolean limitHit = resistor.getAllBehaviours().stream()
+                .filter(ScrollValueBehaviour.class::isInstance)
+                .map(ScrollValueBehaviour.class::cast)
+                .anyMatch(box ->
+                        hits(helper, box, resistorPos, Direction.UP, new Vec3(0.5, 0.75, 0.5)));
+        helper.assertTrue(limitHit, "The resistor limit box must catch a click on its body surface");
+        helper.succeed();
+    }
+
+    /** Simulates Create's value box hit test for a click on the given face. */
+    private static boolean hits(GameTestHelper helper, ScrollValueBehaviour box, BlockPos pos,
+                                Direction side, Vec3 localHit) {
+        if (box.getSlotPositioning() instanceof ValueBoxTransform.Sided sided) {
+            sided.fromSide(side);
+        }
+        Vec3 world = Vec3.atLowerCornerOf(helper.absolutePos(pos)).add(localHit);
+        return box.testHit(world);
     }
 
     /**

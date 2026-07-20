@@ -45,6 +45,7 @@ public class ModLanguageProvider extends LanguageProvider {
         add("weatherinducer.value.offset_z", "Lightning Offset Z");
         add("weatherinducer.value.su_limit", "Max SU Draw");
         add("weatherinducer.value.threshold", "SU Threshold");
+        add("weatherinducer.value.su_row", "SU");
 
         add("weatherinducer.mode.rain", "Rain");
         add("weatherinducer.mode.clear", "Clear");
