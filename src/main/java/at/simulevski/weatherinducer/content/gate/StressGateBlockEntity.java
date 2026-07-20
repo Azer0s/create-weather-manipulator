@@ -27,10 +27,10 @@ import java.util.List;
 public class StressGateBlockEntity extends SplitShaftBlockEntity implements IHaveGoggleInformation {
 
     /** How often the network provision is re-read, in ticks. */
-    private static final int MEASURE_INTERVAL = 10;
+    private static final int MEASURE_INTERVAL = 8;
 
-    /** Default threshold: 100,000 SU (index into the shared ladder). */
-    private static final int DEFAULT_INDEX = 10;
+    /** Default threshold: 131,072 SU (index into the shared ladder). */
+    private static final int DEFAULT_INDEX = 12;
 
     private ScrollValueBehaviour threshold;
     private double lastProvided;

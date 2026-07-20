@@ -12,15 +12,17 @@ import net.neoforged.fml.common.Mod;
 /**
  * Entry point for the Weather Inducer Create addon.
  *
- * <p>Adds four blocks:
+ * <p>Adds five blocks:
  * <ul>
  *   <li><b>Weather Inducer</b> &mdash; charges from the connected kinetic
- *       network's stress units (SU) up to 1,000,000 SU, drawing at most
- *       100,000 SU per tick. When fully charged and pulsed with redstone it
+ *       network's spare stress units (SU) up to 1,048,576 SU (2^20),
+ *       drawing at most 131,072 SU (2^17) per tick. When fully charged and pulsed with redstone it
  *       applies the selected weather effect (rain / clear / lightning at a
  *       configurable offset), provided it has line of sight to the sky.</li>
- *   <li><b>SU Resistor</b> &mdash; an inline shaft block that caps how much
- *       SU whatever is hooked up through it may draw.</li>
+ *   <li><b>SU Resistor</b> &mdash; a latching circuit breaker: trips when
+ *       the machines downstream of it draw more SU than its limit.</li>
+ *   <li><b>Stress Gate</b> &mdash; stays locked until the network provides
+ *       at least a set amount of total SU.</li>
  *   <li><b>SU Charger</b> &mdash; a kinetic capacitor: passes rotation but
  *       never SU, fills a buffer from its input side while the shaft turns,
  *       discharges it to consumers on its output side once the input stops,

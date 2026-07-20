@@ -41,7 +41,7 @@ public final class ModPonderScenes {
         scene.idle(90);
 
         scene.overlay().showText(90)
-                .text("Once charged to 1,000,000 SU, a redstone pulse applies the selected weather: rain, clear, or a lightning strike")
+                .text("Once charged to 1,048,576 SU, a redstone pulse applies the selected weather: rain, clear, or a lightning strike")
                 .placeNearTarget()
                 .pointAt(util.vector().blockSurface(inducer, Direction.UP));
         scene.idle(100);

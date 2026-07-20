@@ -41,10 +41,10 @@ import java.util.List;
 public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHaveGoggleInformation {
 
     /** The Weather Inducer must accumulate this many SU before it can fire. */
-    public static final double MAX_CHARGE = 1_000_000.0;
+    public static final double MAX_CHARGE = 1_048_576.0; // 2^20
 
     /** The most SU the inducer itself can pull in per tick, resistors aside. */
-    public static final double MAX_INTAKE_PER_TICK = 100_000.0;
+    public static final double MAX_INTAKE_PER_TICK = 131_072.0; // 2^17, full in 8 ticks
 
     /** Weather effect durations (ticks). 6000 ticks = 5 in-game minutes. */
     private static final int RAIN_TIME = 6000;

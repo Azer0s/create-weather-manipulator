@@ -65,7 +65,7 @@ public class ModLanguageProvider extends LanguageProvider {
         // JEI / EMI information pages
         add("weatherinducer.info.weather_inducer",
                 "The Weather Inducer charges from the network's spare Stress Units (whatever the sources provide "
-                        + "beyond what the machines use), up to 1,000,000 SU at 100,000 SU per tick at most. While "
+                        + "beyond what the machines use), up to 1,048,576 SU at 131,072 SU per tick at most. While "
                         + "it can see the sky, a redstone pulse then applies the selected weather - rain, clear, or "
                         + "a lightning strike at a configurable offset - and discharges it.");
         add("weatherinducer.info.su_resistor",
@@ -79,7 +79,7 @@ public class ModLanguageProvider extends LanguageProvider {
                         + "the sky; covered, it reads 0.");
         add("weatherinducer.info.su_charger",
                 "The SU Charger is a kinetic capacitor. While the shaft turns it soaks the network's spare SU "
-                        + "into a 1,000,000 SU buffer, at up to 100,000 SU per tick. Stop the input, and machines "
+                        + "into a 1,048,576 SU buffer, at up to 131,072 SU per tick. Stop the input, and machines "
                         + "on its output side may drain the buffer instead; raw network SU never passes through. "
                         + "It emits a redstone signal proportional to its fill level.");
         add("weatherinducer.info.stress_gate",

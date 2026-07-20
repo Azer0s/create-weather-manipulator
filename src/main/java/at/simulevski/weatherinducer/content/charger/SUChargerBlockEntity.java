@@ -31,10 +31,10 @@ import java.util.List;
 public class SUChargerBlockEntity extends KineticBlockEntity implements IHaveGoggleInformation {
 
     /** How much SU the buffer holds; one full buffer is one inducer charge. */
-    public static final double MAX_BUFFER = 1_000_000.0;
+    public static final double MAX_BUFFER = 1_048_576.0; // 2^20
 
     /** Charge and discharge ceiling per tick. */
-    public static final double MAX_RATE_PER_TICK = 100_000.0;
+    public static final double MAX_RATE_PER_TICK = 131_072.0; // 2^17
 
     private double buffer;
 

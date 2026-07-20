@@ -255,7 +255,7 @@ public class ModGameTests {
                     helper.setBlock(fanPos, fan.defaultBlockState()
                             .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
                     StressGateBlockEntity gate = helper.getBlockEntity(gatePos);
-                    gate.setThresholdIndexForTesting(SUValueLadder.STEPS.length - 1); // 1M SU
+                    gate.setThresholdIndexForTesting(SUValueLadder.STEPS.length - 1); // 2^20 SU
                 })
                 .thenIdle(30)
                 .thenExecute(() -> {

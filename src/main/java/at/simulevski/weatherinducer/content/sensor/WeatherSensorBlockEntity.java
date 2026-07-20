@@ -15,7 +15,7 @@ import net.minecraft.world.level.block.state.BlockState;
 public class WeatherSensorBlockEntity extends BlockEntity {
 
     /** How often the weather is re-read, in ticks. */
-    private static final int UPDATE_INTERVAL = 10;
+    private static final int UPDATE_INTERVAL = 8;
 
     public WeatherSensorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);

@@ -36,7 +36,7 @@ import java.util.List;
 public class SUResistorBlockEntity extends SplitShaftBlockEntity implements IHaveGoggleInformation {
 
     /** How often the downstream demand is re-measured while closed, in ticks. */
-    private static final int MEASURE_INTERVAL = 10;
+    private static final int MEASURE_INTERVAL = 8;
 
     private ScrollValueBehaviour suLimit;
     private double demandAtBreak;
@@ -57,13 +57,13 @@ public class SUResistorBlockEntity extends SplitShaftBlockEntity implements IHav
                 new SideValueBoxTransform((state, dir) -> dir.getAxis() != state.getValue(SUResistorBlock.AXIS)));
         suLimit.between(0, SUValueLadder.STEPS.length - 1);
         suLimit.withFormatter(SUValueLadder::format);
-        suLimit.setValue(4); // 1,000 SU
+        suLimit.setValue(5); // 1,024 SU
         behaviours.add(suLimit);
     }
 
     /** The configured SU draw limit this breaker allows downstream. */
     public int getSuLimit() {
-        return suLimit != null ? SUValueLadder.value(suLimit.getValue()) : 1_000;
+        return suLimit != null ? SUValueLadder.value(suLimit.getValue()) : 1_024;
     }
 
     /** Clutch semantics: a tripped breaker passes nothing downstream. */

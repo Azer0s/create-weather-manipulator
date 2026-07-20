@@ -1,16 +1,17 @@
 package at.simulevski.weatherinducer.content.util;
 
 /**
- * The logarithmic 1-2.5-5 ladder of SU values the scroll boxes use (SU
- * Resistor cap, Stress Gate threshold). Scrolling linearly over 0..1,000,000
- * was hopeless, so the scroll behaviours store an index into this table and
+ * The ladder of SU values the scroll boxes use (SU Resistor limit, Stress
+ * Gate threshold): zero, then every power of two from 64 up to 1,048,576
+ * (2^20, one full inducer charge). Scrolling linearly over that range was
+ * hopeless, so the scroll behaviours store an index into this table and
  * their formatters show the SU value it stands for.
  */
 public final class SUValueLadder {
 
     public static final int[] STEPS = {
-            0, 100, 250, 500, 1_000, 2_500, 5_000, 10_000,
-            25_000, 50_000, 100_000, 250_000, 500_000, 1_000_000,
+            0, 64, 128, 256, 512, 1_024, 2_048, 4_096, 8_192,
+            16_384, 32_768, 65_536, 131_072, 262_144, 524_288, 1_048_576,
     };
 
     private SUValueLadder() {
