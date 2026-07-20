@@ -31,5 +31,7 @@ public class WeatherInducerJeiPlugin implements IModPlugin {
                 Component.translatable("weatherinducer.info.weather_sensor"));
         registration.addIngredientInfo(ModItems.SU_CHARGER.get(),
                 Component.translatable("weatherinducer.info.su_charger"));
+        registration.addIngredientInfo(ModItems.STRESS_GATE.get(),
+                Component.translatable("weatherinducer.info.stress_gate"));
     }
 }

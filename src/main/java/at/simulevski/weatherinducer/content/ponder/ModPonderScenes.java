@@ -63,20 +63,20 @@ public final class ModPonderScenes {
         BlockPos inducer = util.grid().at(4, 1, 2);
 
         scene.overlay().showText(90)
-                .text("The SU Resistor sits inline on a shaft and caps how much SU whatever it feeds may draw")
+                .text("The SU Resistor is a circuit breaker: it watches how much SU the machines behind it draw")
                 .attachKeyFrame()
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(resistor));
         scene.idle(100);
 
         scene.overlay().showText(90)
-                .text("Its limit is set with a value box. Without a resistor, an Inducer draws up to 100,000 SU every tick")
+                .text("Its limit is set with a value box. Demand above the limit trips the breaker and cuts rotation to that side")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(inducer));
         scene.idle(100);
 
         scene.overlay().showText(90)
-                .text("Real machines are limited too: if the load behind the resistor demands more SU than the cap, it trips like a breaker and cuts rotation until the load drops")
+                .text("A tripped resistor remembers the demand that broke it, and closes again on its own once the limit is raised to cover it")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(resistor));
         scene.idle(100);

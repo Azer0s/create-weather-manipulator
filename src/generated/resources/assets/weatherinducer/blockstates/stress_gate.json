@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "axis=x,locked=false": {
+      "model": "weatherinducer:block/stress_gate_open",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,locked=true": {
+      "model": "weatherinducer:block/stress_gate_locked",
+      "x": 90,
+      "y": 90
+    },
+    "axis=y,locked=false": {
+      "model": "weatherinducer:block/stress_gate_open"
+    },
+    "axis=y,locked=true": {
+      "model": "weatherinducer:block/stress_gate_locked"
+    },
+    "axis=z,locked=false": {
+      "model": "weatherinducer:block/stress_gate_open",
+      "x": 90
+    },
+    "axis=z,locked=true": {
+      "model": "weatherinducer:block/stress_gate_locked",
+      "x": 90
+    }
+  }
+}

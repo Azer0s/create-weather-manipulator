@@ -28,11 +28,10 @@ import java.util.List;
 /**
  * Drives the Weather Inducer:
  * <ul>
- *   <li>charges from the kinetic network's SU (see {@link SUNetwork}) up to
- *       {@link #MAX_CHARGE}. Each tick it takes whatever is on offer, up to
- *       {@link #MAX_INTAKE_PER_TICK}; an inline SU Resistor lowers that draw
- *       further, and a stopped line offers nothing unless a discharging SU
- *       Charger feeds it;</li>
+ *   <li>charges from the kinetic network's spare SU (provided capacity minus
+ *       used stress, see {@link SUNetwork}) up to {@link #MAX_CHARGE},
+ *       taking at most {@link #MAX_INTAKE_PER_TICK} per tick. A stopped line
+ *       offers nothing unless a discharging SU Charger feeds it;</li>
  *   <li>when fully charged, a rising redstone edge fires the selected weather
  *       effect, provided the block above can see the sky;</li>
  *   <li>exposes three scroll value boxes: mode (top), and the lightning X/Z
@@ -101,12 +100,15 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
             return;
         }
 
-        // Charge from whatever SU is on offer: a spinning network, or an SU
-        // Charger discharging while the line stands still. A dead network has
-        // zero capacity, so no explicit speed gate is needed here.
+        // Charge from the network's spare SU (provided capacity minus what
+        // the machines use), topping up from any discharging SU Charger. A
+        // dead network has no spare capacity, so no speed gate is needed.
         if (charge < MAX_CHARGE) {
             double wanted = Math.min(MAX_INTAKE_PER_TICK, MAX_CHARGE - charge);
-            double intake = SUNetwork.drawSU(this, wanted, null);
+            double intake = Math.min(wanted, SUNetwork.remainingSU(this));
+            if (intake < wanted) {
+                intake += SUNetwork.drawFromChargers(this, wanted - intake);
+            }
             if (intake > 0) {
                 double before = charge;
                 charge = Math.min(MAX_CHARGE, charge + intake);

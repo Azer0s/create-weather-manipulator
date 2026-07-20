@@ -2,6 +2,7 @@ package at.simulevski.weatherinducer.registry;
 
 import at.simulevski.weatherinducer.WeatherInducerMod;
 import at.simulevski.weatherinducer.content.charger.SUChargerBlock;
+import at.simulevski.weatherinducer.content.gate.StressGateBlock;
 import at.simulevski.weatherinducer.content.inducer.WeatherInducerBlock;
 import at.simulevski.weatherinducer.content.resistor.SUResistorBlock;
 import at.simulevski.weatherinducer.content.sensor.WeatherSensorBlock;
@@ -52,6 +53,15 @@ public final class ModBlocks {
                     .mapColor(MapColor.PODZOL)
                     .strength(3.0f, 6.0f)
                     .sound(SoundType.NETHERITE_BLOCK)
+                    .requiresCorrectToolForDrops()));
+
+    public static final DeferredBlock<StressGateBlock> STRESS_GATE = BLOCKS.register(
+            "stress_gate",
+            () -> new StressGateBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.PODZOL)
+                    .strength(2.0f, 4.0f)
+                    .sound(SoundType.NETHERITE_BLOCK)
+                    .noOcclusion()
                     .requiresCorrectToolForDrops()));
 
     private ModBlocks() {

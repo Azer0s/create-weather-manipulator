@@ -19,12 +19,12 @@ import java.util.List;
 /**
  * Buffer logic for the SU Charger.
  *
- * <p>While the shaft turns, the charger is in charge mode: it draws SU from
- * whatever feeds its input face (respecting resistors) into an internal
- * buffer, up to {@link #MAX_RATE_PER_TICK} per tick. Once the input stops
- * (the shaft stands still), it flips to discharge mode: consumers reachable
- * through the output face may drain the buffer (see
- * {@link SUNetwork#drawSU}). In neither mode does raw network SU pass through
+ * <p>While the shaft turns, the charger is in charge mode: it soaks up the
+ * network's spare SU into an internal buffer, up to
+ * {@link #MAX_RATE_PER_TICK} per tick. Once the input stops (the shaft
+ * stands still), it flips to discharge mode: consumers reachable through the
+ * output face may drain the buffer (see
+ * {@link SUNetwork#drawFromChargers}). Raw network SU never passes through
  * the block. The buffer fill is also published as a 0..15 redstone signal via
  * {@link SUChargerBlock#POWER}.
  */
@@ -63,7 +63,7 @@ public class SUChargerBlockEntity extends KineticBlockEntity implements IHaveGog
             return;
         }
         double wanted = Math.min(MAX_RATE_PER_TICK, MAX_BUFFER - buffer);
-        double intake = SUNetwork.drawSU(this, wanted, getInputFace());
+        double intake = Math.min(wanted, SUNetwork.remainingSU(this));
         if (intake > 0) {
             buffer = Math.min(MAX_BUFFER, buffer + intake);
             setChanged();

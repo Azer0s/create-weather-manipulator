@@ -2,6 +2,7 @@ package at.simulevski.weatherinducer.data;
 
 import at.simulevski.weatherinducer.WeatherInducerMod;
 import at.simulevski.weatherinducer.content.charger.SUChargerBlock;
+import at.simulevski.weatherinducer.content.gate.StressGateBlock;
 import at.simulevski.weatherinducer.content.inducer.WeatherInducerBlock;
 import at.simulevski.weatherinducer.content.resistor.SUResistorBlock;
 import at.simulevski.weatherinducer.registry.ModBlocks;
@@ -54,6 +55,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         registerSuResistor();
         registerWeatherSensor();
         registerSuCharger();
+        registerStressGate();
     }
 
     // ------------------------------------------------------------------
@@ -216,8 +218,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
      * every face sets its UVs explicitly.
      */
     private void registerSuResistor() {
-        ModelFile closed = resistorModel("su_resistor", "su_resistor_side");
-        ModelFile tripped = resistorModel("su_resistor_tripped", "su_resistor_side_tripped");
+        ModelFile closed = flangedModel("su_resistor", "su_resistor_side", "su_resistor_end");
+        ModelFile tripped = flangedModel("su_resistor_tripped", "su_resistor_side_tripped", "su_resistor_end");
         getVariantBuilder(ModBlocks.SU_RESISTOR.get()).forAllStates(state -> {
             Direction.Axis axis = state.getValue(SUResistorBlock.AXIS);
             int x = 0;
@@ -237,12 +239,18 @@ public class ModBlockStateProvider extends BlockStateProvider {
         });
     }
 
-    private BlockModelBuilder resistorModel(String name, String sideTexture) {
+    /**
+     * The flanged inline-shaft silhouette the SU Resistor and Stress Gate
+     * share: two socketed collars and an 8x10 body between them. The side
+     * texture is an atlas (rows 0..3 the collar band, the patch at 4,4 the
+     * body), so every face sets its UVs explicitly.
+     */
+    private BlockModelBuilder flangedModel(String name, String sideTexture, String endTexture) {
         BlockModelBuilder resistor = models().getBuilder(name)
                 .parent(models().getExistingFile(mcLoc("block/block")))
                 .texture("side", modLoc("block/" + sideTexture))
-                .texture("end", modLoc("block/su_resistor_end"))
-                .texture("particle", modLoc("block/su_resistor_end"));
+                .texture("end", modLoc("block/" + endTexture))
+                .texture("particle", modLoc("block/" + endTexture));
         collar(resistor, true);
         collar(resistor, false);
         resistor.element()
@@ -397,4 +405,30 @@ public class ModBlockStateProvider extends BlockStateProvider {
         zSocket(b, 16, false, "in", "plate");
         return b;
     }
+    /**
+     * The Stress Gate shares the resistor's flanged silhouette; its padlock
+     * body swaps between the locked (red pip) and open (teal pip) art.
+     */
+    private void registerStressGate() {
+        ModelFile locked = flangedModel("stress_gate_locked", "stress_gate_side_locked", "stress_gate_end");
+        ModelFile open = flangedModel("stress_gate_open", "stress_gate_side_open", "stress_gate_end");
+        getVariantBuilder(ModBlocks.STRESS_GATE.get()).forAllStates(state -> {
+            Direction.Axis axis = state.getValue(StressGateBlock.AXIS);
+            int x = 0;
+            int y = 0;
+            switch (axis) {
+                case Z -> x = 90;
+                case X -> {
+                    x = 90;
+                    y = 90;
+                }
+                default -> {
+                    // Y: default orientation.
+                }
+            }
+            ModelFile model = state.getValue(StressGateBlock.LOCKED) ? locked : open;
+            return ConfiguredModel.builder().modelFile(model).rotationX(x).rotationY(y).build();
+        });
+    }
+
 }

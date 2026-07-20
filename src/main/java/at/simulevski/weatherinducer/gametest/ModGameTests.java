@@ -3,6 +3,9 @@ package at.simulevski.weatherinducer.gametest;
 import at.simulevski.weatherinducer.WeatherInducerMod;
 import at.simulevski.weatherinducer.content.charger.SUChargerBlock;
 import at.simulevski.weatherinducer.content.charger.SUChargerBlockEntity;
+import at.simulevski.weatherinducer.content.gate.StressGateBlock;
+import at.simulevski.weatherinducer.content.gate.StressGateBlockEntity;
+import at.simulevski.weatherinducer.content.util.SUValueLadder;
 import at.simulevski.weatherinducer.content.inducer.WeatherInducerBlockEntity;
 import at.simulevski.weatherinducer.content.inducer.WeatherMode;
 import at.simulevski.weatherinducer.content.resistor.SUResistorBlock;
@@ -225,6 +228,53 @@ public class ModGameTests {
                     SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
                     helper.assertTrue(resistor.isTripped() && fanBe.getSpeed() == 0,
                             "Expected a tripped resistor with the fan cut off");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * The Stress Gate on real kinetics: locked while the network provides
+     * less than the threshold, open once it provides enough.
+     */
+    @GameTest(template = "empty", timeoutTicks = 200)
+    public static void stressGateUnlocksOnProvision(GameTestHelper helper) {
+        BlockPos motorPos = new BlockPos(2, 2, 3);
+        BlockPos gatePos = new BlockPos(3, 2, 3);
+        BlockPos fanPos = new BlockPos(4, 2, 3);
+        helper.startSequence()
+                .thenExecute(() -> {
+                    placeFloor(helper);
+                    Block motor = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:creative_motor"));
+                    Block fan = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:encased_fan"));
+                    helper.setBlock(motorPos, motor.defaultBlockState()
+                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
+                    helper.setBlock(gatePos, ModBlocks.STRESS_GATE.get().defaultBlockState()
+                            .setValue(StressGateBlock.AXIS, Direction.Axis.X));
+                    helper.setBlock(fanPos, fan.defaultBlockState()
+                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
+                    StressGateBlockEntity gate = helper.getBlockEntity(gatePos);
+                    gate.setThresholdIndexForTesting(SUValueLadder.STEPS.length - 1); // 1M SU
+                })
+                .thenIdle(30)
+                .thenExecute(() -> {
+                    StressGateBlockEntity gate = helper.getBlockEntity(gatePos);
+                    KineticBlockEntity fanBe = helper.getBlockEntity(fanPos);
+                    helper.assertTrue(gate.isLocked(),
+                            "The gate should stay locked below its threshold");
+                    helper.assertTrue(fanBe.getSpeed() == 0,
+                            "A locked gate must not pass rotation");
+                })
+                .thenExecute(() -> {
+                    StressGateBlockEntity gate = helper.getBlockEntity(gatePos);
+                    gate.setThresholdIndexForTesting(0); // 0 SU, always met
+                })
+                .thenWaitUntil(() -> {
+                    StressGateBlockEntity gate = helper.getBlockEntity(gatePos);
+                    KineticBlockEntity fanBe = helper.getBlockEntity(fanPos);
+                    helper.assertTrue(!gate.isLocked() && fanBe.getSpeed() != 0,
+                            "The gate should unlock and pass rotation once the threshold is met");
                 })
                 .thenSucceed();
     }

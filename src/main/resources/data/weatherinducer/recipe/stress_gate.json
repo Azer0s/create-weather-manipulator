@@ -1,0 +1,19 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "NBN",
+        "SES",
+        "NBN"
+    ],
+    "key": {
+        "N": { "item": "create:andesite_alloy" },
+        "B": { "item": "create:brass_sheet" },
+        "S": { "item": "create:shaft" },
+        "E": { "item": "create:electron_tube" }
+    },
+    "result": {
+        "id": "weatherinducer:stress_gate",
+        "count": 1
+    }
+}

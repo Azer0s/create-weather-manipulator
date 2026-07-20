@@ -37,6 +37,8 @@ public final class WeatherInducerClient {
                 context -> new SplitShaftRenderer(context));
         event.registerBlockEntityRenderer(ModBlockEntities.SU_CHARGER.get(),
                 context -> new ShaftRenderer<>(context));
+        event.registerBlockEntityRenderer(ModBlockEntities.STRESS_GATE.get(),
+                context -> new SplitShaftRenderer(context));
     }
 
     @SubscribeEvent

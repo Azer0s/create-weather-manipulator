@@ -24,6 +24,9 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> SU_CHARGER = ITEMS.registerSimpleBlockItem(
             "su_charger", ModBlocks.SU_CHARGER, new Item.Properties());
 
+    public static final DeferredItem<BlockItem> STRESS_GATE = ITEMS.registerSimpleBlockItem(
+            "stress_gate", ModBlocks.STRESS_GATE, new Item.Properties());
+
     private ModItems() {
     }
 

@@ -22,11 +22,13 @@ public class ModLanguageProvider extends LanguageProvider {
         add(ModBlocks.SU_RESISTOR.get(), "SU Resistor");
         add(ModBlocks.WEATHER_SENSOR.get(), "Weather Sensor");
         add(ModBlocks.SU_CHARGER.get(), "SU Charger");
+        add(ModBlocks.STRESS_GATE.get(), "Stress Gate");
 
         add("weatherinducer.value.mode", "Weather Mode");
         add("weatherinducer.value.offset_x", "Lightning Offset X");
         add("weatherinducer.value.offset_z", "Lightning Offset Z");
         add("weatherinducer.value.su_limit", "Max SU Draw");
+        add("weatherinducer.value.threshold", "SU Threshold");
 
         add("weatherinducer.mode.rain", "Rain");
         add("weatherinducer.mode.clear", "Clear");
@@ -38,7 +40,11 @@ public class ModLanguageProvider extends LanguageProvider {
         add("weatherinducer.tooltip.su_resistor", "SU Resistor");
         add("weatherinducer.tooltip.su_limit", "Limit: %s SU");
         add("weatherinducer.tooltip.demand", "Downstream draw: %s SU");
-        add("weatherinducer.tooltip.tripped", "Tripped: draw exceeds the limit, retrying");
+        add("weatherinducer.tooltip.tripped", "Tripped at %s SU, raise the limit to reset");
+        add("weatherinducer.tooltip.stress_gate", "Stress Gate");
+        add("weatherinducer.tooltip.threshold", "Unlocks at: %s SU provided");
+        add("weatherinducer.tooltip.provided", "Network provides: %s SU");
+        add("weatherinducer.tooltip.locked", "Locked: the network provides too little SU");
         add("weatherinducer.tooltip.su_charger", "SU Charger");
         add("weatherinducer.tooltip.buffer", "Buffer: %s / %s SU (%s%%)");
         add("weatherinducer.tooltip.charger_mode", "Mode: %s");
@@ -58,24 +64,27 @@ public class ModLanguageProvider extends LanguageProvider {
 
         // JEI / EMI information pages
         add("weatherinducer.info.weather_inducer",
-                "The Weather Inducer charges from the Stress Units flowing through its shaft, up to 1,000,000 SU. "
-                        + "It draws whatever the network offers, at most 100,000 SU per tick. While it can see the "
-                        + "sky, a redstone pulse then applies the selected weather - rain, clear, or a lightning "
-                        + "strike at a configurable offset - and discharges it.");
+                "The Weather Inducer charges from the network's spare Stress Units (whatever the sources provide "
+                        + "beyond what the machines use), up to 1,000,000 SU at 100,000 SU per tick at most. While "
+                        + "it can see the sky, a redstone pulse then applies the selected weather - rain, clear, or "
+                        + "a lightning strike at a configurable offset - and discharges it.");
         add("weatherinducer.info.su_resistor",
-                "The SU Resistor sits inline on a shaft and caps how much SU whatever is hooked up through it may "
-                        + "draw from the network. Set the limit with a value box. A Weather Inducer behind a "
-                        + "resistor charges no faster than the cap allows, and real machines are policed too: "
-                        + "if everything downstream demands more SU than the cap, the resistor trips like a "
-                        + "breaker and cuts rotation, retrying every few seconds until the load fits.");
+                "The SU Resistor is a circuit breaker for kinetic stress. If the machines downstream of it "
+                        + "demand more SU than its limit, it trips and cuts rotation to that side, remembering "
+                        + "the demand that broke it. It closes again on its own once the limit is raised to "
+                        + "cover that demand.");
         add("weatherinducer.info.weather_sensor",
                 "The Weather Sensor reads the sky like a daylight detector reads the sun: it emits redstone "
                         + "signal 0 under clear skies, 7 in rain and 15 during a thunderstorm. It needs to see "
                         + "the sky; covered, it reads 0.");
         add("weatherinducer.info.su_charger",
-                "The SU Charger is a kinetic capacitor. Rotation passes through it, SU never does. While the "
-                        + "shaft turns it fills a 1,000,000 SU buffer from its input side at up to 100,000 SU "
-                        + "per tick. Stop the input, and machines on its output side may drain the buffer "
-                        + "instead. It emits a redstone signal proportional to its fill level.");
+                "The SU Charger is a kinetic capacitor. While the shaft turns it soaks the network's spare SU "
+                        + "into a 1,000,000 SU buffer, at up to 100,000 SU per tick. Stop the input, and machines "
+                        + "on its output side may drain the buffer instead; raw network SU never passes through. "
+                        + "It emits a redstone signal proportional to its fill level.");
+        add("weatherinducer.info.stress_gate",
+                "The Stress Gate stays locked, passing no rotation downstream, until its kinetic network "
+                        + "provides at least the set amount of total SU. Use it to keep a contraption dormant "
+                        + "until the power plant behind it is big enough.");
     }
 }

@@ -2,6 +2,7 @@ package at.simulevski.weatherinducer.registry;
 
 import at.simulevski.weatherinducer.WeatherInducerMod;
 import at.simulevski.weatherinducer.content.charger.SUChargerBlockEntity;
+import at.simulevski.weatherinducer.content.gate.StressGateBlockEntity;
 import at.simulevski.weatherinducer.content.inducer.WeatherInducerBlockEntity;
 import at.simulevski.weatherinducer.content.resistor.SUResistorBlockEntity;
 import at.simulevski.weatherinducer.content.sensor.WeatherSensorBlockEntity;
@@ -49,6 +50,13 @@ public final class ModBlockEntities {
                             (pos, state) -> new SUChargerBlockEntity(
                                     ModBlockEntities.SU_CHARGER.get(), pos, state),
                             ModBlocks.SU_CHARGER.get()).build(null));
+
+    public static final Supplier<BlockEntityType<StressGateBlockEntity>> STRESS_GATE =
+            BLOCK_ENTITIES.register("stress_gate",
+                    () -> BlockEntityType.Builder.of(
+                            (pos, state) -> new StressGateBlockEntity(
+                                    ModBlockEntities.STRESS_GATE.get(), pos, state),
+                            ModBlocks.STRESS_GATE.get()).build(null));
 
     private ModBlockEntities() {
     }
