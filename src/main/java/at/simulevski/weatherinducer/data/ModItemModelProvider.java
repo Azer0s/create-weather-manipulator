@@ -107,27 +107,15 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .face(Direction.UP).texture("#blade").uvs(4, 12, 10, 14).end()
                 .face(Direction.DOWN).texture("#blade").uvs(4, 12, 10, 14).end()
                 .end();
-        // The blade, wearing the animated arc texture, shoulder capped so
-        // there is no hollow to look into from above.
-        blade.element()
-                .from(7, 5.5f, 7.6f).to(9, 15.5f, 8.4f)
-                .rotation().angle(-45).axis(Direction.Axis.Z).origin(8, 8, 8).end()
-                .face(Direction.NORTH).texture("#blade").uvs(0, 0, 2, 10).end()
-                .face(Direction.SOUTH).texture("#blade").uvs(0, 0, 2, 10).end()
-                .face(Direction.EAST).texture("#blade").uvs(2, 0, 3, 10).end()
-                .face(Direction.WEST).texture("#blade").uvs(2, 0, 3, 10).end()
-                .face(Direction.UP).texture("#blade").uvs(0, 0, 2, 1).end()
-                .end();
-        // Tapered tip.
-        blade.element()
-                .from(7.5f, 15.5f, 7.7f).to(8.5f, 17.5f, 8.3f)
-                .rotation().angle(-45).axis(Direction.Axis.Z).origin(8, 8, 8).end()
-                .face(Direction.NORTH).texture("#blade").uvs(0, 9, 1, 11).end()
-                .face(Direction.SOUTH).texture("#blade").uvs(0, 9, 1, 11).end()
-                .face(Direction.EAST).texture("#blade").uvs(2, 9, 3, 11).end()
-                .face(Direction.WEST).texture("#blade").uvs(2, 9, 3, 11).end()
-                .face(Direction.UP).texture("#blade").uvs(0, 9, 1, 10).end()
-                .end();
+        // The blade, wearing the animated arc texture. Four segments
+        // stepping down in width and thickness, so the silhouette tapers
+        // to a fine point instead of ending in a blunt nub. Every
+        // segment's up face is drawn: the exposed rim of each step stays
+        // closed and the next segment covers the rest.
+        bladeSegment(blade, 7, 5.5f, 12.5f, 0.8f, 0, 7);
+        bladeSegment(blade, 7.25f, 12.5f, 14.5f, 0.7f, 7, 9);
+        bladeSegment(blade, 7.5f, 14.5f, 16, 0.6f, 9, 10);
+        bladeSegment(blade, 7.75f, 16, 17.25f, 0.4f, 10, 10.75f);
 
         getBuilder("lightning_sword")
                 .customLoader(SeparateTransformsModelBuilder::begin)
@@ -135,6 +123,28 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .perspective(ItemDisplayContext.GUI, flat)
                 .perspective(ItemDisplayContext.FIXED, flat)
                 .perspective(ItemDisplayContext.GROUND, flat)
+                .end();
+    }
+
+    /**
+     * One taper step of the blade: centered on x=8, {@code width} taken
+     * from {@code xMin}, running {@code y1..y2}, {@code thick} deep, faces
+     * sampling texture rows {@code v1..v2} of the animated strip. Carries
+     * the same shared -45 degree roll as the rest of the sword.
+     */
+    private void bladeSegment(ItemModelBuilder blade, float xMin, float y1, float y2,
+                              float thick, float v1, float v2) {
+        float xMax = 16 - xMin;
+        float z1 = 8 - thick / 2;
+        float z2 = 8 + thick / 2;
+        blade.element()
+                .from(xMin, y1, z1).to(xMax, y2, z2)
+                .rotation().angle(-45).axis(Direction.Axis.Z).origin(8, 8, 8).end()
+                .face(Direction.NORTH).texture("#blade").uvs(0, v1, xMax - xMin, v2).end()
+                .face(Direction.SOUTH).texture("#blade").uvs(0, v1, xMax - xMin, v2).end()
+                .face(Direction.EAST).texture("#blade").uvs(2, v1, 3, v2).end()
+                .face(Direction.WEST).texture("#blade").uvs(2, v1, 3, v2).end()
+                .face(Direction.UP).texture("#blade").uvs(0, v1, xMax - xMin, v1 + 0.5f).end()
                 .end();
     }
 }
