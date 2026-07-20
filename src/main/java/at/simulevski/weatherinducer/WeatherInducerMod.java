@@ -7,6 +7,7 @@ import at.simulevski.weatherinducer.registry.ModEntityTypes;
 import at.simulevski.weatherinducer.registry.ModCreativeTabs;
 import at.simulevski.weatherinducer.registry.ModDisplaySources;
 import at.simulevski.weatherinducer.registry.ModItems;
+import at.simulevski.weatherinducer.registry.ModPackets;
 import at.simulevski.weatherinducer.client.ModPartialModels;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
@@ -50,6 +51,7 @@ public class WeatherInducerMod {
         ModItems.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
         ModDisplaySources.register(modEventBus);
+        ModPackets.register(modEventBus);
         if (FMLEnvironment.dist == Dist.CLIENT) {
             // Flywheel partials must exist before the client bakes models.
             ModPartialModels.init();

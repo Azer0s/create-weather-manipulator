@@ -123,6 +123,8 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
     private int groupSize;
     private long groupLead = Long.MAX_VALUE;
     private String groupLeadName = "";
+    private double groupDrain;
+    private boolean groupDischarging;
 
     /** This charger's own link name, pushed over by the attached link. */
     private String linkName = "";
@@ -478,8 +480,16 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         KineticChargerBlockEntity lead = ChargerNetworks.dischargeLeader(linkNetwork);
         long leadLong = lead == null ? Long.MAX_VALUE : lead.getBlockPos().asLong();
         String leadName = lead == null ? "" : lead.getLinkDisplayName();
+        // The group's current draw is just every member's own: the lead
+        // carries the stress share, everyone holding charge bleeds the
+        // neutral drain.
+        double drain = ChargerNetworks.members(linkNetwork).stream()
+                .mapToDouble(KineticChargerBlockEntity::getDrainPerSecond).sum();
+        boolean discharging = lead != null && lead.isGenerating();
         if (size != groupSize || leadLong != groupLead
                 || !leadName.equals(groupLeadName)
+                || discharging != groupDischarging
+                || Math.abs(drain - groupDrain) > 0.5
                 || Math.abs(energy - groupEnergy) > 1
                 || Math.abs(capacity - groupCapacity) > 0.5) {
             groupEnergy = energy;
@@ -487,8 +497,14 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
             groupSize = size;
             groupLead = leadLong;
             groupLeadName = leadName;
+            groupDrain = drain;
+            groupDischarging = discharging;
             sendData();
         }
+    }
+
+    public double getDrainPerSecond() {
+        return drainPerSecond;
     }
 
     public double getGroupEnergy() {
@@ -628,6 +644,8 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         compound.putInt("GroupSize", groupSize);
         compound.putLong("GroupLead", groupLead);
         compound.putString("GroupLeadName", groupLeadName);
+        compound.putDouble("GroupDrain", groupDrain);
+        compound.putBoolean("GroupDischarging", groupDischarging);
         compound.putString("LinkName", linkName);
     }
 
@@ -645,6 +663,8 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         groupSize = compound.getInt("GroupSize");
         groupLead = compound.contains("GroupLead") ? compound.getLong("GroupLead") : Long.MAX_VALUE;
         groupLeadName = compound.getString("GroupLeadName");
+        groupDrain = compound.getDouble("GroupDrain");
+        groupDischarging = compound.getBoolean("GroupDischarging");
         linkName = compound.getString("LinkName");
     }
 
@@ -697,6 +717,15 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
                                     ? ChatFormatting.GREEN : ChatFormatting.BLUE))
                     .append(Component.literal("|".repeat(BAR_SEGMENTS - groupFilled))
                             .withStyle(ChatFormatting.DARK_GRAY)));
+            // How long the whole network's charge lasts, only while its
+            // lead actually discharges.
+            if (groupDischarging && groupDrain > 0 && groupEnergy > 0) {
+                tooltip.add(Component.literal("    ").append(
+                        Component.translatable("weatherinducer.tooltip.network_remaining",
+                                formatSeconds(groupEnergy / groupDrain),
+                                String.format("%,.0f", groupDrain))
+                                .withStyle(ChatFormatting.BLUE)));
+            }
             tooltip.add(Component.literal("    ").append(
                     Component.translatable("weatherinducer.tooltip.network_buffer",
                             String.format("%,.0f", groupEnergy),

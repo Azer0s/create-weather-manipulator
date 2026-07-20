@@ -81,7 +81,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         // single-edged blade whose segments step sideways toward the
         // spine for the curve and close in an angled kissaki.
         blade.element() // kashira, the small end cap
-                .from(7.3f, -4, 7.3f).to(8.7f, -3.4f, 8.7f)
+                .from(7.3f, -4.6f, 7.3f).to(8.7f, -4, 8.7f)
                 .rotation().angle(-45).axis(Direction.Axis.Z).origin(8, 8, 8).end()
                 .face(Direction.NORTH).texture("#blade").uvs(4, 12, 5, 13).end()
                 .face(Direction.SOUTH).texture("#blade").uvs(4, 12, 5, 13).end()
@@ -90,7 +90,7 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .face(Direction.DOWN).texture("#blade").uvs(4, 12, 5, 13).end()
                 .end();
         blade.element() // tsuka, the wrapped grip
-                .from(7.4f, -3.4f, 7.4f).to(8.6f, 4, 8.6f)
+                .from(7.4f, -4, 7.4f).to(8.6f, 4, 8.6f)
                 .rotation().angle(-45).axis(Direction.Axis.Z).origin(8, 8, 8).end()
                 .face(Direction.NORTH).texture("#blade").uvs(12, 12, 14, 16).end()
                 .face(Direction.SOUTH).texture("#blade").uvs(12, 12, 14, 16).end()
@@ -109,12 +109,14 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .end();
         // The blade: each segment shifts a quarter pixel toward the spine
         // so the whole edge sweeps in a shallow curve, and the kissaki
-        // narrows onto the spine line the way a real tip does.
-        bladeSegment(blade, 7.3f, 8.7f, 4.75f, 9.5f, 0.5f, 0, 4.75f);
-        bladeSegment(blade, 7.05f, 8.45f, 9.5f, 13.5f, 0.46f, 4.75f, 8.75f);
-        bladeSegment(blade, 6.8f, 8.2f, 13.5f, 16, 0.42f, 8.75f, 11.25f);
-        bladeSegment(blade, 6.65f, 7.75f, 16, 17, 0.38f, 11.25f, 12.25f);
-        bladeSegment(blade, 6.55f, 7.15f, 17, 17.6f, 0.34f, 12.25f, 12.85f);
+        // narrows onto the spine line the way a real tip does. The spine
+        // rides the +x side, which in the baked diagonal puts the cutting
+        // edge forward, the way the sword is actually swung.
+        bladeSegment(blade, 7.3f, 8.7f, 4.75f, 11.5f, 0.5f, 0, 5.5f);
+        bladeSegment(blade, 7.55f, 8.95f, 11.5f, 16, 0.46f, 5.5f, 9.2f);
+        bladeSegment(blade, 7.8f, 9.2f, 16, 19, 0.42f, 9.2f, 11.6f);
+        bladeSegment(blade, 8.1f, 9.2f, 19, 20.3f, 0.38f, 11.6f, 12.7f);
+        bladeSegment(blade, 8.6f, 9.2f, 20.3f, 21, 0.34f, 12.7f, 13.4f);
 
         getBuilder("lightning_sword")
                 .customLoader(SeparateTransformsModelBuilder::begin)
@@ -143,8 +145,8 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .rotation().angle(-45).axis(Direction.Axis.Z).origin(8, 8, 8).end()
                 .face(Direction.NORTH).texture("#blade").uvs(0.5f, v1, 2, v2).end()
                 .face(Direction.SOUTH).texture("#blade").uvs(0.5f, v1, 2, v2).end()
-                .face(Direction.EAST).texture("#blade").uvs(3, v1, 4, v2).end()
-                .face(Direction.WEST).texture("#blade").uvs(2, v1, 3, v2).end()
+                .face(Direction.EAST).texture("#blade").uvs(2, v1, 3, v2).end()
+                .face(Direction.WEST).texture("#blade").uvs(3, v1, 4, v2).end()
                 .face(Direction.UP).texture("#blade").uvs(0.5f, v1, 2, v1 + 0.4f).end()
                 .end();
     }

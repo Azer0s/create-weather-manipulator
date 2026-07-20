@@ -121,6 +121,25 @@ public class ChargerLinkBlockEntity extends LinkWithBulbBlockEntity
         }
     }
 
+    /**
+     * The lamp tint for the heartbeat flash, from the host charger's
+     * state: blue while charging, red while discharging, green when the
+     * buffer sits full, yellow when idle or standing by. Runs client side
+     * off the charger's synced flags.
+     */
+    public int getLampColor() {
+        KineticChargerBlockEntity charger = host();
+        if (charger == null) {
+            return 0xFFFFFF;
+        }
+        return switch (charger.modeKey()) {
+            case "charging" -> 0x508CFF;
+            case "discharging" -> 0xFF5046;
+            default -> charger.getBuffer() >= charger.getMaxBuffer()
+                    ? 0x5AEB78 : 0xFFD246;
+        };
+    }
+
     // The glow partial is authored in place, so the renderer needs no
     // extra offset; the facing steers its rotation switch.
     @Override
@@ -142,14 +161,18 @@ public class ChargerLinkBlockEntity extends LinkWithBulbBlockEntity
     }
 
     @Override
-    public void destroy() {
-        // Only on actual removal, not chunk unload: unhook the host.
+    public void remove() {
+        // SmartBlockEntity calls this on actual removal only, never on
+        // chunk unload. That distinction is load-bearing: the host lookup
+        // touches a neighbouring chunk, and doing that while chunks are
+        // being torn down at shutdown can deadlock the chunk system (the
+        // save completes but the process never exits).
         KineticChargerBlockEntity charger = host();
         if (charger != null) {
             charger.setLinkNetwork(null);
             charger.setLinkDisplayName(null);
         }
-        super.destroy();
+        super.remove();
     }
 
     @Override

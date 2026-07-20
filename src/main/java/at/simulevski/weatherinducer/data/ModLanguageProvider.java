@@ -69,9 +69,11 @@ public class ModLanguageProvider extends LanguageProvider {
         add("weatherinducer.tooltip.link_lead_none", "none (all empty)");
         add("weatherinducer.tooltip.link_name", "Name: %s");
         add("weatherinducer.tooltip.network_buffer", "Network: %s / %s SU-seconds (%s%%)");
-        add("weatherinducer.tooltip.remaining", "Lasts %s at the current draw (%s SU-s/s)");
+        add("weatherinducer.tooltip.remaining", "Lasts %s at the current draw of %s SU");
+        add("weatherinducer.tooltip.network_remaining", "Network lasts %s at the current draw of %s SU");
         add("weatherinducer.message.link_bound", "Link items bound to this charger network");
-        add("weatherinducer.message.link_named", "Link named '%s'");
+        add("weatherinducer.screen.charger_link", "Name this Charger Link");
+        add("weatherinducer.screen.charger_link.name", "Name");
         add("weatherinducer.display_source.charger_charge", "Charger Charge Level");
         add("weatherinducer.display_source.charger_status", "Charger Status");
         add("weatherinducer.display.charger_status", "%s, %s wheels");

@@ -384,6 +384,62 @@ public class ModGameTests {
     }
 
     /**
+     * Breaking a Charger Link must free its host on the spot: the charger
+     * leaves the network and stops deferring to the lead. Guards the
+     * removal hook, which must run on real removal but never on chunk
+     * unload (where its neighbour lookup can deadlock a stopping server).
+     */
+    @GameTest(template = "empty", timeoutTicks = 300)
+    public static void breakingALinkFreesItsCharger(GameTestHelper helper) {
+        BlockPos chargerA = new BlockPos(2, 2, 3);
+        BlockPos shaftPos = new BlockPos(3, 2, 3);
+        BlockPos chargerB = new BlockPos(4, 2, 3);
+        BlockPos linkA = chargerA.above();
+        BlockPos linkB = chargerB.above();
+        helper.startSequence()
+                .thenExecute(() -> {
+                    placeFloor(helper);
+                    Block shaft = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:shaft"));
+                    helper.setBlock(chargerA, ModBlocks.KINETIC_CHARGER.get().defaultBlockState()
+                            .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.EAST));
+                    helper.setBlock(shaftPos, shaft.defaultBlockState()
+                            .setValue(RotatedPillarKineticBlock.AXIS, Direction.Axis.X));
+                    helper.setBlock(chargerB, ModBlocks.KINETIC_CHARGER.get().defaultBlockState()
+                            .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.WEST));
+                    helper.setBlock(linkA, ModBlocks.CHARGER_LINK.get().defaultBlockState()
+                            .setValue(ChargerLinkBlock.FACING, Direction.UP));
+                    helper.setBlock(linkB, ModBlocks.CHARGER_LINK.get().defaultBlockState()
+                            .setValue(ChargerLinkBlock.FACING, Direction.UP));
+                    ChargerLinkBlockEntity la = helper.getBlockEntity(linkA);
+                    ChargerLinkBlockEntity lb = helper.getBlockEntity(linkB);
+                    java.util.UUID network = java.util.UUID.randomUUID();
+                    la.setNetwork(network);
+                    lb.setNetwork(network);
+                    KineticChargerBlockEntity a = helper.getBlockEntity(chargerA);
+                    KineticChargerBlockEntity b = helper.getBlockEntity(chargerB);
+                    a.setBufferForTesting(600);
+                    a.setChargeSpeedForTesting(16);
+                    b.setBufferForTesting(600);
+                    b.setChargeSpeedForTesting(16);
+                })
+                .thenIdle(40)
+                .thenExecute(() -> {
+                    KineticChargerBlockEntity b = helper.getBlockEntity(chargerB);
+                    helper.assertTrue(!b.isGenerating(),
+                            "While linked, the higher charger stands by");
+                    helper.setBlock(linkB, Blocks.AIR);
+                })
+                .thenWaitUntil(() -> {
+                    KineticChargerBlockEntity a = helper.getBlockEntity(chargerA);
+                    KineticChargerBlockEntity b = helper.getBlockEntity(chargerB);
+                    helper.assertTrue(b.isGenerating() && a.isGenerating(),
+                            "With its link gone the charger must push freely again");
+                })
+                .thenSucceed();
+    }
+
+    /**
      * The Weather Sensor tracks the global weather. Runs in its own batch so
      * flipping the weather cannot race the other tests (batches run
      * sequentially, tests within a batch in parallel). The generous timeout

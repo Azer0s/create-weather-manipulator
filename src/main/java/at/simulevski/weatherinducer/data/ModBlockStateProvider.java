@@ -532,6 +532,16 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .face(Direction.NORTH).texture("#1").uvs(11.5f, 6, 13, 8).end()
                 .face(Direction.SOUTH).texture("#1").uvs(11.5f, 6, 13, 8).end()
                 .end();
+        // The sync LED, a small dark red lens on the housing top; the
+        // renderer flashes its glow with the network heartbeat.
+        base.element()
+                .from(4.5f, 8, 10.5f).to(5.5f, 8.5f, 11.5f)
+                .face(Direction.NORTH).texture("#1").uvs(12, 0, 13, 0.5f).end()
+                .face(Direction.SOUTH).texture("#1").uvs(12, 0, 13, 0.5f).end()
+                .face(Direction.EAST).texture("#1").uvs(12, 0, 13, 0.5f).end()
+                .face(Direction.WEST).texture("#1").uvs(12, 0, 13, 0.5f).end()
+                .face(Direction.UP).texture("#1").uvs(12, 0, 13, 1).end()
+                .end();
 
         // The teal glass bulb, rendered translucent like the display
         // link's.
@@ -574,20 +584,35 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .rotation(270, 0, 0).translation(0, 0, -4).scale(0.5f).end();
         directionalBlock(ModBlocks.CHARGER_LINK.get(), link);
 
-        // The heartbeat glow: the bulb inflated half a pixel, drawn
-        // fullbright into the additive layer by the link renderer while a
-        // pulse runs. Baked as a Flywheel partial, never as a blockstate.
+        // The status lamp glow: the bulb inflated half a pixel, drawn
+        // fullbright into the additive layer by the link renderer, tinted
+        // by the host charger's state. Samples the white patch so the
+        // tint comes out true. Baked as a Flywheel partial, never as a
+        // blockstate.
         models().getBuilder("charger_link_glow")
-                .texture("glass", modLoc("block/charger_link_details"))
+                .texture("glow", modLoc("block/charger_link_details"))
                 .texture("particle", modLoc("block/charger_link_details"))
                 .element()
                 .from(8, 6.5f, 2).to(14, 12.5f, 8)
-                .face(Direction.NORTH).texture("#glass").uvs(16, 2.5f, 13.5f, 5).end()
-                .face(Direction.EAST).texture("#glass").uvs(16, 2.5f, 13.5f, 5).end()
-                .face(Direction.SOUTH).texture("#glass").uvs(13.5f, 2.5f, 16, 5).end()
-                .face(Direction.WEST).texture("#glass").uvs(13.5f, 2.5f, 16, 5).end()
-                .face(Direction.UP).texture("#glass").uvs(13.5f, 0, 16, 2.5f).end()
-                .face(Direction.DOWN).texture("#glass").uvs(13.5f, 5, 16, 7.5f).end()
+                .face(Direction.NORTH).texture("#glow").uvs(12, 1.5f, 13, 2.5f).end()
+                .face(Direction.EAST).texture("#glow").uvs(12, 1.5f, 13, 2.5f).end()
+                .face(Direction.SOUTH).texture("#glow").uvs(12, 1.5f, 13, 2.5f).end()
+                .face(Direction.WEST).texture("#glow").uvs(12, 1.5f, 13, 2.5f).end()
+                .face(Direction.UP).texture("#glow").uvs(12, 1.5f, 13, 2.5f).end()
+                .face(Direction.DOWN).texture("#glow").uvs(12, 1.5f, 13, 2.5f).end()
+                .end();
+
+        // The sync LED's glow, flashed red with the network heartbeat.
+        models().getBuilder("charger_link_sync_glow")
+                .texture("glow", modLoc("block/charger_link_details"))
+                .texture("particle", modLoc("block/charger_link_details"))
+                .element()
+                .from(4.25f, 7.9f, 10.25f).to(5.75f, 8.9f, 11.75f)
+                .face(Direction.NORTH).texture("#glow").uvs(12, 1.5f, 13, 2.5f).end()
+                .face(Direction.EAST).texture("#glow").uvs(12, 1.5f, 13, 2.5f).end()
+                .face(Direction.SOUTH).texture("#glow").uvs(12, 1.5f, 13, 2.5f).end()
+                .face(Direction.WEST).texture("#glow").uvs(12, 1.5f, 13, 2.5f).end()
+                .face(Direction.UP).texture("#glow").uvs(12, 1.5f, 13, 2.5f).end()
                 .end();
     }
 

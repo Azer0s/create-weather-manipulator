@@ -23,10 +23,14 @@ public final class ModPartialModels {
 
     /**
      * The Charger Link's bulb, inflated half a pixel, drawn fullbright by
-     * the link renderer for the periodic heartbeat flash.
+     * the link renderer as the steady status lamp.
      */
     public static final PartialModel CHARGER_LINK_GLOW =
             PartialModel.of(WeatherInducerMod.asResource("block/charger_link_glow"));
+
+    /** The little sync LED, flashed red with the network heartbeat. */
+    public static final PartialModel CHARGER_LINK_SYNC_GLOW =
+            PartialModel.of(WeatherInducerMod.asResource("block/charger_link_sync_glow"));
 
     private ModPartialModels() {
     }
