@@ -445,15 +445,20 @@ public class ModGameTests {
     }
 
     /**
-     * The battery on real kinetics: a motor charges the charger while
-     * rotation passes through to a fan; cut the motor, and the charger
-     * takes over as the source, spinning the fan from its buffer and
-     * draining it by the stress the fan uses.
+     * The battery on real kinetics: a motor charges the charger while a
+     * fan runs off the same line; cut the motor, and the charger takes
+     * over as the source, spinning the fan from its buffer and draining
+     * it by the stress the fan uses.
+     *
+     * <p>The fan hangs off a gearbox beside the line: an encased fan only
+     * has the one shaft at its back, so putting it mid-line would cut the
+     * charger off from the motor entirely.
      */
     @GameTest(template = "empty", timeoutTicks = 300)
     public static void chargerDrivesOutputFromBuffer(GameTestHelper helper) {
         BlockPos motorPos = new BlockPos(2, 2, 3);
-        BlockPos fanPos = new BlockPos(3, 2, 3);
+        BlockPos gearboxPos = new BlockPos(3, 2, 3);
+        BlockPos fanPos = new BlockPos(3, 2, 2);
         BlockPos chargerPos = new BlockPos(4, 2, 3);
         double[] bufferBefore = new double[1];
         helper.startSequence()
@@ -461,21 +466,29 @@ public class ModGameTests {
                     placeFloor(helper);
                     Block motor = BuiltInRegistries.BLOCK
                             .get(ResourceLocation.parse("create:creative_motor"));
+                    Block gearbox = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:gearbox"));
                     Block fan = BuiltInRegistries.BLOCK
                             .get(ResourceLocation.parse("create:encased_fan"));
                     helper.setBlock(motorPos, motor.defaultBlockState()
                             .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
+                    // Vertical-axis gearbox: connects all four horizontal
+                    // faces, so motor, fan and charger all meet here.
+                    helper.setBlock(gearboxPos, gearbox.defaultBlockState()
+                            .setValue(RotatedPillarKineticBlock.AXIS, Direction.Axis.Y));
+                    // Fan back faces the gearbox.
                     helper.setBlock(fanPos, fan.defaultBlockState()
-                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
-                    // I/O face west, towards fan and motor; the flywheel side
-                    // (east) stays empty, or the bank walk would pop them.
+                            .setValue(DirectionalKineticBlock.FACING, Direction.NORTH));
+                    // I/O face west, towards the gearbox; the flywheel side
+                    // (east) stays empty, or the bank walk would pop things.
                     helper.setBlock(chargerPos, ModBlocks.KINETIC_CHARGER.get().defaultBlockState()
                             .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.WEST));
                 })
                 .thenWaitUntil(() -> {
                     KineticBlockEntity fanBe = helper.getBlockEntity(fanPos);
-                    helper.assertTrue(fanBe.getSpeed() != 0,
-                            "While charging, rotation should pass through to the fan");
+                    KineticChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
+                    helper.assertTrue(fanBe.getSpeed() != 0 && charger.getSpeed() != 0,
+                            "While charging, the fan and charger should both turn");
                 })
                 .thenExecute(() -> {
                     KineticChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
@@ -513,7 +526,8 @@ public class ModGameTests {
     public static void chargerDischargesBehindPoweredClutch(GameTestHelper helper) {
         BlockPos motorPos = new BlockPos(1, 2, 3);
         BlockPos clutchPos = new BlockPos(2, 2, 3);
-        BlockPos fanPos = new BlockPos(3, 2, 3);
+        BlockPos gearboxPos = new BlockPos(3, 2, 3);
+        BlockPos fanPos = new BlockPos(3, 2, 2);
         BlockPos chargerPos = new BlockPos(4, 2, 3);
         helper.startSequence()
                 .thenExecute(() -> {
@@ -522,22 +536,30 @@ public class ModGameTests {
                             .get(ResourceLocation.parse("create:creative_motor"));
                     Block clutch = BuiltInRegistries.BLOCK
                             .get(ResourceLocation.parse("create:clutch"));
+                    Block gearbox = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:gearbox"));
                     Block fan = BuiltInRegistries.BLOCK
                             .get(ResourceLocation.parse("create:encased_fan"));
                     helper.setBlock(motorPos, motor.defaultBlockState()
                             .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
                     helper.setBlock(clutchPos, clutch.defaultBlockState()
                             .setValue(RotatedPillarKineticBlock.AXIS, Direction.Axis.X));
+                    // The fan hangs off a gearbox beside the line (its only
+                    // shaft is at its back, so mid-line it would cut the
+                    // charger off from the clutch).
+                    helper.setBlock(gearboxPos, gearbox.defaultBlockState()
+                            .setValue(RotatedPillarKineticBlock.AXIS, Direction.Axis.Y));
                     helper.setBlock(fanPos, fan.defaultBlockState()
-                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
+                            .setValue(DirectionalKineticBlock.FACING, Direction.NORTH));
                     // I/O face west, towards the whole line; flywheel side empty.
                     helper.setBlock(chargerPos, ModBlocks.KINETIC_CHARGER.get().defaultBlockState()
                             .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.WEST));
                 })
                 .thenWaitUntil(() -> {
                     KineticBlockEntity fanBe = helper.getBlockEntity(fanPos);
-                    helper.assertTrue(fanBe.getSpeed() != 0,
-                            "The fan should spin through the open clutch and charger");
+                    KineticChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
+                    helper.assertTrue(fanBe.getSpeed() != 0 && charger.getSpeed() != 0,
+                            "The open clutch should turn both the fan and the charger");
                 })
                 .thenExecute(() -> {
                     KineticChargerBlockEntity charger = helper.getBlockEntity(chargerPos);

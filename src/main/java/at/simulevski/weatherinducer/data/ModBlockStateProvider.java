@@ -7,10 +7,13 @@ import at.simulevski.weatherinducer.content.inducer.WeatherInducerBlock;
 import at.simulevski.weatherinducer.registry.ModBlocks;
 import net.minecraft.core.Direction;
 import net.minecraft.data.PackOutput;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.neoforged.neoforge.client.model.generators.BlockModelBuilder;
 import net.neoforged.neoforge.client.model.generators.BlockStateProvider;
 import net.neoforged.neoforge.client.model.generators.ConfiguredModel;
+import net.neoforged.neoforge.client.model.generators.ModelBuilder;
 import net.neoforged.neoforge.client.model.generators.ModelFile;
+import net.neoforged.neoforge.client.model.generators.loaders.CompositeModelBuilder;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 
 /**
@@ -431,33 +434,116 @@ public class ModBlockStateProvider extends BlockStateProvider {
     }
 
     /**
-     * The Charger Link: a small brass panel with a teal gem, bolted flat
-     * onto a charger face, display-link style. Built facing north (panel
-     * hugging the south edge, antenna poking north); directionalBlock
-     * rotates it onto all six faces.
+     * The Charger Link, built straight from Create's display link: same
+     * textures (link_base_unpowered for the plate, link_details for the
+     * antenna assembly) and the same geometry, so it reads as a sibling of
+     * the display link at a glance. The model is authored in the display
+     * link's native floor-mounted pose (host charger below, feet poking
+     * into it), which is exactly the facing=up identity that
+     * directionalBlock rotates onto all six faces.
+     *
+     * <p>Like Create's original this is a composite: the plate and antenna
+     * render cutout while the green glass bulb over the coil renders
+     * translucent. The bulb doubles as the teal accent that marks it as a
+     * charger-network device.
      */
     private void registerChargerLink() {
+        BlockModelBuilder base = models().nested()
+                .renderType("cutout_mipped")
+                .texture("0", "create:block/link_base_unpowered")
+                .texture("1", "create:block/link_details");
+        // The mounting plate.
+        base.element()
+                .from(1, 1, 1).to(15, 5, 15)
+                .face(Direction.NORTH).texture("#0").uvs(15.5f, 8.5f, 8.5f, 10.5f).end()
+                .face(Direction.EAST).texture("#0").uvs(8.5f, 11, 15.5f, 13).end()
+                .face(Direction.SOUTH).texture("#0").uvs(8.5f, 8.5f, 15.5f, 10.5f).end()
+                .face(Direction.WEST).texture("#0").uvs(8.5f, 11, 15.5f, 13).end()
+                .face(Direction.UP).texture("#0").uvs(0.5f, 8.5f, 7.5f, 15.5f).end()
+                .face(Direction.DOWN).texture("#0").uvs(0.5f, 8.5f, 7.5f, 15.5f).end()
+                .end();
+        // The feet, sunk into the host charger's face.
+        base.element()
+                .from(2, -1, 2).to(14, 1, 14)
+                .face(Direction.NORTH).texture("#0").uvs(9, 13, 15, 14).end()
+                .face(Direction.EAST).texture("#0").uvs(9, 13, 15, 14).end()
+                .face(Direction.SOUTH).texture("#0").uvs(9, 13, 15, 14).end()
+                .face(Direction.WEST).texture("#0").uvs(9, 13, 15, 14).end()
+                .face(Direction.DOWN).texture("#1").uvs(1, 9, 7, 15).end()
+                .end();
+        // The long instrument housing.
+        base.element()
+                .from(3, 5, 3.5f).to(7, 8, 12.5f)
+                .face(Direction.NORTH).texture("#1").uvs(8, 0, 10, 1.5f).end()
+                .face(Direction.EAST).texture("#1").uvs(10, 1.5f, 11.5f, 6)
+                .rotation(ModelBuilder.FaceRotation.CLOCKWISE_90).end()
+                .face(Direction.SOUTH).texture("#1").uvs(8, 0, 10, 1.5f).end()
+                .face(Direction.WEST).texture("#1").uvs(10, 1.5f, 11.5f, 6)
+                .rotation(ModelBuilder.FaceRotation.CLOCKWISE_90).end()
+                .face(Direction.UP).texture("#1").uvs(8, 1.5f, 10, 6).end()
+                .end();
+        // The two copper coils.
+        base.element()
+                .from(9, 5, 3).to(13, 7, 7)
+                .face(Direction.NORTH).texture("#1").uvs(6, 7, 8, 8).end()
+                .face(Direction.EAST).texture("#1").uvs(6, 7, 8, 8).end()
+                .face(Direction.SOUTH).texture("#1").uvs(6, 7, 8, 8).end()
+                .face(Direction.WEST).texture("#1").uvs(6, 7, 8, 8).end()
+                .face(Direction.UP).texture("#1").uvs(6, 0, 8, 2).end()
+                .end();
+        base.element()
+                .from(9, 5, 9).to(13, 7, 13)
+                .face(Direction.NORTH).texture("#1").uvs(6, 7, 8, 8).end()
+                .face(Direction.EAST).texture("#1").uvs(6, 7, 8, 8).end()
+                .face(Direction.SOUTH).texture("#1").uvs(6, 7, 8, 8).end()
+                .face(Direction.WEST).texture("#1").uvs(6, 7, 8, 8).end()
+                .face(Direction.UP).texture("#1").uvs(6, 2.5f, 8, 4.5f).end()
+                .end();
+        // The forked antenna, a flat plane above the front coil.
+        base.element()
+                .from(9.5f, 7, 5).to(12.5f, 11, 5)
+                .face(Direction.NORTH).texture("#1").uvs(11.5f, 6, 13, 8).end()
+                .face(Direction.SOUTH).texture("#1").uvs(11.5f, 6, 13, 8).end()
+                .end();
+
+        // The green glass bulb, rendered translucent like Create's.
+        BlockModelBuilder bulb = models().nested()
+                .renderType("translucent")
+                .texture("1", "create:block/link_details");
+        bulb.element()
+                .from(8.5f, 7, 2.5f).to(13.5f, 12, 7.5f)
+                .face(Direction.NORTH).texture("#1").uvs(16, 2.5f, 13.5f, 5).end()
+                .face(Direction.EAST).texture("#1").uvs(16, 2.5f, 13.5f, 5).end()
+                .face(Direction.SOUTH).texture("#1").uvs(13.5f, 2.5f, 16, 5).end()
+                .face(Direction.WEST).texture("#1").uvs(13.5f, 2.5f, 16, 5).end()
+                .face(Direction.UP).texture("#1").uvs(13.5f, 0, 16, 2.5f).end()
+                .face(Direction.DOWN).texture("#1").uvs(13.5f, 5, 16, 7.5f).end()
+                .end();
+
         BlockModelBuilder link = models().getBuilder("charger_link")
-                .texture("panel", modLoc("block/charger_link"))
-                .texture("particle", modLoc("block/charger_link"))
-                .renderType("cutout");
-        link.element()
-                .from(4, 4, 12).to(12, 12, 16)
-                .face(Direction.NORTH).texture("#panel").uvs(0, 0, 8, 8).end()
-                .face(Direction.SOUTH).texture("#panel").uvs(0, 0, 8, 8).end()
-                .face(Direction.UP).texture("#panel").uvs(0, 8, 8, 12).end()
-                .face(Direction.DOWN).texture("#panel").uvs(0, 8, 8, 12).end()
-                .face(Direction.EAST).texture("#panel").uvs(0, 8, 4, 12).end()
-                .face(Direction.WEST).texture("#panel").uvs(0, 8, 4, 12).end()
+                .parent(models().getExistingFile(mcLoc("block/block")))
+                .texture("particle", "create:block/brass_casing")
+                .customLoader(CompositeModelBuilder::begin)
+                .child("base", base)
+                .child("bulb", bulb)
                 .end();
-        link.element()
-                .from(6.5f, 6.5f, 9.5f).to(9.5f, 9.5f, 12)
-                .face(Direction.NORTH).texture("#panel").uvs(9, 0, 12, 3).end()
-                .face(Direction.UP).texture("#panel").uvs(9, 4, 12, 6).end()
-                .face(Direction.DOWN).texture("#panel").uvs(9, 4, 12, 6).end()
-                .face(Direction.EAST).texture("#panel").uvs(9, 4, 12, 6).end()
-                .face(Direction.WEST).texture("#panel").uvs(9, 4, 12, 6).end()
-                .end();
+        // The display link's own item transforms, so the item reads the
+        // same in hand and inventory.
+        link.transforms()
+                .transform(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
+                .rotation(75, 45, 0).translation(0, 2.5f, 0).scale(0.375f).end()
+                .transform(ItemDisplayContext.THIRD_PERSON_LEFT_HAND)
+                .rotation(75, 45, 0).translation(0, 2.5f, 0).scale(0.375f).end()
+                .transform(ItemDisplayContext.FIRST_PERSON_RIGHT_HAND)
+                .rotation(0, 45, 0).scale(0.4f).end()
+                .transform(ItemDisplayContext.FIRST_PERSON_LEFT_HAND)
+                .rotation(0, 225, 0).scale(0.4f).end()
+                .transform(ItemDisplayContext.GROUND)
+                .translation(0, 3, 0).scale(0.25f).end()
+                .transform(ItemDisplayContext.GUI)
+                .rotation(30, 225, 0).translation(0, 1.5f, 0).scale(0.625f).end()
+                .transform(ItemDisplayContext.FIXED)
+                .rotation(270, 0, 0).translation(0, 0, -4).scale(0.5f).end();
         directionalBlock(ModBlocks.CHARGER_LINK.get(), link);
     }
 

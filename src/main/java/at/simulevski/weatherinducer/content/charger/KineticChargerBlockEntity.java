@@ -500,11 +500,16 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
 
     public void setBufferForTesting(double value) {
         this.buffer = Math.max(0, Math.min(MAX_BUFFER, value));
+        // In real play every path that changes what getGeneratedSpeed()
+        // returns also raises this flag; the hook must do the same or the
+        // generator keeps running on stale numbers.
+        this.reActivateSource = true;
         setChanged();
     }
 
     public void setChargeSpeedForTesting(float speed) {
         this.chargeSpeed = speed;
+        this.reActivateSource = true;
         setChanged();
     }
 

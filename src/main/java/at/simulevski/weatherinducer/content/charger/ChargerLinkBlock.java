@@ -50,15 +50,17 @@ public class ChargerLinkBlock extends Block implements EntityBlock {
     /** The item tag key carrying a bound stack's network id. */
     public static final String NETWORK_KEY = "ChargerNetwork";
 
-    // Indexed by Direction ordinal; the panel hugs the host charger's face,
-    // which sits behind (opposite) the FACING direction.
+    // Indexed by Direction ordinal; the mounting plate hugs the host
+    // charger's face, which sits behind (opposite) the FACING direction.
+    // Covers the display-link style plate; the thin antenna above it is
+    // left out of the outline on purpose.
     private static final VoxelShape[] SHAPES = new VoxelShape[]{
-            Block.box(4, 12, 4, 12, 16, 12),   // DOWN: host above
-            Block.box(4, 0, 4, 12, 4, 12),     // UP: host below
-            Block.box(4, 4, 12, 12, 12, 16),   // NORTH: host south
-            Block.box(4, 4, 0, 12, 12, 4),     // SOUTH: host north
-            Block.box(12, 4, 4, 16, 12, 12),   // WEST: host east
-            Block.box(0, 4, 4, 4, 12, 12),     // EAST: host west
+            Block.box(1, 10, 1, 15, 16, 15),   // DOWN: host above
+            Block.box(1, 0, 1, 15, 6, 15),     // UP: host below
+            Block.box(1, 1, 10, 15, 15, 16),   // NORTH: host south
+            Block.box(1, 1, 0, 15, 15, 6),     // SOUTH: host north
+            Block.box(10, 1, 1, 16, 15, 15),   // WEST: host east
+            Block.box(0, 1, 1, 6, 15, 15),     // EAST: host west
     };
 
     public ChargerLinkBlock(Properties properties) {
