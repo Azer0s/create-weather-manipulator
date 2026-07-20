@@ -6,6 +6,7 @@ import com.simibubi.create.content.kinetics.KineticNetwork;
 import com.simibubi.create.content.kinetics.base.GeneratingKineticBlockEntity;
 import com.simibubi.create.content.kinetics.base.HorizontalKineticBlock;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import com.simibubi.create.content.kinetics.transmission.SplitShaftBlockEntity;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -48,6 +49,7 @@ public class SUChargerBlockEntity extends GeneratingKineticBlockEntity
     public static final float DISCHARGE_CAPACITY = 131_072f; // 2^17
 
     private double buffer;
+    private double lastSyncedBuffer;
 
     /** The last non-zero input speed; discharge drives the output at it. */
     private float chargeSpeed;
@@ -69,6 +71,12 @@ public class SUChargerBlockEntity extends GeneratingKineticBlockEntity
         if (state.getValue(SUChargerBlock.POWER) != power) {
             level.setBlock(worldPosition, state.setValue(SUChargerBlock.POWER, power),
                     Block.UPDATE_ALL);
+        }
+        // Sync the exact buffer now and then so the goggle readout tracks
+        // it between chunk loads.
+        if (buffer != lastSyncedBuffer && level.getGameTime() % 8 == 0) {
+            lastSyncedBuffer = buffer;
+            sendData();
         }
 
         if (isDischargingState()) {
@@ -121,10 +129,23 @@ public class SUChargerBlockEntity extends GeneratingKineticBlockEntity
     }
 
     private boolean inputSideSpinning() {
-        return level != null
-                && level.getBlockEntity(worldPosition.relative(getInputFace()))
-                        instanceof KineticBlockEntity neighbour
-                && neighbour.getSpeed() != 0;
+        if (level == null) {
+            return false;
+        }
+        if (!(level.getBlockEntity(worldPosition.relative(getInputFace()))
+                instanceof KineticBlockEntity neighbour)) {
+            return false;
+        }
+        float conveyed = neighbour.getSpeed();
+        // A clutch or gearshift right at the input keeps spinning on its own
+        // source side even while it cuts us off; what matters is the speed
+        // it conveys through the face pointing at us. Without this, a
+        // clutch-stopped charger flips out of battery mode every other tick
+        // and the output side never keeps its rotation.
+        if (neighbour instanceof SplitShaftBlockEntity split) {
+            conveyed *= split.getRotationSpeedModifier(getInputFace().getOpposite());
+        }
+        return conveyed != 0;
     }
 
     private void setDischarging(boolean discharging) {

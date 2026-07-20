@@ -129,7 +129,9 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
                     // Keep the comparator output in step with the charge level.
                     level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
                     updateChargeIndicator();
-                    if (charge >= MAX_CHARGE) {
+                    // Sync the exact value now and then so the goggle
+                    // readout tracks the charge, not just chunk loads.
+                    if (charge >= MAX_CHARGE || level.getGameTime() % 8 == 0) {
                         sendData();
                     }
                 }

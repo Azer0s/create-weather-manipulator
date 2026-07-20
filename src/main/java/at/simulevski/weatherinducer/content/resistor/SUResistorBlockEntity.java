@@ -111,11 +111,16 @@ public class SUResistorBlockEntity extends SplitShaftBlockEntity implements IHav
         if (level.getGameTime() % MEASURE_INTERVAL != 0) {
             return;
         }
+        double previousDemand = lastDemand;
         if (getSpeed() == 0 || !hasSource()) {
             lastDemand = 0;
-            return;
+        } else {
+            lastDemand = SUNetwork.downstreamStressDemand(this);
         }
-        lastDemand = SUNetwork.downstreamStressDemand(this, getSourceFacing().getOpposite());
+        if (lastDemand != previousDemand) {
+            // Goggles read the live demand on the client.
+            sendData();
+        }
         if (lastDemand > breakerCeiling()) {
             demandAtBreak = lastDemand;
             setChanged();
@@ -144,12 +149,14 @@ public class SUResistorBlockEntity extends SplitShaftBlockEntity implements IHav
     protected void write(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
         super.write(compound, registries, clientPacket);
         compound.putDouble("DemandAtBreak", demandAtBreak);
+        compound.putDouble("LastDemand", lastDemand);
     }
 
     @Override
     protected void read(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
         super.read(compound, registries, clientPacket);
         demandAtBreak = compound.getDouble("DemandAtBreak");
+        lastDemand = compound.getDouble("LastDemand");
     }
 
     // --- Test hook (used by the game tests; harmless in normal play) ---------

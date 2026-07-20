@@ -11,6 +11,8 @@ import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollVa
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -82,7 +84,13 @@ public class StressGateBlockEntity extends SplitShaftBlockEntity implements IHav
             return;
         }
         KineticNetwork network = getOrCreateNetwork();
-        lastProvided = network == null ? 0 : Math.max(0, network.calculateCapacity());
+        double provided = network == null ? 0 : Math.max(0, network.calculateCapacity());
+        if (provided != lastProvided) {
+            lastProvided = provided;
+            // Goggles read this on the client; without the sync the
+            // "network provides" line sits at 0 forever.
+            sendData();
+        }
         boolean shouldLock = lastProvided < getThreshold();
         if (shouldLock != getBlockState().getValue(StressGateBlock.LOCKED)) {
             setLocked(shouldLock);
@@ -100,6 +108,18 @@ public class StressGateBlockEntity extends SplitShaftBlockEntity implements IHav
 
     public boolean isLocked() {
         return getBlockState().getValue(StressGateBlock.LOCKED);
+    }
+
+    @Override
+    protected void write(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
+        super.write(compound, registries, clientPacket);
+        compound.putDouble("LastProvided", lastProvided);
+    }
+
+    @Override
+    protected void read(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
+        super.read(compound, registries, clientPacket);
+        lastProvided = compound.getDouble("LastProvided");
     }
 
     // --- Test hook (used by the game tests; harmless in normal play) ---------

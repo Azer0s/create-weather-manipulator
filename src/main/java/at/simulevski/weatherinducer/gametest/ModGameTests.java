@@ -18,6 +18,7 @@ import at.simulevski.weatherinducer.registry.ModItems;
 import com.simibubi.create.content.kinetics.base.DirectionalKineticBlock;
 import com.simibubi.create.content.kinetics.base.HorizontalKineticBlock;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import com.simibubi.create.content.kinetics.base.RotatedPillarKineticBlock;
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueSettingsBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollOptionBehaviour;
@@ -263,6 +264,67 @@ public class ModGameTests {
     }
 
     /**
+     * The battery behind a clutch, the setup the README recommends: the cut
+     * clutch keeps spinning on its motor side, and an early version of the
+     * charger read that raw speed as "input is back", flipping out of
+     * battery mode every other tick so the output never kept its rotation.
+     * The charger must stay in battery mode and drive the fan while the
+     * clutch is powered.
+     */
+    @GameTest(template = "empty", timeoutTicks = 300)
+    public static void chargerDischargesBehindPoweredClutch(GameTestHelper helper) {
+        BlockPos motorPos = new BlockPos(1, 2, 3);
+        BlockPos clutchPos = new BlockPos(2, 2, 3);
+        BlockPos chargerPos = new BlockPos(3, 2, 3);
+        BlockPos fanPos = new BlockPos(4, 2, 3);
+        helper.startSequence()
+                .thenExecute(() -> {
+                    placeFloor(helper);
+                    Block motor = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:creative_motor"));
+                    Block clutch = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:clutch"));
+                    Block fan = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:encased_fan"));
+                    helper.setBlock(motorPos, motor.defaultBlockState()
+                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
+                    helper.setBlock(clutchPos, clutch.defaultBlockState()
+                            .setValue(RotatedPillarKineticBlock.AXIS, Direction.Axis.X));
+                    helper.setBlock(chargerPos, ModBlocks.SU_CHARGER.get().defaultBlockState()
+                            .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.EAST));
+                    helper.setBlock(fanPos, fan.defaultBlockState()
+                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
+                })
+                .thenWaitUntil(() -> {
+                    KineticBlockEntity fanBe = helper.getBlockEntity(fanPos);
+                    helper.assertTrue(fanBe.getSpeed() != 0,
+                            "The fan should spin through the open clutch and charger");
+                })
+                .thenExecute(() -> {
+                    SUChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
+                    charger.setBufferForTesting(65_536); // 2^16
+                    // Power the clutch: the input side keeps spinning, the
+                    // charger side stops.
+                    helper.setBlock(clutchPos.above(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> {
+                    SUChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
+                    KineticBlockEntity fanBe = helper.getBlockEntity(fanPos);
+                    helper.assertTrue(charger.isDischarging() && fanBe.getSpeed() != 0,
+                            "Behind a powered clutch the charger must drive the fan from its buffer");
+                })
+                .thenIdle(20)
+                .thenExecute(() -> {
+                    // Still in battery mode after a second: no flip-flopping.
+                    SUChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
+                    KineticBlockEntity fanBe = helper.getBlockEntity(fanPos);
+                    helper.assertTrue(charger.isDischarging() && fanBe.getSpeed() != 0,
+                            "The charger must stay in battery mode while the clutch is powered");
+                })
+                .thenSucceed();
+    }
+
+    /**
      * The breaker on real Create kinetics: a creative motor drives an encased
      * fan through a resistor whose cap is 0 SU, so any demand at all must
      * trip it and cut the fan off, while the resistor itself keeps spinning
@@ -339,6 +401,52 @@ public class ModGameTests {
                     // uncapped it would be north of 100,000 by now.
                     helper.assertTrue(charge <= 1_024 * 12,
                             "The resistor must cap the charge rate, got " + charge + " SU");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * The demand measurement runs on Create's propagation tree, so machines
+     * hooked up through a diagonal cogwheel mesh (which no block-adjacency
+     * scan can see) still count against the breaker. A fan driven through a
+     * large-to-small cog step behind the resistor must trip a 0 SU cap.
+     */
+    @GameTest(template = "empty", timeoutTicks = 200)
+    public static void resistorSeesDemandThroughCogwheels(GameTestHelper helper) {
+        BlockPos motorPos = new BlockPos(1, 2, 3);
+        BlockPos resistorPos = new BlockPos(2, 2, 3);
+        BlockPos largeCogPos = new BlockPos(3, 2, 3);
+        BlockPos smallCogPos = new BlockPos(3, 3, 4);
+        BlockPos fanPos = new BlockPos(4, 3, 4);
+        helper.startSequence()
+                .thenExecute(() -> {
+                    placeFloor(helper);
+                    Block motor = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:creative_motor"));
+                    Block largeCog = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:large_cogwheel"));
+                    Block smallCog = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:cogwheel"));
+                    Block fan = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:encased_fan"));
+                    helper.setBlock(motorPos, motor.defaultBlockState()
+                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
+                    helper.setBlock(resistorPos, ModBlocks.SU_RESISTOR.get().defaultBlockState()
+                            .setValue(SUResistorBlock.AXIS, Direction.Axis.X));
+                    helper.setBlock(largeCogPos, largeCog.defaultBlockState()
+                            .setValue(RotatedPillarKineticBlock.AXIS, Direction.Axis.X));
+                    helper.setBlock(smallCogPos, smallCog.defaultBlockState()
+                            .setValue(RotatedPillarKineticBlock.AXIS, Direction.Axis.X));
+                    helper.setBlock(fanPos, fan.defaultBlockState()
+                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
+                    SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
+                    resistor.setLimitIndexForTesting(0); // cap: 0 SU
+                })
+                .thenWaitUntil(() -> {
+                    SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
+                    KineticBlockEntity fanBe = helper.getBlockEntity(fanPos);
+                    helper.assertTrue(resistor.isTripped() && fanBe.getSpeed() == 0,
+                            "The breaker must trip on demand routed through cogwheels");
                 })
                 .thenSucceed();
     }
