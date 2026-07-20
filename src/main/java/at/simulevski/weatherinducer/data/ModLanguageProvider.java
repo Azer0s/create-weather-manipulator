@@ -95,7 +95,8 @@ public class ModLanguageProvider extends LanguageProvider {
                         + "2,048 SU-seconds bare, about 104,858 per wheel, up to ten. More than ten jams it and "
                         + "overstresses the network. It stores SU-seconds, like watt-hours: charging loads the "
                         + "network with capacity divided by charge time (10 s at the fastest; the slider locks "
-                        + "while charged), and discharge drains the machines' stress per second. The flywheels "
+                        + "while charged), discharge drains the machines' stress per second, and holding charge at "
+                        + "all bleeds a neutral 5 SU-seconds per second. The flywheels "
                         + "keep spinning as long as energy is stored, wheels may be added or removed while it "
                         + "runs, and the buffer fill is emitted as a redstone signal.");
         add("weatherinducer.info.lightning_medium",

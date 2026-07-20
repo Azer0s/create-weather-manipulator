@@ -40,8 +40,10 @@ import java.util.Set;
  * external source drives the I/O side, the charger loads the network with
  * its capacity divided by its charge time (in SU) and banks that many
  * SU-seconds each second. While it discharges, the machines' stress drains
- * the buffer per second. A 104,858 SU-second wheel therefore runs a
- * 1,024 SU load for a little over 102 seconds.
+ * the buffer per second, and holding charge at all bleeds a neutral
+ * {@link #NEUTRAL_DRAIN_PER_SECOND} SU-seconds per second on top. A
+ * 104,858 SU-second wheel therefore runs a 1,024 SU load for a little
+ * over 101 seconds.
  *
  * <p>Whether the charger is charging or discharging is decided by the
  * network itself: if any other source powers the network, the charger
@@ -67,6 +69,12 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
 
     /** Discharge offer ceiling per tick for direct buffer draws. */
     public static final double MAX_RATE_PER_TICK = 131_072.0; // 2^17
+
+    /** SU-seconds the battery bleeds per second just for holding charge. */
+    public static final double NEUTRAL_DRAIN_PER_SECOND = 5.0;
+
+    /** Width of the goggle fill bar, in text segments. */
+    private static final int BAR_SEGMENTS = 20;
 
     /** SU the battery provides while it is the network's source. */
     public static final float DISCHARGE_CAPACITY = 131_072f; // 2^17
@@ -225,11 +233,25 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
             }
         }
 
+        // Neutral drain: a spinning bank is never free. Five SU-seconds
+        // bleed away every second while any charge is held, whether the
+        // battery charges, discharges or just sits there.
+        if (buffer > 0) {
+            buffer = Math.max(0, buffer - NEUTRAL_DRAIN_PER_SECOND / 20.0);
+            setChanged();
+            if (buffer <= 0) {
+                reActivateSource = true;
+                level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
+            }
+        }
+
         boolean external = findExternalSource();
         if (external != externallyPowered) {
             externallyPowered = external;
-            // Our generated speed just turned on or off with it.
+            // Our generated speed just turned on or off with it, and the
+            // goggles read this flag on the client, so ship it over.
             reActivateSource = true;
+            sendData();
         }
         refreshLoad();
         updateDischargingState();
@@ -399,6 +421,7 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         compound.putDouble("Buffer", buffer);
         compound.putFloat("ChargeSpeed", chargeSpeed);
         compound.putInt("Flywheels", flywheels);
+        compound.putBoolean("ExternallyPowered", externallyPowered);
     }
 
     @Override
@@ -407,6 +430,7 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         buffer = compound.getDouble("Buffer");
         chargeSpeed = compound.getFloat("ChargeSpeed");
         flywheels = compound.getInt("Flywheels");
+        externallyPowered = compound.getBoolean("ExternallyPowered");
     }
 
     // @Override intentionally present: if Create ever changes this signature,
@@ -418,7 +442,16 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
                 Component.translatable("weatherinducer.tooltip.kinetic_charger")
                         .withStyle(ChatFormatting.GRAY)));
 
-        int percent = (int) Math.floor(100.0 * Math.min(1.0, buffer / getMaxBuffer()));
+        // A live fill bar, then the exact numbers under it.
+        double fraction = Math.min(1.0, buffer / getMaxBuffer());
+        int filled = (int) Math.round(BAR_SEGMENTS * fraction);
+        tooltip.add(Component.literal("    ")
+                .append(Component.literal("|".repeat(filled))
+                        .withStyle(buffer >= getMaxBuffer() ? ChatFormatting.GREEN : ChatFormatting.AQUA))
+                .append(Component.literal("|".repeat(BAR_SEGMENTS - filled))
+                        .withStyle(ChatFormatting.DARK_GRAY)));
+
+        int percent = (int) Math.floor(100.0 * fraction);
         tooltip.add(Component.literal("    ").append(
                 Component.translatable("weatherinducer.tooltip.buffer",
                         String.format("%,.0f", buffer), String.format("%,.0f", getMaxBuffer()), percent)

@@ -281,17 +281,22 @@ public class ModGameTests {
                     double capacity = be.getMaxBuffer();
                     helper.assertTrue(capacity == KineticChargerBlockEntity.BASE_CAPACITY,
                             "A bare charger holds only the base capacity");
+                    // Compare against the live buffer: the neutral drain has
+                    // already bled a few SU-seconds off the preset.
                     helper.assertTrue(
-                            be.availableDischarge() == Math.min(capacity,
+                            be.availableDischarge() == Math.min(be.getBuffer(),
                                     KineticChargerBlockEntity.MAX_RATE_PER_TICK),
                             "Discharge offer should be capped at the per-tick rate");
                     helper.assertBlockState(INDUCER,
                             state -> state.getValue(KineticChargerBlock.POWER) == 15,
                             () -> "A full charger should emit redstone 15");
+                    // Capture right before draining: the neutral 5 SU-seconds
+                    // per second bleed has already nibbled at the preset.
+                    double before = be.getBuffer();
                     double taken = be.drain(1234);
                     helper.assertTrue(taken == 1234,
                             "Draining should hand out the requested amount");
-                    helper.assertTrue(be.getBuffer() == capacity - 1234,
+                    helper.assertTrue(be.getBuffer() == before - 1234,
                             "The buffer should shrink by exactly the drained amount");
                     be.drain(KineticChargerBlockEntity.MAX_BUFFER);
                 })
