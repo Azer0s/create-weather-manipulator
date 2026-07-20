@@ -66,19 +66,24 @@ The endgame chain, powered by the Weather Inducer's own lightning:
    block is consumed and drops a **Bottle o' Lightning**. An inducer in
    lightning mode with a matching offset automates the whole thing, and the
    bottle survives the strike that creates it.
-2. **Lightning Bolt**: one ancient debris plus two bottles, laid out as a
+2. **Lightning Bolt**: one netherite ingot plus two bottles, laid out as a
    diagonal in the crafting grid.
-3. **Tools** (sword, pickaxe, axe, shovel, hoe): the usual shapes, with
-   stripped logs instead of sticks. 4,096 durability, mining speed 16, and
-   the diggers come out of the crafting table with Efficiency V already on
-   them. The sword hits for 1,024 damage, which one-shots everything up to
-   and including the warden. Holding any lightning tool grants Speed II.
+3. **Tools** (katana, pickaxe, axe, shovel, hoe): 4,096 durability, mining
+   speed 16, and the diggers come out of the crafting table with Efficiency V
+   already on them. All five are fully modelled in hand: gold heads on
+   wrapped handles, and the sword is a long curved katana with an electric
+   blade that swings in a flat horizontal slash. Hold right click with the
+   katana to guard: blocked blows lose most of their bite and the attacker
+   catches fire off the arcs. The katana hits for 1,024 damage, which
+   one-shots everything up to and including the warden. Holding any
+   lightning tool grants Speed II.
 4. **Armor**: Thor-styled steel with gold discs and a winged helm. The
    chestplate recipe also takes an elytra. Each piece comes with Thorns III;
    the full set grants water breathing, fire resistance, Resistance IV,
    Strength II, Speed II, Regeneration, creative flight, and no fall damage.
    With 40 armor points, toughness 16, and full knockback resistance on top,
-   it is practically invincible.
+   it is practically invincible. While flying under a clear sky, the boots
+   trail harmless lightning.
 
 ---
 

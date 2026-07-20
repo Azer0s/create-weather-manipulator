@@ -4,6 +4,7 @@ import at.simulevski.weatherinducer.WeatherInducerMod;
 import at.simulevski.weatherinducer.content.charger.ChargerLinkItem;
 import at.simulevski.weatherinducer.content.lightning.BottleOLightningItem;
 import at.simulevski.weatherinducer.content.lightning.LightningGear;
+import at.simulevski.weatherinducer.content.lightning.LightningKatanaItem;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.BlockItem;
@@ -56,7 +57,7 @@ public final class ModItems {
     // Efficiency V baked in by their crafting recipes.
     public static final DeferredItem<Item> LIGHTNING_SWORD = ITEMS.registerItem(
             "lightning_sword",
-            props -> new SwordItem(LightningGear.TIER, props
+            props -> new LightningKatanaItem(LightningGear.TIER, props
                     .attributes(SwordItem.createAttributes(LightningGear.TIER, 1019, -2.4f))),
             new Item.Properties());
 

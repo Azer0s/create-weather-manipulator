@@ -55,7 +55,7 @@
   "weatherinducer.tooltip.charge_time": "Full charge in %s s (loads the network with %s SU)",
   "weatherinducer.tooltip.charger_link": "Charger Link",
   "weatherinducer.tooltip.charger_mode": "Mode: %s",
-  "weatherinducer.tooltip.flywheels": "Flywheels banked: %s (up to %s add capacity)",
+  "weatherinducer.tooltip.flywheels": "%s / %s wheels",
   "weatherinducer.tooltip.kinetic_charger": "Kinetic Charger",
   "weatherinducer.tooltip.link_lead_none": "none (all empty)",
   "weatherinducer.tooltip.link_lead_self": "%s (this one)",

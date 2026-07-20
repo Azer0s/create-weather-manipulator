@@ -62,7 +62,7 @@ public class ModLanguageProvider extends LanguageProvider {
         add("weatherinducer.tooltip.locked", "Locked: the network provides too little SU");
         add("weatherinducer.tooltip.kinetic_charger", "Kinetic Charger");
         add("weatherinducer.tooltip.buffer", "Buffer: %s / %s SU-seconds (%s%%)");
-        add("weatherinducer.tooltip.flywheels", "Flywheels banked: %s (up to %s add capacity)");
+        add("weatherinducer.tooltip.flywheels", "%s / %s wheels");
         add("weatherinducer.tooltip.charger_link", "Charger Link");
         add("weatherinducer.tooltip.link_network", "Network: %s chargers, discharge lead: %s");
         add("weatherinducer.tooltip.link_lead_self", "%s (this one)");

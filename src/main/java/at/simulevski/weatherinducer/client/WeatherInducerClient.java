@@ -5,6 +5,8 @@ import at.simulevski.weatherinducer.content.ponder.ModPonderPlugin;
 import at.simulevski.weatherinducer.registry.ModBlockEntities;
 import at.simulevski.weatherinducer.registry.ModEntityTypes;
 import at.simulevski.weatherinducer.registry.ModItems;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import com.simibubi.create.content.kinetics.base.ShaftRenderer;
 import com.simibubi.create.content.kinetics.base.SingleAxisRotatingVisual;
 import com.simibubi.create.content.kinetics.transmission.SplitShaftRenderer;
@@ -14,8 +16,11 @@ import net.createmod.ponder.foundation.PonderIndex;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.EntityModelSet;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
@@ -94,6 +99,30 @@ public final class WeatherInducerClient {
             }
         }, ModItems.LIGHTNING_HELMET.get(), ModItems.LIGHTNING_CHESTPLATE.get(),
                 ModItems.LIGHTNING_LEGGINGS.get(), ModItems.LIGHTNING_BOOTS.get());
+
+        // The katana swings its own way: a flat horizontal slash across
+        // the view instead of vanilla's diagonal chop. Returning true
+        // takes over the base hand transform and the swing, so both are
+        // rebuilt here; the blocking pose still runs through vanilla's
+        // separate use-animation path.
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public boolean applyForgeHandTransform(PoseStack poseStack, LocalPlayer player,
+                                                   HumanoidArm arm, ItemStack itemInHand,
+                                                   float partialTick, float equipProcess,
+                                                   float swingProcess) {
+                int side = arm == HumanoidArm.RIGHT ? 1 : -1;
+                poseStack.translate(side * 0.42f, -0.48f + equipProcess * -0.6f, -0.86f);
+                if (swingProcess > 0) {
+                    float sweep = Mth.sin(swingProcess * (float) Math.PI);
+                    float wind = Mth.sin(Mth.sqrt(swingProcess) * (float) Math.PI);
+                    poseStack.mulPose(Axis.YP.rotationDegrees(side * wind * -65));
+                    poseStack.mulPose(Axis.ZP.rotationDegrees(side * sweep * -35));
+                    poseStack.mulPose(Axis.XP.rotationDegrees(sweep * -12));
+                }
+                return true;
+            }
+        }, ModItems.LIGHTNING_SWORD.get());
     }
 
     @SubscribeEvent

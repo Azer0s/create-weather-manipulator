@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -591,10 +592,20 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
 
     /** Wired up by an attached Charger Link; null when standalone. */
     public void setLinkNetwork(UUID network) {
-        if (linkNetwork != null && !linkNetwork.equals(network)) {
+        if (Objects.equals(linkNetwork, network)) {
+            return;
+        }
+        if (linkNetwork != null) {
             ChargerNetworks.unregister(linkNetwork, this);
         }
         linkNetwork = network;
+        // The goggle tooltip renders on the client and gates its whole
+        // network section on this field, so membership changes must ship
+        // over right away.
+        setChanged();
+        if (level != null && !level.isClientSide) {
+            sendData();
+        }
     }
 
     public UUID getLinkNetwork() {
@@ -647,6 +658,9 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         compound.putDouble("GroupDrain", groupDrain);
         compound.putBoolean("GroupDischarging", groupDischarging);
         compound.putString("LinkName", linkName);
+        if (linkNetwork != null) {
+            compound.putUUID("LinkNetwork", linkNetwork);
+        }
     }
 
     @Override
@@ -666,6 +680,8 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         groupDrain = compound.getDouble("GroupDrain");
         groupDischarging = compound.getBoolean("GroupDischarging");
         linkName = compound.getString("LinkName");
+        linkNetwork = compound.hasUUID("LinkNetwork")
+                ? compound.getUUID("LinkNetwork") : null;
     }
 
     // @Override intentionally present: if Create ever changes this signature,
@@ -681,9 +697,9 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         double fraction = Math.min(1.0, buffer / getMaxBuffer());
         int filled = (int) Math.round(BAR_SEGMENTS * fraction);
         tooltip.add(Component.literal("    ")
-                .append(Component.literal("|".repeat(filled))
+                .append(Component.literal("█".repeat(filled))
                         .withStyle(buffer >= getMaxBuffer() ? ChatFormatting.GREEN : ChatFormatting.AQUA))
-                .append(Component.literal("|".repeat(BAR_SEGMENTS - filled))
+                .append(Component.literal("░".repeat(BAR_SEGMENTS - filled))
                         .withStyle(ChatFormatting.DARK_GRAY)));
 
         int percent = (int) Math.floor(100.0 * fraction);
@@ -700,8 +716,15 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
                             String.format("%,.0f", drainPerSecond))
                             .withStyle(ChatFormatting.GRAY)));
         }
-        tooltip.add(Component.literal("    ").append(
-                Component.translatable("weatherinducer.tooltip.flywheels",
+        // The flywheel bank as a bar, one block per wheel slot.
+        int banked = Math.min(flywheels, MAX_FLYWHEELS);
+        tooltip.add(Component.literal("    ")
+                .append(Component.literal("█".repeat(banked))
+                        .withStyle(ChatFormatting.GOLD))
+                .append(Component.literal("░".repeat(MAX_FLYWHEELS - banked))
+                        .withStyle(ChatFormatting.DARK_GRAY))
+                .append(Component.literal(" "))
+                .append(Component.translatable("weatherinducer.tooltip.flywheels",
                         flywheels, MAX_FLYWHEELS)
                         .withStyle(ChatFormatting.GRAY)));
         if (linkNetwork != null) {
@@ -712,10 +735,10 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
                     ? Math.min(1.0, groupEnergy / groupCapacity) : 0;
             int groupFilled = (int) Math.round(BAR_SEGMENTS * groupFraction);
             tooltip.add(Component.literal("    ")
-                    .append(Component.literal("|".repeat(groupFilled))
+                    .append(Component.literal("█".repeat(groupFilled))
                             .withStyle(groupEnergy >= groupCapacity && groupCapacity > 0
                                     ? ChatFormatting.GREEN : ChatFormatting.BLUE))
-                    .append(Component.literal("|".repeat(BAR_SEGMENTS - groupFilled))
+                    .append(Component.literal("░".repeat(BAR_SEGMENTS - groupFilled))
                             .withStyle(ChatFormatting.DARK_GRAY)));
             // How long the whole network's charge lasts, only while its
             // lead actually discharges.
