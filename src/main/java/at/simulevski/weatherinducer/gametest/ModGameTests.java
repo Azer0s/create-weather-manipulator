@@ -214,6 +214,20 @@ public class ModGameTests {
                             + 2 * KineticChargerBlockEntity.FLYWHEEL_CAPACITY;
                     helper.assertTrue(Math.abs(charger.getMaxBuffer() - expected) < 1,
                             "Capacity should follow the flywheel bank, got " + charger.getMaxBuffer());
+                    // Hot-attach a third wheel while the charger runs.
+                    Block flywheel = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:flywheel"));
+                    helper.setBlock(new BlockPos(2, 3, 3), flywheel.defaultBlockState()
+                            .setValue(RotatedPillarKineticBlock.AXIS, Direction.Axis.X));
+                })
+                .thenIdle(15)
+                .thenExecute(() -> {
+                    KineticChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
+                    double expected = KineticChargerBlockEntity.BASE_CAPACITY
+                            + 3 * KineticChargerBlockEntity.FLYWHEEL_CAPACITY;
+                    helper.assertTrue(Math.abs(charger.getMaxBuffer() - expected) < 1,
+                            "A wheel attached at runtime should grow the bank, got "
+                                    + charger.getMaxBuffer());
                 })
                 .thenSucceed();
     }

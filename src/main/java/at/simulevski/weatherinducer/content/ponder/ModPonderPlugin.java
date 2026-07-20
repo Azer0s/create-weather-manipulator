@@ -18,15 +18,15 @@ public class ModPonderPlugin implements PonderPlugin {
 
     @Override
     public void registerScenes(PonderSceneRegistrationHelper<ResourceLocation> helper) {
-        // Second argument -> assets/weatherinducer/ponder/weather_devices.nbt
+        // Second argument -> assets/weatherinducer/ponder/<name>.nbt
         helper.addStoryBoard(
                 WeatherInducerMod.asResource("weather_inducer"),
-                WeatherInducerMod.asResource("weather_devices"),
+                WeatherInducerMod.asResource("weather_inducer"),
                 ModPonderScenes::weatherInducer);
 
         helper.addStoryBoard(
                 WeatherInducerMod.asResource("kinetic_charger"),
-                WeatherInducerMod.asResource("weather_devices"),
+                WeatherInducerMod.asResource("kinetic_charger"),
                 ModPonderScenes::kineticCharger);
     }
 }

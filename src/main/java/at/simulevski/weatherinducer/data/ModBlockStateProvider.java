@@ -364,38 +364,40 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .texture("in", modLoc("block/kinetic_charger_in"))
                 .texture("plate", modLoc("block/weather_inducer_bottom"))
                 .texture("particle", modLoc("block/kinetic_charger_side_" + fillLevel));
-        // A battery drum between two flanged end plates: the full-size
-        // collars carry the shaft sockets, the recessed body shows the fill
-        // gauge on its sides, and two proud copper bands hoop the drum.
-        for (boolean north : new boolean[]{true, false}) {
-            float z0 = north ? 0 : 13;
-            float z1 = north ? 3 : 16;
+        // A battery drum between two end plates. The plates carry the shaft
+        // sockets and the I/O ring (north face, the front) and flywheel
+        // mount (south); the drum between them is recessed and shows the
+        // fill gauge, with a proud copper hoop around the middle. Nothing
+        // overlaps, so no faces fight.
+        for (boolean front : new boolean[]{true, false}) {
+            float z0 = front ? 2 : 12;
+            float z1 = front ? 4 : 14;
             b.element()
                     .from(0, 0, z0).to(16, 16, z1)
                     .face(Direction.DOWN).texture("#plate").end()
                     .face(Direction.UP).texture("#plate").end()
-                    .face(Direction.NORTH).texture(north ? "#out" : "#plate").end()
-                    .face(Direction.SOUTH).texture(north ? "#plate" : "#in").end()
-                    .face(Direction.EAST).texture("#side").uvs(z0, 0, z1, 16).end()
-                    .face(Direction.WEST).texture("#side").uvs(z0, 0, z1, 16).end()
+                    .face(Direction.NORTH).texture(front ? "#out" : "#plate").end()
+                    .face(Direction.SOUTH).texture(front ? "#plate" : "#in").end()
+                    .face(Direction.EAST).texture("#plate").uvs(z0, 0, z1, 16).end()
+                    .face(Direction.WEST).texture("#plate").uvs(z0, 0, z1, 16).end()
                     .end();
         }
         b.element()
-                .from(1, 1, 3).to(15, 15, 13)
-                .face(Direction.DOWN).texture("#side").uvs(3, 1, 13, 15).end()
-                .face(Direction.UP).texture("#side").uvs(3, 1, 13, 15).end()
-                .face(Direction.EAST).texture("#side").uvs(3, 1, 13, 15).end()
-                .face(Direction.WEST).texture("#side").uvs(3, 1, 13, 15).end()
+                .from(1.5f, 1.5f, 4).to(14.5f, 14.5f, 12)
+                .face(Direction.DOWN).texture("#side").uvs(4, 1.5f, 12, 14.5f).end()
+                .face(Direction.UP).texture("#side").uvs(4, 1.5f, 12, 14.5f).end()
+                .face(Direction.EAST).texture("#side").uvs(4, 1.5f, 12, 14.5f).end()
+                .face(Direction.WEST).texture("#side").uvs(4, 1.5f, 12, 14.5f).end()
                 .end();
-        for (float bandZ : new float[]{4.5f, 10}) {
-            b.element()
-                    .from(0.5f, 0.5f, bandZ).to(15.5f, 15.5f, bandZ + 1.5f)
-                    .face(Direction.DOWN).texture("#band").end()
-                    .face(Direction.UP).texture("#band").end()
-                    .face(Direction.EAST).texture("#band").end()
-                    .face(Direction.WEST).texture("#band").end()
-                    .end();
-        }
+        b.element()
+                .from(0.5f, 0.5f, 7).to(15.5f, 15.5f, 9)
+                .face(Direction.DOWN).texture("#band").uvs(0, 7, 16, 9).end()
+                .face(Direction.UP).texture("#band").uvs(0, 7, 16, 9).end()
+                .face(Direction.EAST).texture("#band").uvs(7, 0, 9, 16).end()
+                .face(Direction.WEST).texture("#band").uvs(7, 0, 9, 16).end()
+                .face(Direction.NORTH).texture("#band").end()
+                .face(Direction.SOUTH).texture("#band").end()
+                .end();
         b.texture("band", mcLoc("block/copper_block"));
         zSocket(b, 16, true, "out", "plate");
         zSocket(b, 16, false, "in", "plate");

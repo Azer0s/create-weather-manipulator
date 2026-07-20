@@ -52,10 +52,25 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .parent(getExistingFile(mcLoc("item/handheld")))
                 .texture("layer0", modLoc("item/lightning_sword"));
 
+        // No item/handheld parent here: that chain bottoms out in
+        // builtin/generated, which insists on baking sprite layers and has
+        // no layer0 to bake, so the whole model falls over and nothing
+        // renders. The 3D base is self-contained and carries its own hand
+        // transforms instead (GUI and frames use the flat sprite anyway).
         ItemModelBuilder blade = getBuilder("lightning_sword_3d")
-                .parent(getExistingFile(mcLoc("item/handheld")))
                 .texture("blade", modLoc("item/lightning_sword_blade"))
-                .texture("particle", modLoc("item/lightning_sword_blade"));
+                .texture("particle", modLoc("item/lightning_sword_blade"))
+                .guiLight(net.minecraft.client.renderer.block.model.BlockModel.GuiLight.FRONT);
+        blade.transforms()
+                .transform(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
+                .rotation(0, -90, 10).translation(0, 4, 0.5f).scale(0.85f).end()
+                .transform(ItemDisplayContext.THIRD_PERSON_LEFT_HAND)
+                .rotation(0, 90, -10).translation(0, 4, 0.5f).scale(0.85f).end()
+                .transform(ItemDisplayContext.FIRST_PERSON_RIGHT_HAND)
+                .rotation(0, -90, -20).translation(1.13f, 3.2f, 1.13f).scale(0.68f).end()
+                .transform(ItemDisplayContext.FIRST_PERSON_LEFT_HAND)
+                .rotation(0, 90, 20).translation(1.13f, 3.2f, 1.13f).scale(0.68f).end()
+                .end();
         // Grip, low on the model so the fist wraps it.
         blade.element()
                 .from(7, 0, 7).to(9, 4, 9)

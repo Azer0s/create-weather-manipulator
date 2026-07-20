@@ -62,14 +62,14 @@ public final class ModPonderScenes {
         BlockPos charger = util.grid().at(2, 1, 2);
 
         scene.overlay().showText(90)
-                .text("The Kinetic Charger is a battery: while its input shaft turns, it banks the network's power into a buffer")
+                .text("The Kinetic Charger is a battery: while a source drives its I/O face, it banks the power as SU-seconds, like watt-hours")
                 .attachKeyFrame()
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(charger));
         scene.idle(100);
 
         scene.overlay().showText(100)
-                .text("Flywheels attached on the input side set the capacity: 2,048 SU bare, about 104,858 more per wheel, up to ten. Any more jams the charger")
+                .text("Flywheels banked on its back set the capacity: 2,048 SU-seconds bare, about 104,858 more per wheel, up to ten. Any more jams the charger")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(charger));
         scene.idle(110);
@@ -81,7 +81,7 @@ public final class ModPonderScenes {
         scene.idle(100);
 
         scene.overlay().showText(90)
-                .text("Stop the input, and the charger takes over: it spins its output side at the speed it charged with until the buffer runs dry")
+                .text("Stop the source, and the charger takes over: it drives the I/O side itself, the machines drain it per second, and the flywheels keep spinning as long as energy remains")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(charger));
         scene.idle(100);

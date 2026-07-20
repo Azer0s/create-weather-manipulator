@@ -8,7 +8,7 @@ import com.simibubi.create.content.kinetics.base.GeneratingKineticBlockEntity;
 import com.simibubi.create.content.kinetics.base.HorizontalKineticBlock;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.flywheel.FlywheelBlockEntity;
-import com.simibubi.create.content.kinetics.transmission.SplitShaftBlockEntity;
+import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -28,28 +28,35 @@ import java.util.Set;
 /**
  * Battery logic for the Kinetic Charger.
  *
- * <p>While the input shaft turns, the charger passes rotation through and
- * fills its buffer the same way the Weather Inducer charges: it loads the
- * network with real stress, the full buffer divided by its charge time
- * slider (ten seconds at the fastest), and banks a tick's worth of that
- * every tick. The slider locks while the buffer holds anything. Once the
- * input stops and the buffer holds charge, it flips to
- * discharge: the input face disconnects, the charger itself becomes the
- * kinetic source of its output side, spinning it at the speed it was
- * charged with and providing {@link #DISCHARGE_CAPACITY} SU. Each tick the
- * buffer drops by the stress the driven machines actually use, and when it
- * runs dry (or the input side starts turning again) the charger reconnects
- * and goes back to charging. Raw network SU never passes through. The
- * buffer fill is also published as a 0..15 redstone signal via
- * {@link KineticChargerBlock#POWER}.
+ * <p>The block has two working sides. The <b>I/O face</b> (the front, with
+ * the teal ring) is where power flows in and out: an external source
+ * charges the battery through it, and once that source stops, the charger
+ * itself drives the same face, powering whatever hangs off it. The
+ * <b>flywheel face</b> (the back) carries the flywheel bank that sets the
+ * capacity, and the wheels keep turning as long as the battery holds
+ * energy, whichever way it is flowing.
+ *
+ * <p>The buffer stores SU-seconds, like a watt-hour meter: while an
+ * external source drives the I/O side, the charger loads the network with
+ * its capacity divided by its charge time (in SU) and banks that many
+ * SU-seconds each second. While it discharges, the machines' stress drains
+ * the buffer per second. A 104,858 SU-second wheel therefore runs a
+ * 1,024 SU load for a little over 102 seconds.
+ *
+ * <p>Whether the charger is charging or discharging is decided by the
+ * network itself: if any other source powers the network, the charger
+ * banks; if the charger is the only source left and the buffer holds
+ * energy, it generates at the speed it was last charged with. No faces
+ * ever disconnect. The buffer fill is published as a 0..15 redstone signal
+ * via {@link KineticChargerBlock#POWER}.
  */
 public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         implements IHaveGoggleInformation {
 
     /** Buffer capacity with no flywheels attached: barely a sip. */
-    public static final double BASE_CAPACITY = 2_048.0; // 2^11
+    public static final double BASE_CAPACITY = 2_048.0; // 2^11 SU-seconds
 
-    /** Capacity each flywheel on the input side adds (2^20 / 10). */
+    /** Capacity each flywheel on the flywheel side adds (2^20 / 10). */
     public static final double FLYWHEEL_CAPACITY = 104_857.6;
 
     /** Flywheels beyond this jam the charger and overstress the network. */
@@ -61,26 +68,29 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
     /** Discharge offer ceiling per tick for direct buffer draws. */
     public static final double MAX_RATE_PER_TICK = 131_072.0; // 2^17
 
-    /** SU the battery provides to its output side while discharging. */
+    /** SU the battery provides while it is the network's source. */
     public static final float DISCHARGE_CAPACITY = 131_072f; // 2^17
 
     private double buffer;
     private double lastSyncedBuffer;
 
-    /** The last non-zero input speed; discharge drives the output at it. */
+    /** The last non-zero externally driven speed; discharge repeats it. */
     private float chargeSpeed;
 
     private ChargeTimeScrollBehaviour chargeTime;
 
-    /** Cached flywheel count on the input side, recounted twice a second. */
+    /** Cached flywheel count on the flywheel side, recounted twice a second. */
     private int flywheels;
+
+    /** True while some other source powers our network (cached each tick). */
+    private boolean externallyPowered;
 
     public KineticChargerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
     }
 
     @Override
-    public void addBehaviours(java.util.List<com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour> behaviours) {
+    public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
         super.addBehaviours(behaviours);
         // Charge time slider on the four faces beside the shaft; locked
         // while the buffer holds anything, like the inducer's.
@@ -96,7 +106,7 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         return ChargeTimeScrollBehaviour.seconds(chargeTime != null ? chargeTime.getValue() : 0);
     }
 
-    /** SU banked per tick so a full buffer takes the configured seconds. */
+    /** SU-seconds banked per tick so a full buffer takes the set time. */
     public double intakePerTick() {
         return getMaxBuffer() / (getChargeTimeSeconds() * 20.0);
     }
@@ -106,24 +116,36 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         return getMaxBuffer() / getChargeTimeSeconds();
     }
 
-    /** Flywheels currently banked on the input side (uncapped count). */
+    /** Flywheels currently banked on the flywheel side (uncapped count). */
     public int getFlywheels() {
         return flywheels;
     }
 
     /**
-     * The buffer this flywheel bank can hold: 2,048 SU bare, plus 104,857.6
-     * per flywheel up to ten of them. More than ten does not extend it
-     * further; it jams the charger instead (see {@link #targetImpact}).
+     * The SU-seconds this flywheel bank can hold: 2,048 bare, plus
+     * 104,857.6 per flywheel up to ten of them. More than ten does not
+     * extend it further; it jams the charger instead (see
+     * {@link #targetImpact}).
      */
     public double getMaxBuffer() {
         return BASE_CAPACITY + Math.min(flywheels, MAX_FLYWHEELS) * FLYWHEEL_CAPACITY;
     }
 
+    /** The I/O face: power in from the source, power out to the machines. */
+    public Direction getIoFace() {
+        return getBlockState().getValue(HorizontalKineticBlock.HORIZONTAL_FACING);
+    }
+
+    /** The flywheel face: the capacity bank hangs off the back. */
+    public Direction getFlywheelFace() {
+        return getIoFace().getOpposite();
+    }
+
     /**
-     * Counts flywheels physically connected on the input side: a bounded
-     * flood over kinetic blocks starting behind the input face, so a bank
-     * of wheels in any arrangement counts, but nothing across the charger.
+     * Counts flywheels physically connected on the flywheel side: a
+     * bounded flood over kinetic blocks starting behind the back face, so
+     * a bank of wheels in any arrangement counts, but nothing across the
+     * charger.
      */
     private int countFlywheels() {
         if (level == null) {
@@ -132,7 +154,7 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         Set<BlockPos> visited = new HashSet<>();
         Deque<BlockPos> queue = new ArrayDeque<>();
         visited.add(worldPosition);
-        queue.add(worldPosition.relative(getInputFace()));
+        queue.add(worldPosition.relative(getFlywheelFace()));
         int count = 0;
         while (!queue.isEmpty() && visited.size() < 64) {
             BlockPos pos = queue.poll();
@@ -153,6 +175,20 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
             }
         }
         return count;
+    }
+
+    /** True when any source other than this charger powers the network. */
+    private boolean findExternalSource() {
+        KineticNetwork network = getOrCreateNetwork();
+        if (network == null) {
+            return false;
+        }
+        for (KineticBlockEntity source : network.sources.keySet()) {
+            if (source != this) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -176,28 +212,6 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
             sendData();
         }
 
-        if (isDischargingState()) {
-            // The input face is disconnected while discharging, so any spin
-            // over there is a returning external supply: yield to it.
-            if (buffer <= 0 || inputSideSpinning()) {
-                setDischarging(false);
-                return;
-            }
-            // The machines we drive eat the buffer at the rate they load
-            // the shaft.
-            KineticNetwork network = getOrCreateNetwork();
-            double used = network == null ? 0 : Math.max(0, network.calculateStress());
-            if (used > 0) {
-                buffer = Math.max(0, buffer - used);
-                setChanged();
-                level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
-                if (buffer <= 0) {
-                    setDischarging(false);
-                }
-            }
-            return;
-        }
-
         if (level.getGameTime() % 10 == 0 || flywheels == 0) {
             int counted = countFlywheels();
             if (counted != flywheels) {
@@ -210,64 +224,62 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
                 setChanged();
             }
         }
+
+        boolean external = findExternalSource();
+        if (external != externallyPowered) {
+            externallyPowered = external;
+            // Our generated speed just turned on or off with it.
+            reActivateSource = true;
+        }
         refreshLoad();
-        if (getSpeed() != 0) {
-            // Charge mode. Remember the input speed; it becomes the
-            // discharge speed once the input stops.
+        updateDischargingState();
+
+        if (externallyPowered && getSpeed() != 0) {
+            // Charge mode. Remember the driven speed; discharge repeats it.
             if (chargeSpeed != getSpeed()) {
                 chargeSpeed = getSpeed();
                 setChanged();
             }
-            if (buffer >= getMaxBuffer() || flywheels > MAX_FLYWHEELS) {
-                return;
+            if (buffer < getMaxBuffer() && flywheels <= MAX_FLYWHEELS) {
+                // An honest consumer, like the inducer: the network carries
+                // the charge load as stress and the buffer banks a tick's
+                // worth of SU-seconds.
+                buffer = Math.min(getMaxBuffer(), buffer + intakePerTick());
+                setChanged();
+                level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
             }
-            // An honest consumer, like the inducer: the network carries the
-            // charge load as stress and the buffer banks a tick's worth.
-            buffer = Math.min(getMaxBuffer(), buffer + intakePerTick());
-            setChanged();
-            level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
             return;
         }
 
-        // Input stopped with charge in the tank: take over as the source.
-        if (buffer > 0 && chargeSpeed != 0) {
-            setDischarging(true);
+        if (isGenerating()) {
+            // Battery mode: the machines' stress drains SU-seconds per
+            // second, one twentieth of it each tick.
+            KineticNetwork network = getOrCreateNetwork();
+            double used = network == null ? 0 : Math.max(0, network.calculateStress());
+            if (used > 0) {
+                buffer = Math.max(0, buffer - used / 20.0);
+                setChanged();
+                level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
+                if (buffer <= 0) {
+                    reActivateSource = true;
+                }
+            }
         }
     }
 
-    private boolean inputSideSpinning() {
-        if (level == null) {
-            return false;
-        }
-        if (!(level.getBlockEntity(worldPosition.relative(getInputFace()))
-                instanceof KineticBlockEntity neighbour)) {
-            return false;
-        }
-        float conveyed = neighbour.getSpeed();
-        // A clutch or gearshift right at the input keeps spinning on its own
-        // source side even while it cuts us off; what matters is the speed
-        // it conveys through the face pointing at us. Without this, a
-        // clutch-stopped charger flips out of battery mode every other tick
-        // and the output side never keeps its rotation.
-        if (neighbour instanceof SplitShaftBlockEntity split) {
-            conveyed *= split.getRotationSpeedModifier(getInputFace().getOpposite());
-        }
-        return conveyed != 0;
+    /** True while the battery itself spins the network. */
+    public boolean isGenerating() {
+        return !externallyPowered && buffer > 0 && chargeSpeed != 0;
     }
 
-    private void setDischarging(boolean discharging) {
+    private void updateDischargingState() {
+        boolean discharging = isGenerating();
         BlockState state = getBlockState();
-        if (state.getValue(KineticChargerBlock.DISCHARGING) == discharging) {
-            return;
+        if (state.getValue(KineticChargerBlock.DISCHARGING) != discharging) {
+            level.setBlock(worldPosition,
+                    state.setValue(KineticChargerBlock.DISCHARGING, discharging),
+                    Block.UPDATE_ALL);
         }
-        level.setBlock(worldPosition, state.setValue(KineticChargerBlock.DISCHARGING, discharging),
-                Block.UPDATE_ALL);
-        // Re-propagate rotation with the new face connections, and let the
-        // generating base class re-apply (or drop) our source speed.
-        if (level.getBlockState(worldPosition).getBlock() instanceof KineticChargerBlock block) {
-            block.detachKinetics(level, worldPosition, true);
-        }
-        reActivateSource = true;
     }
 
     public boolean isDischargingState() {
@@ -276,14 +288,14 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
 
     @Override
     public float getGeneratedSpeed() {
-        return isDischargingState() && buffer > 0 ? chargeSpeed : 0;
+        return isGenerating() ? chargeSpeed : 0;
     }
 
     @Override
     public float calculateAddedStressCapacity() {
         // Stored per RPM; Create multiplies by the generated speed, so the
         // battery provides a flat DISCHARGE_CAPACITY SU while running.
-        float capacity = isDischargingState() && buffer > 0
+        float capacity = isGenerating()
                 ? DISCHARGE_CAPACITY / Math.max(1f, Math.abs(chargeSpeed))
                 : 0;
         this.lastCapacityProvided = capacity;
@@ -291,9 +303,9 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
     }
 
     // While filling, the charger applies its charge load as stress; as a
-    // source (discharging) or when full it applies none. Create stores
-    // stress as impact times speed, hence the division; the theoretical
-    // speed keeps the load booked while the network is overstressed.
+    // source it applies none. Create stores stress as impact times speed,
+    // hence the division; the theoretical speed keeps the load booked
+    // while the network is overstressed, so it cannot flap.
     @Override
     public float calculateStressApplied() {
         float impact = targetImpact();
@@ -303,7 +315,7 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
 
     private float targetImpact() {
         float speed = Math.abs(getTheoreticalSpeed());
-        if (isDischargingState() || speed < 0.01f) {
+        if (!externallyPowered || speed < 0.01f) {
             return 0;
         }
         // Eleven or more flywheels is more inertia than the charger can
@@ -330,25 +342,17 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         }
     }
 
-    public Direction getOutputFace() {
-        return getBlockState().getValue(HorizontalKineticBlock.HORIZONTAL_FACING);
-    }
-
-    public Direction getInputFace() {
-        return getOutputFace().getOpposite();
-    }
-
-    /** Discharging = battery mode with charge left in the buffer. */
+    /** Battery mode with charge left in the buffer. */
     public boolean isDischarging() {
-        return isDischargingState() && buffer > 0;
+        return isGenerating();
     }
 
-    /** SU a consumer on the output side may pull from this charger right now. */
+    /** SU-seconds a consumer may pull from this charger right now. */
     public double availableDischarge() {
-        return isDischarging() ? Math.min(buffer, MAX_RATE_PER_TICK) : 0;
+        return buffer > 0 ? Math.min(buffer, MAX_RATE_PER_TICK) : 0;
     }
 
-    /** Removes up to {@code amount} SU from the buffer, returns what was taken. */
+    /** Removes up to {@code amount} SU-seconds, returns what was taken. */
     public double drain(double amount) {
         double taken = Math.max(0, Math.min(amount, buffer));
         if (taken > 0) {
@@ -380,13 +384,13 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         setChanged();
     }
 
-    public void recountFlywheelsForTesting() {
-        this.flywheels = countFlywheels();
-    }
-
     public void setChargeSpeedForTesting(float speed) {
         this.chargeSpeed = speed;
         setChanged();
+    }
+
+    public void recountFlywheelsForTesting() {
+        this.flywheels = countFlywheels();
     }
 
     @Override
@@ -424,7 +428,8 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
                         flywheels, MAX_FLYWHEELS)
                         .withStyle(flywheels > MAX_FLYWHEELS ? ChatFormatting.RED : ChatFormatting.GRAY)));
 
-        String modeKey = isDischarging() ? "discharging" : (getSpeed() != 0 ? "charging" : "idle");
+        String modeKey = isGenerating() ? "discharging"
+                : (externallyPowered && getSpeed() != 0 && buffer < getMaxBuffer() ? "charging" : "idle");
         tooltip.add(Component.literal("    ").append(
                 Component.translatable("weatherinducer.tooltip.charger_mode",
                         Component.translatable("weatherinducer.charger_mode." + modeKey))

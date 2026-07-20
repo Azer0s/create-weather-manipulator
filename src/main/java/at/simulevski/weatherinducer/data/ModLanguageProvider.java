@@ -60,8 +60,8 @@ public class ModLanguageProvider extends LanguageProvider {
         add("weatherinducer.tooltip.provided", "Network provides: %s SU");
         add("weatherinducer.tooltip.locked", "Locked: the network provides too little SU");
         add("weatherinducer.tooltip.kinetic_charger", "Kinetic Charger");
-        add("weatherinducer.tooltip.buffer", "Buffer: %s / %s SU (%s%%)");
-        add("weatherinducer.tooltip.flywheels", "Flywheels: %s (up to %s add capacity)");
+        add("weatherinducer.tooltip.buffer", "Buffer: %s / %s SU-seconds (%s%%)");
+        add("weatherinducer.tooltip.flywheels", "Flywheels banked: %s (up to %s add capacity)");
         add("weatherinducer.tooltip.charger_mode", "Mode: %s");
         add("weatherinducer.charger_mode.charging", "Charging");
         add("weatherinducer.charger_mode.discharging", "Discharging");
@@ -90,14 +90,14 @@ public class ModLanguageProvider extends LanguageProvider {
                         + "signal 0 under clear skies, 7 in rain and 15 during a thunderstorm. It needs to see "
                         + "the sky; covered, it reads 0.");
         add("weatherinducer.info.kinetic_charger",
-                "The Kinetic Charger is a kinetic battery. While the shaft turns it charges like the Weather "
-                        + "Inducer does, loading the network with its buffer divided by its charge time (10 "
-                        + "seconds at the fastest; the slider locks while the buffer holds anything). Flywheels "
-                        + "attached on the input side set the capacity: 2,048 SU bare, about 104,858 more per "
-                        + "flywheel, up to ten of them. More than ten jams the charger and overstresses the "
-                        + "network. Stop the input and it takes over: it drives its output side at the speed it "
-                        + "charged with, providing 131,072 SU and draining the buffer by what the machines use. "
-                        + "It emits a redstone signal proportional to its fill level.");
+                "The Kinetic Charger is a kinetic battery with two sides: power flows in and out through the "
+                        + "front I/O face (the teal ring), and flywheels banked on the back set the capacity - "
+                        + "2,048 SU-seconds bare, about 104,858 per wheel, up to ten. More than ten jams it and "
+                        + "overstresses the network. It stores SU-seconds, like watt-hours: charging loads the "
+                        + "network with capacity divided by charge time (10 s at the fastest; the slider locks "
+                        + "while charged), and discharge drains the machines' stress per second. The flywheels "
+                        + "keep spinning as long as energy is stored, wheels may be added or removed while it "
+                        + "runs, and the buffer fill is emitted as a redstone signal.");
         add("weatherinducer.info.lightning_medium",
                 "A beacon and an end crystal encased in glass. Strike it with lightning (a Weather Inducer "
                         + "in lightning mode aims for you) and the block shatters into a Bottle o' Lightning, "
