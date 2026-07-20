@@ -1,6 +1,7 @@
 package at.simulevski.weatherinducer.registry;
 
 import at.simulevski.weatherinducer.WeatherInducerMod;
+import at.simulevski.weatherinducer.content.charger.ChargerLinkBlock;
 import at.simulevski.weatherinducer.content.charger.KineticChargerBlock;
 import at.simulevski.weatherinducer.content.gate.StressGateBlock;
 import at.simulevski.weatherinducer.content.inducer.WeatherInducerBlock;
@@ -43,7 +44,18 @@ public final class ModBlocks {
                     .mapColor(MapColor.PODZOL)
                     .strength(3.0f, 6.0f)
                     .sound(SoundType.NETHERITE_BLOCK)
+                    // The drum model is recessed; claiming full-cube occlusion
+                    // makes neighbours cull faces and the world shows through.
+                    .noOcclusion()
                     .requiresCorrectToolForDrops()));
+
+    public static final DeferredBlock<ChargerLinkBlock> CHARGER_LINK = BLOCKS.register(
+            "charger_link",
+            () -> new ChargerLinkBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.TERRACOTTA_YELLOW)
+                    .strength(1.0f)
+                    .sound(SoundType.NETHERITE_BLOCK)
+                    .noOcclusion()));
 
     public static final DeferredBlock<StressGateBlock> STRESS_GATE = BLOCKS.register(
             "stress_gate",

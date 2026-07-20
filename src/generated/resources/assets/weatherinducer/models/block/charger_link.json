@@ -1,0 +1,136 @@
+{
+  "elements": [
+    {
+      "faces": {
+        "down": {
+          "texture": "#panel",
+          "uv": [
+            0.0,
+            8.0,
+            8.0,
+            12.0
+          ]
+        },
+        "east": {
+          "texture": "#panel",
+          "uv": [
+            0.0,
+            8.0,
+            4.0,
+            12.0
+          ]
+        },
+        "north": {
+          "texture": "#panel",
+          "uv": [
+            0.0,
+            0.0,
+            8.0,
+            8.0
+          ]
+        },
+        "south": {
+          "texture": "#panel",
+          "uv": [
+            0.0,
+            0.0,
+            8.0,
+            8.0
+          ]
+        },
+        "up": {
+          "texture": "#panel",
+          "uv": [
+            0.0,
+            8.0,
+            8.0,
+            12.0
+          ]
+        },
+        "west": {
+          "texture": "#panel",
+          "uv": [
+            0.0,
+            8.0,
+            4.0,
+            12.0
+          ]
+        }
+      },
+      "from": [
+        4,
+        4,
+        12
+      ],
+      "to": [
+        12,
+        12,
+        16
+      ]
+    },
+    {
+      "faces": {
+        "down": {
+          "texture": "#panel",
+          "uv": [
+            9.0,
+            4.0,
+            12.0,
+            6.0
+          ]
+        },
+        "east": {
+          "texture": "#panel",
+          "uv": [
+            9.0,
+            4.0,
+            12.0,
+            6.0
+          ]
+        },
+        "north": {
+          "texture": "#panel",
+          "uv": [
+            9.0,
+            0.0,
+            12.0,
+            3.0
+          ]
+        },
+        "up": {
+          "texture": "#panel",
+          "uv": [
+            9.0,
+            4.0,
+            12.0,
+            6.0
+          ]
+        },
+        "west": {
+          "texture": "#panel",
+          "uv": [
+            9.0,
+            4.0,
+            12.0,
+            6.0
+          ]
+        }
+      },
+      "from": [
+        6.5,
+        6.5,
+        9.5
+      ],
+      "to": [
+        9.5,
+        9.5,
+        12
+      ]
+    }
+  ],
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "panel": "weatherinducer:block/charger_link",
+    "particle": "weatherinducer:block/charger_link"
+  }
+}

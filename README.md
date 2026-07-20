@@ -29,10 +29,16 @@ A [Create](https://github.com/Creators-of-Create/Create) addon for **Minecraft 1
 
 ### Kinetic Charger
 - **Two sides:** the front face (teal ring) is the I/O side, where power flows in and out; the back is the flywheel side, where the capacity bank hangs. Placed dropper-style, the I/O face points away from you. Both sides stay connected at all times.
-- **Flywheel bank:** capacity comes from flywheels connected behind the back face: 2,048 SU-seconds bare, about 104,858 per wheel, ten wheels tops. An eleventh wheel is more inertia than the charger can spin: it grinds the network to an overstressed halt until removed. Wheels can be added or removed while the charger runs; the capacity follows within half a second, and a shrunken bank spills any charge it can no longer hold.
+- **Flywheel bank:** capacity comes from flywheels connected behind the back face: 2,048 SU-seconds bare, about 104,858 per wheel, ten wheels tops. The bank is picky: nothing but flywheels may connect on that side, and nothing but more flywheels may hang off those, or the offending block pops right off as an item; so does an eleventh wheel. Wheels can be added or removed while the charger runs; the capacity follows within half a second, and a shrunken bank spills any charge it can no longer hold.
 - **Watt-hour storage:** the buffer holds SU-seconds, power times time. Charging loads the network with real stress (capacity divided by the charge time slider, 10 s at the fastest, slider locked while charged) and banks a tick's worth each tick; discharging drains the driven machines' stress per second, so a full ten-wheel bank runs a 1,024 SU load for about 1,021 seconds.
 - **Neutral drain:** holding charge is never free: 5 SU-seconds bleed away every second no matter what the charger is doing, so an idle bare charger empties in about seven minutes and even a full ten-wheel bank slowly winds down over a couple of days.
 - **Battery mode:** when no other source powers its network and the buffer holds energy, the charger becomes the source itself, driving the I/O side at the speed it charged with and providing 131,072 SU. The flywheels keep spinning the whole time; when the buffer runs dry, everything coasts to a stop.
+- **Taking turns:** several chargers on one kinetic network never fight over the shaft; exactly one (the lowest position with energy) generates, and when it runs dry the next in line takes over seamlessly.
+
+### Charger Link
+- **A panel on the battery:** bolts flat onto any face of a Kinetic Charger, display link style.
+- **Founding a network:** placing a link from a fresh item founds a new charger network. Right-click any placed link with more link items in hand to bind that stack; every link placed from a bound stack joins the same network.
+- **One big battery:** chargers wearing links of one network balance their buffers every second (weighted by their flywheel banks), so they fill, drain and read as a single store. Goggles on any link or member show the pooled numbers.
 - **Redstone output:** the block emits a signal of 0 to 15 proportional to the buffer fill; a comparator reads the same value, and goggles show the exact numbers, the wheel count and the current mode.
 - **Fill indicator:** the gauge on the drum fills with teal as the buffer charges.
 

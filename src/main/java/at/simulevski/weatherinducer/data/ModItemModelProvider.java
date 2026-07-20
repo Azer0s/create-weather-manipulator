@@ -23,6 +23,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent("weather_inducer", modLoc("block/weather_inducer_0"));
         withExistingParent("weather_sensor", modLoc("block/weather_sensor"));
         withExistingParent("kinetic_charger", modLoc("block/kinetic_charger_0"));
+        withExistingParent("charger_link", modLoc("block/charger_link"));
         withExistingParent("stress_gate", modLoc("block/stress_gate_locked"));
         withExistingParent("lightning_medium", modLoc("block/lightning_medium"));
 

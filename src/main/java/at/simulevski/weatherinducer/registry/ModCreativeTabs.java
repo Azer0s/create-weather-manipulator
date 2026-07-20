@@ -22,6 +22,7 @@ public final class ModCreativeTabs {
                     .displayItems((params, output) -> {
                         output.accept(ModItems.WEATHER_INDUCER.get());
                         output.accept(ModItems.KINETIC_CHARGER.get());
+                        output.accept(ModItems.CHARGER_LINK.get());
                         output.accept(ModItems.STRESS_GATE.get());
                         output.accept(ModItems.WEATHER_SENSOR.get());
                         output.accept(ModItems.LIGHTNING_MEDIUM.get());

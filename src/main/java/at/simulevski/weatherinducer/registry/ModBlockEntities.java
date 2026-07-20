@@ -1,6 +1,7 @@
 package at.simulevski.weatherinducer.registry;
 
 import at.simulevski.weatherinducer.WeatherInducerMod;
+import at.simulevski.weatherinducer.content.charger.ChargerLinkBlockEntity;
 import at.simulevski.weatherinducer.content.charger.KineticChargerBlockEntity;
 import at.simulevski.weatherinducer.content.gate.StressGateBlockEntity;
 import at.simulevski.weatherinducer.content.inducer.WeatherInducerBlockEntity;
@@ -49,6 +50,12 @@ public final class ModBlockEntities {
                     () -> BlockEntityType.Builder.of(
                             LightningMediumBlockEntity::new,
                             ModBlocks.LIGHTNING_MEDIUM.get()).build(null));
+
+    public static final Supplier<BlockEntityType<ChargerLinkBlockEntity>> CHARGER_LINK =
+            BLOCK_ENTITIES.register("charger_link",
+                    () -> BlockEntityType.Builder.of(
+                            ChargerLinkBlockEntity::new,
+                            ModBlocks.CHARGER_LINK.get()).build(null));
 
     public static final Supplier<BlockEntityType<StressGateBlockEntity>> STRESS_GATE =
             BLOCK_ENTITIES.register("stress_gate",

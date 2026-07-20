@@ -4,6 +4,7 @@ import at.simulevski.weatherinducer.content.inducer.ChargeTimeScrollBehaviour;
 import at.simulevski.weatherinducer.content.util.SideValueBoxTransform;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.content.kinetics.KineticNetwork;
+import com.simibubi.create.content.kinetics.RotationPropagator;
 import com.simibubi.create.content.kinetics.base.GeneratingKineticBlockEntity;
 import com.simibubi.create.content.kinetics.base.HorizontalKineticBlock;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
@@ -20,10 +21,12 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Battery logic for the Kinetic Charger.
@@ -93,6 +96,12 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
     /** True while some other source powers our network (cached each tick). */
     private boolean externallyPowered;
 
+    /** True while this charger won the right to generate (cached, synced). */
+    private boolean electedLeader = true;
+
+    /** The charger link network this block belongs to, if a link is attached. */
+    private UUID linkNetwork;
+
     public KineticChargerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
     }
@@ -131,9 +140,8 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
 
     /**
      * The SU-seconds this flywheel bank can hold: 2,048 bare, plus
-     * 104,857.6 per flywheel up to ten of them. More than ten does not
-     * extend it further; it jams the charger instead (see
-     * {@link #targetImpact}).
+     * 104,857.6 per flywheel up to ten of them. An eleventh wheel never
+     * survives: the bank walk pops it right off (see {@link #walkBank}).
      */
     public double getMaxBuffer() {
         return BASE_CAPACITY + Math.min(flywheels, MAX_FLYWHEELS) * FLYWHEEL_CAPACITY;
@@ -150,53 +158,110 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
     }
 
     /**
-     * Counts flywheels physically connected on the flywheel side: a
-     * bounded flood over kinetic blocks starting behind the back face, so
-     * a bank of wheels in any arrangement counts, but nothing across the
-     * charger.
+     * Walks the bank and keeps it honest. The walk follows Create's real
+     * rotation connections starting behind the flywheel face, so only
+     * blocks that would actually spin with the bank count. The flywheel
+     * side tolerates nothing but flywheels: any other kinetic block that
+     * connects to the bank pops right off as an item, and so does every
+     * wheel past the tenth. Returns the surviving wheel count.
      */
-    private int countFlywheels() {
+    private int walkBank() {
         if (level == null) {
             return 0;
         }
+        if (!(level.getBlockEntity(worldPosition.relative(getFlywheelFace()))
+                instanceof KineticBlockEntity first)) {
+            return 0;
+        }
+        if (!RotationPropagator.isConnected(this, first)
+                && !RotationPropagator.isConnected(first, this)) {
+            return 0;
+        }
         Set<BlockPos> visited = new HashSet<>();
-        Deque<BlockPos> queue = new ArrayDeque<>();
         visited.add(worldPosition);
-        queue.add(worldPosition.relative(getFlywheelFace()));
-        int count = 0;
+        Deque<KineticBlockEntity> queue = new ArrayDeque<>();
+        queue.add(first);
+        visited.add(first.getBlockPos());
+        List<BlockPos> toPop = new ArrayList<>();
+        int wheels = 0;
         while (!queue.isEmpty() && visited.size() < 64) {
-            BlockPos pos = queue.poll();
-            if (!visited.add(pos)) {
+            KineticBlockEntity member = queue.poll();
+            if (!(member instanceof FlywheelBlockEntity)) {
+                // The flywheel side takes nothing but flywheels.
+                toPop.add(member.getBlockPos());
                 continue;
             }
-            if (!(level.getBlockEntity(pos) instanceof KineticBlockEntity member)) {
+            wheels++;
+            if (wheels > MAX_FLYWHEELS) {
+                // The eleventh wheel is one too many; off it comes.
+                toPop.add(member.getBlockPos());
+                wheels--;
                 continue;
             }
-            if (member instanceof FlywheelBlockEntity) {
-                count++;
-            }
-            for (Direction d : Direction.values()) {
-                BlockPos next = pos.relative(d);
-                if (!visited.contains(next)) {
-                    queue.add(next);
+            for (BlockPos offset : BlockPos.betweenClosed(-1, -1, -1, 1, 1, 1)) {
+                BlockPos next = member.getBlockPos().offset(offset);
+                if (visited.contains(next)) {
+                    continue;
+                }
+                if (!(level.getBlockEntity(next) instanceof KineticBlockEntity candidate)) {
+                    continue;
+                }
+                if (RotationPropagator.isConnected(member, candidate)
+                        || RotationPropagator.isConnected(candidate, member)) {
+                    visited.add(next.immutable());
+                    queue.add(candidate);
                 }
             }
         }
-        return count;
+        for (BlockPos pos : toPop) {
+            level.destroyBlock(pos, true);
+        }
+        return wheels;
     }
 
-    /** True when any source other than this charger powers the network. */
+    /**
+     * True when a real source (not a battery) powers the network. Other
+     * chargers do not count: batteries never charge from batteries, they
+     * take turns instead (see {@link #findElectedLeader}).
+     */
     private boolean findExternalSource() {
         KineticNetwork network = getOrCreateNetwork();
         if (network == null) {
             return false;
         }
         for (KineticBlockEntity source : network.sources.keySet()) {
-            if (source != this) {
+            if (source != this && !(source instanceof KineticChargerBlockEntity)) {
                 return true;
             }
         }
         return false;
+    }
+
+    /**
+     * Exactly one charger per kinetic network may generate: the one at the
+     * lowest position that still holds energy. The rest wait their turn,
+     * which is what keeps two batteries on one shaft from fighting over
+     * the speed and shearing it apart. When the leader runs dry, the next
+     * in line takes over seamlessly.
+     */
+    private boolean findElectedLeader() {
+        if (buffer <= 0) {
+            return false;
+        }
+        KineticNetwork network = getOrCreateNetwork();
+        if (network == null) {
+            return true;
+        }
+        long self = worldPosition.asLong();
+        for (KineticBlockEntity member : network.members.keySet()) {
+            if (member != this
+                    && member instanceof KineticChargerBlockEntity other
+                    && other.getBuffer() > 0
+                    && other.getBlockPos().asLong() < self) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
@@ -221,7 +286,7 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         }
 
         if (level.getGameTime() % 10 == 0 || flywheels == 0) {
-            int counted = countFlywheels();
+            int counted = walkBank();
             if (counted != flywheels) {
                 flywheels = counted;
                 sendData();
@@ -230,6 +295,13 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
             if (buffer > getMaxBuffer()) {
                 buffer = getMaxBuffer();
                 setChanged();
+            }
+        }
+        if (linkNetwork != null) {
+            ChargerNetworks.register(linkNetwork, this);
+            if (level.getGameTime() % 20 == 0
+                    && ChargerNetworks.runsGroupWork(linkNetwork, this)) {
+                ChargerNetworks.balance(linkNetwork);
             }
         }
 
@@ -246,10 +318,12 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         }
 
         boolean external = findExternalSource();
-        if (external != externallyPowered) {
+        boolean elected = findElectedLeader();
+        if (external != externallyPowered || elected != electedLeader) {
             externallyPowered = external;
-            // Our generated speed just turned on or off with it, and the
-            // goggles read this flag on the client, so ship it over.
+            electedLeader = elected;
+            // Our generated speed just turned on or off with these, and the
+            // goggles read the flags on the client, so ship them over.
             reActivateSource = true;
             sendData();
         }
@@ -262,7 +336,7 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
                 chargeSpeed = getSpeed();
                 setChanged();
             }
-            if (buffer < getMaxBuffer() && flywheels <= MAX_FLYWHEELS) {
+            if (buffer < getMaxBuffer()) {
                 // An honest consumer, like the inducer: the network carries
                 // the charge load as stress and the buffer banks a tick's
                 // worth of SU-seconds.
@@ -291,7 +365,7 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
 
     /** True while the battery itself spins the network. */
     public boolean isGenerating() {
-        return !externallyPowered && buffer > 0 && chargeSpeed != 0;
+        return !externallyPowered && electedLeader && buffer > 0 && chargeSpeed != 0;
     }
 
     private void updateDischargingState() {
@@ -339,11 +413,6 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         float speed = Math.abs(getTheoreticalSpeed());
         if (!externallyPowered || speed < 0.01f) {
             return 0;
-        }
-        // Eleven or more flywheels is more inertia than the charger can
-        // spin up: it grinds the whole network to an overstressed halt.
-        if (flywheels > MAX_FLYWHEELS) {
-            return (float) (1_073_741_824.0 / speed); // 2^30
         }
         if (buffer >= getMaxBuffer()) {
             return 0;
@@ -399,6 +468,34 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         return (int) Math.ceil(15.0 * Math.min(1.0, buffer / getMaxBuffer()));
     }
 
+    /** Wired up by an attached Charger Link; null when standalone. */
+    public void setLinkNetwork(UUID network) {
+        if (linkNetwork != null && !linkNetwork.equals(network)) {
+            ChargerNetworks.unregister(linkNetwork, this);
+        }
+        linkNetwork = network;
+    }
+
+    public UUID getLinkNetwork() {
+        return linkNetwork;
+    }
+
+    /** Balancing writes bypass the comparator spam; POWER follows next tick. */
+    void setBufferBalanced(double value) {
+        if (value != buffer) {
+            buffer = value;
+            setChanged();
+        }
+    }
+
+    @Override
+    public void invalidate() {
+        if (linkNetwork != null) {
+            ChargerNetworks.unregister(linkNetwork, this);
+        }
+        super.invalidate();
+    }
+
     // --- Test hooks (used by the game tests; harmless in normal play) --------
 
     public void setBufferForTesting(double value) {
@@ -412,7 +509,7 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
     }
 
     public void recountFlywheelsForTesting() {
-        this.flywheels = countFlywheels();
+        this.flywheels = walkBank();
     }
 
     @Override
@@ -422,6 +519,7 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         compound.putFloat("ChargeSpeed", chargeSpeed);
         compound.putInt("Flywheels", flywheels);
         compound.putBoolean("ExternallyPowered", externallyPowered);
+        compound.putBoolean("ElectedLeader", electedLeader);
     }
 
     @Override
@@ -431,6 +529,7 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         chargeSpeed = compound.getFloat("ChargeSpeed");
         flywheels = compound.getInt("Flywheels");
         externallyPowered = compound.getBoolean("ExternallyPowered");
+        electedLeader = compound.getBoolean("ElectedLeader");
     }
 
     // @Override intentionally present: if Create ever changes this signature,
@@ -459,7 +558,15 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         tooltip.add(Component.literal("    ").append(
                 Component.translatable("weatherinducer.tooltip.flywheels",
                         flywheels, MAX_FLYWHEELS)
-                        .withStyle(flywheels > MAX_FLYWHEELS ? ChatFormatting.RED : ChatFormatting.GRAY)));
+                        .withStyle(ChatFormatting.GRAY)));
+        if (linkNetwork != null) {
+            tooltip.add(Component.literal("    ").append(
+                    Component.translatable("weatherinducer.tooltip.link_network",
+                            String.format("%,.0f", ChargerNetworks.totalEnergy(linkNetwork)),
+                            String.format("%,.0f", ChargerNetworks.totalCapacity(linkNetwork)),
+                            ChargerNetworks.members(linkNetwork).size())
+                            .withStyle(ChatFormatting.AQUA)));
+        }
 
         String modeKey = isGenerating() ? "discharging"
                 : (externallyPowered && getSpeed() != 0 && buffer < getMaxBuffer() ? "charging" : "idle");

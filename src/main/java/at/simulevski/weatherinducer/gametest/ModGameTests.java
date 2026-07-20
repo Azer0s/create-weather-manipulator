@@ -1,6 +1,8 @@
 package at.simulevski.weatherinducer.gametest;
 
 import at.simulevski.weatherinducer.WeatherInducerMod;
+import at.simulevski.weatherinducer.content.charger.ChargerLinkBlock;
+import at.simulevski.weatherinducer.content.charger.ChargerLinkBlockEntity;
 import at.simulevski.weatherinducer.content.charger.KineticChargerBlock;
 import at.simulevski.weatherinducer.content.charger.KineticChargerBlockEntity;
 import at.simulevski.weatherinducer.content.gate.StressGateBlock;
@@ -184,23 +186,20 @@ public class ModGameTests {
      */
     @GameTest(template = "empty", timeoutTicks = 200)
     public static void flywheelsSetChargerCapacity(GameTestHelper helper) {
-        BlockPos motorPos = new BlockPos(1, 2, 3);
+        BlockPos hotWheel = new BlockPos(1, 2, 3);
         BlockPos wheelA = new BlockPos(2, 2, 3);
         BlockPos wheelB = new BlockPos(3, 2, 3);
         BlockPos chargerPos = new BlockPos(4, 2, 3);
         helper.startSequence()
                 .thenExecute(() -> {
                     placeFloor(helper);
-                    Block motor = BuiltInRegistries.BLOCK
-                            .get(ResourceLocation.parse("create:creative_motor"));
                     Block flywheel = BuiltInRegistries.BLOCK
                             .get(ResourceLocation.parse("create:flywheel"));
-                    helper.setBlock(motorPos, motor.defaultBlockState()
-                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
                     helper.setBlock(wheelA, flywheel.defaultBlockState()
                             .setValue(RotatedPillarKineticBlock.AXIS, Direction.Axis.X));
                     helper.setBlock(wheelB, flywheel.defaultBlockState()
                             .setValue(RotatedPillarKineticBlock.AXIS, Direction.Axis.X));
+                    // Facing east: the bank hangs west, nothing else on it.
                     helper.setBlock(chargerPos, ModBlocks.KINETIC_CHARGER.get().defaultBlockState()
                             .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.EAST));
                 })
@@ -214,10 +213,10 @@ public class ModGameTests {
                             + 2 * KineticChargerBlockEntity.FLYWHEEL_CAPACITY;
                     helper.assertTrue(Math.abs(charger.getMaxBuffer() - expected) < 1,
                             "Capacity should follow the flywheel bank, got " + charger.getMaxBuffer());
-                    // Hot-attach a third wheel while the charger runs.
+                    // Hot-attach a third wheel extending the bank's line.
                     Block flywheel = BuiltInRegistries.BLOCK
                             .get(ResourceLocation.parse("create:flywheel"));
-                    helper.setBlock(new BlockPos(2, 3, 3), flywheel.defaultBlockState()
+                    helper.setBlock(hotWheel, flywheel.defaultBlockState()
                             .setValue(RotatedPillarKineticBlock.AXIS, Direction.Axis.X));
                 })
                 .thenIdle(15)
@@ -228,6 +227,139 @@ public class ModGameTests {
                     helper.assertTrue(Math.abs(charger.getMaxBuffer() - expected) < 1,
                             "A wheel attached at runtime should grow the bank, got "
                                     + charger.getMaxBuffer());
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * The flywheel side takes nothing but flywheels: a shaft extending the
+     * bank must pop off as an item within half a second of the bank walk
+     * noticing it, leaving the wheel count untouched.
+     */
+    @GameTest(template = "empty", timeoutTicks = 200)
+    public static void bankRejectsForeignBlocks(GameTestHelper helper) {
+        BlockPos shaftPos = new BlockPos(1, 2, 3);
+        BlockPos wheelPos = new BlockPos(2, 2, 3);
+        BlockPos chargerPos = new BlockPos(3, 2, 3);
+        helper.startSequence()
+                .thenExecute(() -> {
+                    placeFloor(helper);
+                    Block flywheel = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:flywheel"));
+                    Block shaft = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:shaft"));
+                    helper.setBlock(chargerPos, ModBlocks.KINETIC_CHARGER.get().defaultBlockState()
+                            .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.EAST));
+                    helper.setBlock(wheelPos, flywheel.defaultBlockState()
+                            .setValue(RotatedPillarKineticBlock.AXIS, Direction.Axis.X));
+                    helper.setBlock(shaftPos, shaft.defaultBlockState()
+                            .setValue(RotatedPillarKineticBlock.AXIS, Direction.Axis.X));
+                })
+                .thenWaitUntil(() -> {
+                    helper.assertBlock(shaftPos, block -> block == Blocks.AIR,
+                            () -> "A shaft on the flywheel side must pop off");
+                })
+                .thenExecute(() -> {
+                    KineticChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
+                    charger.recountFlywheelsForTesting();
+                    helper.assertTrue(charger.getFlywheels() == 1,
+                            "The wheel itself should survive the purge");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * Several chargers on one kinetic network take turns instead of
+     * fighting: exactly one generates at a time (the lowest position with
+     * energy), so nothing oscillates and no shaft shears. Both chargers
+     * point their I/O faces at the shared middle shaft.
+     */
+    @GameTest(template = "empty", timeoutTicks = 300)
+    public static void twoChargersTakeTurns(GameTestHelper helper) {
+        BlockPos chargerA = new BlockPos(2, 2, 3);
+        BlockPos shaftPos = new BlockPos(3, 2, 3);
+        BlockPos chargerB = new BlockPos(4, 2, 3);
+        helper.startSequence()
+                .thenExecute(() -> {
+                    placeFloor(helper);
+                    Block shaft = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:shaft"));
+                    helper.setBlock(chargerA, ModBlocks.KINETIC_CHARGER.get().defaultBlockState()
+                            .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.EAST));
+                    helper.setBlock(shaftPos, shaft.defaultBlockState()
+                            .setValue(RotatedPillarKineticBlock.AXIS, Direction.Axis.X));
+                    helper.setBlock(chargerB, ModBlocks.KINETIC_CHARGER.get().defaultBlockState()
+                            .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.WEST));
+                    KineticChargerBlockEntity a = helper.getBlockEntity(chargerA);
+                    KineticChargerBlockEntity b = helper.getBlockEntity(chargerB);
+                    a.setBufferForTesting(600);
+                    a.setChargeSpeedForTesting(16);
+                    b.setBufferForTesting(600);
+                    b.setChargeSpeedForTesting(16);
+                })
+                .thenIdle(20)
+                .thenExecute(() -> {
+                    KineticChargerBlockEntity a = helper.getBlockEntity(chargerA);
+                    KineticChargerBlockEntity b = helper.getBlockEntity(chargerB);
+                    KineticBlockEntity shaft = helper.getBlockEntity(shaftPos);
+                    helper.assertTrue(a.isGenerating() && !b.isGenerating(),
+                            "Only the lowest charger with energy may generate");
+                    helper.assertTrue(shaft.getSpeed() != 0,
+                            "The shared shaft should spin off the leading battery");
+                })
+                .thenIdle(40)
+                .thenExecute(() -> {
+                    // Still exactly one leader, still spinning: no oscillation.
+                    KineticChargerBlockEntity a = helper.getBlockEntity(chargerA);
+                    KineticChargerBlockEntity b = helper.getBlockEntity(chargerB);
+                    KineticBlockEntity shaft = helper.getBlockEntity(shaftPos);
+                    helper.assertTrue(a.isGenerating() ^ b.isGenerating(),
+                            "Exactly one battery generates at a time");
+                    helper.assertTrue(shaft.getSpeed() != 0,
+                            "The shared shaft must keep spinning");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * Charger Links pool their hosts: two linked chargers balance their
+     * buffers within a second, capacity weighted, so the group reads as a
+     * single battery.
+     */
+    @GameTest(template = "empty", timeoutTicks = 200)
+    public static void linkedChargersBalanceBuffers(GameTestHelper helper) {
+        BlockPos chargerA = new BlockPos(2, 2, 3);
+        BlockPos chargerB = new BlockPos(4, 2, 3);
+        BlockPos linkA = chargerA.above();
+        BlockPos linkB = chargerB.above();
+        helper.startSequence()
+                .thenExecute(() -> {
+                    placeFloor(helper);
+                    helper.setBlock(chargerA, ModBlocks.KINETIC_CHARGER.get().defaultBlockState()
+                            .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.EAST));
+                    helper.setBlock(chargerB, ModBlocks.KINETIC_CHARGER.get().defaultBlockState()
+                            .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.EAST));
+                    helper.setBlock(linkA, ModBlocks.CHARGER_LINK.get().defaultBlockState()
+                            .setValue(ChargerLinkBlock.FACING, Direction.UP));
+                    helper.setBlock(linkB, ModBlocks.CHARGER_LINK.get().defaultBlockState()
+                            .setValue(ChargerLinkBlock.FACING, Direction.UP));
+                    ChargerLinkBlockEntity a = helper.getBlockEntity(linkA);
+                    ChargerLinkBlockEntity b = helper.getBlockEntity(linkB);
+                    java.util.UUID network = java.util.UUID.randomUUID();
+                    a.setNetwork(network);
+                    b.setNetwork(network);
+                    KineticChargerBlockEntity host = helper.getBlockEntity(chargerA);
+                    host.setBufferForTesting(1600);
+                })
+                .thenIdle(45)
+                .thenExecute(() -> {
+                    KineticChargerBlockEntity a = helper.getBlockEntity(chargerA);
+                    KineticChargerBlockEntity b = helper.getBlockEntity(chargerB);
+                    helper.assertTrue(b.getBuffer() > 400,
+                            "The empty member should receive a share, has " + b.getBuffer());
+                    helper.assertTrue(Math.abs(a.getBuffer() - b.getBuffer()) < 100,
+                            "Linked buffers should even out, got " + a.getBuffer()
+                                    + " vs " + b.getBuffer());
                 })
                 .thenSucceed();
     }
@@ -321,8 +453,8 @@ public class ModGameTests {
     @GameTest(template = "empty", timeoutTicks = 300)
     public static void chargerDrivesOutputFromBuffer(GameTestHelper helper) {
         BlockPos motorPos = new BlockPos(2, 2, 3);
-        BlockPos chargerPos = new BlockPos(3, 2, 3);
-        BlockPos fanPos = new BlockPos(4, 2, 3);
+        BlockPos fanPos = new BlockPos(3, 2, 3);
+        BlockPos chargerPos = new BlockPos(4, 2, 3);
         double[] bufferBefore = new double[1];
         helper.startSequence()
                 .thenExecute(() -> {
@@ -333,11 +465,12 @@ public class ModGameTests {
                             .get(ResourceLocation.parse("create:encased_fan"));
                     helper.setBlock(motorPos, motor.defaultBlockState()
                             .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
-                    // Output face east, towards the fan; the motor feeds the back.
-                    helper.setBlock(chargerPos, ModBlocks.KINETIC_CHARGER.get().defaultBlockState()
-                            .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.EAST));
                     helper.setBlock(fanPos, fan.defaultBlockState()
                             .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
+                    // I/O face west, towards fan and motor; the flywheel side
+                    // (east) stays empty, or the bank walk would pop them.
+                    helper.setBlock(chargerPos, ModBlocks.KINETIC_CHARGER.get().defaultBlockState()
+                            .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.WEST));
                 })
                 .thenWaitUntil(() -> {
                     KineticBlockEntity fanBe = helper.getBlockEntity(fanPos);
@@ -380,8 +513,8 @@ public class ModGameTests {
     public static void chargerDischargesBehindPoweredClutch(GameTestHelper helper) {
         BlockPos motorPos = new BlockPos(1, 2, 3);
         BlockPos clutchPos = new BlockPos(2, 2, 3);
-        BlockPos chargerPos = new BlockPos(3, 2, 3);
-        BlockPos fanPos = new BlockPos(4, 2, 3);
+        BlockPos fanPos = new BlockPos(3, 2, 3);
+        BlockPos chargerPos = new BlockPos(4, 2, 3);
         helper.startSequence()
                 .thenExecute(() -> {
                     placeFloor(helper);
@@ -395,10 +528,11 @@ public class ModGameTests {
                             .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
                     helper.setBlock(clutchPos, clutch.defaultBlockState()
                             .setValue(RotatedPillarKineticBlock.AXIS, Direction.Axis.X));
-                    helper.setBlock(chargerPos, ModBlocks.KINETIC_CHARGER.get().defaultBlockState()
-                            .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.EAST));
                     helper.setBlock(fanPos, fan.defaultBlockState()
                             .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
+                    // I/O face west, towards the whole line; flywheel side empty.
+                    helper.setBlock(chargerPos, ModBlocks.KINETIC_CHARGER.get().defaultBlockState()
+                            .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.WEST));
                 })
                 .thenWaitUntil(() -> {
                     KineticBlockEntity fanBe = helper.getBlockEntity(fanPos);

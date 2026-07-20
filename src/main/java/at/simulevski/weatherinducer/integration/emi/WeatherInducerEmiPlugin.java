@@ -38,6 +38,11 @@ public class WeatherInducerEmiPlugin implements EmiPlugin {
                 WeatherInducerMod.asResource("info/kinetic_charger")));
 
         registry.addRecipe(new EmiInfoRecipe(
+                List.<EmiIngredient>of(EmiStack.of(ModItems.CHARGER_LINK.get())),
+                List.of(Component.translatable("weatherinducer.info.charger_link")),
+                WeatherInducerMod.asResource("info/charger_link")));
+
+        registry.addRecipe(new EmiInfoRecipe(
                 List.<EmiIngredient>of(EmiStack.of(ModItems.STRESS_GATE.get())),
                 List.of(Component.translatable("weatherinducer.info.stress_gate")),
                 WeatherInducerMod.asResource("info/stress_gate")));

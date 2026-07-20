@@ -29,6 +29,9 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> KINETIC_CHARGER = ITEMS.registerSimpleBlockItem(
             "kinetic_charger", ModBlocks.KINETIC_CHARGER, new Item.Properties());
 
+    public static final DeferredItem<BlockItem> CHARGER_LINK = ITEMS.registerSimpleBlockItem(
+            "charger_link", ModBlocks.CHARGER_LINK, new Item.Properties());
+
     public static final DeferredItem<BlockItem> STRESS_GATE = ITEMS.registerSimpleBlockItem(
             "stress_gate", ModBlocks.STRESS_GATE, new Item.Properties());
 

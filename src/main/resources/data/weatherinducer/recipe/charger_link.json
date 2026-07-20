@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "pattern": [
+    "T",
+    "B",
+    "C"
+  ],
+  "key": {
+    "T": {
+      "item": "create:electron_tube"
+    },
+    "B": {
+      "item": "create:brass_sheet"
+    },
+    "C": {
+      "item": "minecraft:copper_ingot"
+    }
+  },
+  "result": {
+    "id": "weatherinducer:charger_link",
+    "count": 2
+  }
+}

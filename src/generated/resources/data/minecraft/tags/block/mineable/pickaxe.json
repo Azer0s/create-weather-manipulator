@@ -1,6 +1,7 @@
 {
   "values": [
     "weatherinducer:weather_inducer",
+    "weatherinducer:charger_link",
     "weatherinducer:kinetic_charger",
     "weatherinducer:stress_gate"
   ]

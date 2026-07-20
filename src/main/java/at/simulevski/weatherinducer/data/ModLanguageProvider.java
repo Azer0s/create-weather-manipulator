@@ -23,6 +23,7 @@ public class ModLanguageProvider extends LanguageProvider {
         add(ModBlocks.WEATHER_INDUCER.get(), "Weather Inducer");
         add(ModBlocks.WEATHER_SENSOR.get(), "Weather Sensor");
         add(ModBlocks.KINETIC_CHARGER.get(), "Kinetic Charger");
+        add(ModBlocks.CHARGER_LINK.get(), "Charger Link");
         add(ModBlocks.STRESS_GATE.get(), "Stress Gate");
         add(ModBlocks.LIGHTNING_MEDIUM.get(), "Lightning Medium");
 
@@ -62,6 +63,9 @@ public class ModLanguageProvider extends LanguageProvider {
         add("weatherinducer.tooltip.kinetic_charger", "Kinetic Charger");
         add("weatherinducer.tooltip.buffer", "Buffer: %s / %s SU-seconds (%s%%)");
         add("weatherinducer.tooltip.flywheels", "Flywheels banked: %s (up to %s add capacity)");
+        add("weatherinducer.tooltip.charger_link", "Charger Link");
+        add("weatherinducer.tooltip.link_network", "Network: %s / %s SU-seconds (%s chargers)");
+        add("weatherinducer.message.link_bound", "Link items bound to this charger network");
         add("weatherinducer.tooltip.charger_mode", "Mode: %s");
         add("weatherinducer.charger_mode.charging", "Charging");
         add("weatherinducer.charger_mode.discharging", "Discharging");
@@ -99,6 +103,12 @@ public class ModLanguageProvider extends LanguageProvider {
                         + "all bleeds a neutral 5 SU-seconds per second. The flywheels "
                         + "keep spinning as long as energy is stored, wheels may be added or removed while it "
                         + "runs, and the buffer fill is emitted as a redstone signal.");
+        add("weatherinducer.info.charger_link",
+                "The Charger Link bolts onto a Kinetic Charger, display link style. Placing a fresh link "
+                        + "founds a new charger network; right-click a placed link with more link items to bind "
+                        + "them, and every link placed from a bound stack joins the same network. Linked "
+                        + "chargers balance their buffers and behave like one big battery, and goggles on any "
+                        + "link show the pooled numbers.");
         add("weatherinducer.info.lightning_medium",
                 "A beacon and an end crystal encased in glass. Strike it with lightning (a Weather Inducer "
                         + "in lightning mode aims for you) and the block shatters into a Bottle o' Lightning, "

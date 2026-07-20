@@ -69,7 +69,7 @@ public final class ModPonderScenes {
         scene.idle(100);
 
         scene.overlay().showText(100)
-                .text("Flywheels banked on its back set the capacity: 2,048 SU-seconds bare, about 104,858 more per wheel, up to ten. Any more jams the charger")
+                .text("Flywheels banked on its back set the capacity: 2,048 SU-seconds bare, about 104,858 more per wheel, up to ten. The flywheel side takes nothing else, and an eleventh wheel pops right off")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(charger));
         scene.idle(110);

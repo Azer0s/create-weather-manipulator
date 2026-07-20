@@ -55,6 +55,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         registerSuCharger();
         registerStressGate();
         registerLightningMedium();
+        registerChargerLink();
     }
 
     // ------------------------------------------------------------------
@@ -427,6 +428,37 @@ public class ModBlockStateProvider extends BlockStateProvider {
             ModelFile model = state.getValue(StressGateBlock.LOCKED) ? locked : open;
             return ConfiguredModel.builder().modelFile(model).rotationX(x).rotationY(y).build();
         });
+    }
+
+    /**
+     * The Charger Link: a small brass panel with a teal gem, bolted flat
+     * onto a charger face, display-link style. Built facing north (panel
+     * hugging the south edge, antenna poking north); directionalBlock
+     * rotates it onto all six faces.
+     */
+    private void registerChargerLink() {
+        BlockModelBuilder link = models().getBuilder("charger_link")
+                .texture("panel", modLoc("block/charger_link"))
+                .texture("particle", modLoc("block/charger_link"))
+                .renderType("cutout");
+        link.element()
+                .from(4, 4, 12).to(12, 12, 16)
+                .face(Direction.NORTH).texture("#panel").uvs(0, 0, 8, 8).end()
+                .face(Direction.SOUTH).texture("#panel").uvs(0, 0, 8, 8).end()
+                .face(Direction.UP).texture("#panel").uvs(0, 8, 8, 12).end()
+                .face(Direction.DOWN).texture("#panel").uvs(0, 8, 8, 12).end()
+                .face(Direction.EAST).texture("#panel").uvs(0, 8, 4, 12).end()
+                .face(Direction.WEST).texture("#panel").uvs(0, 8, 4, 12).end()
+                .end();
+        link.element()
+                .from(6.5f, 6.5f, 9.5f).to(9.5f, 9.5f, 12)
+                .face(Direction.NORTH).texture("#panel").uvs(9, 0, 12, 3).end()
+                .face(Direction.UP).texture("#panel").uvs(9, 4, 12, 6).end()
+                .face(Direction.DOWN).texture("#panel").uvs(9, 4, 12, 6).end()
+                .face(Direction.EAST).texture("#panel").uvs(9, 4, 12, 6).end()
+                .face(Direction.WEST).texture("#panel").uvs(9, 4, 12, 6).end()
+                .end();
+        directionalBlock(ModBlocks.CHARGER_LINK.get(), link);
     }
 
     /** The Lightning Medium: beacon and end crystal encased in glass. */
