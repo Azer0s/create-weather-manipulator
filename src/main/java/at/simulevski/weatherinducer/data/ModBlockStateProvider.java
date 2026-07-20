@@ -375,14 +375,16 @@ public class ModBlockStateProvider extends BlockStateProvider {
         for (int lvl = 0; lvl < CHARGE_LEVELS; lvl++) {
             byLevel[lvl] = chargerModel(lvl);
         }
-        getVariantBuilder(ModBlocks.SU_CHARGER.get()).forAllStates(state ->
+        // DISCHARGING only changes behaviour (battery mode), not the model.
+        getVariantBuilder(ModBlocks.SU_CHARGER.get()).forAllStatesExcept(state ->
                 // ceil-map 0..15 onto 0..5 so any non-empty buffer shows a pip
                 ConfiguredModel.builder()
                         .modelFile(byLevel[(state.getValue(SUChargerBlock.POWER)
                                 * (CHARGE_LEVELS - 1) + 14) / 15])
                         .rotationY(((int) state.getValue(SUChargerBlock.HORIZONTAL_FACING)
                                 .toYRot() + 180) % 360)
-                        .build());
+                        .build(),
+                SUChargerBlock.DISCHARGING);
     }
 
     private BlockModelBuilder chargerModel(int fillLevel) {

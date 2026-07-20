@@ -37,17 +37,95 @@ public final class SUNetwork {
     }
 
     /**
+     * The total SU the network of {@code be} provides right now. The SU
+     * Resistor's breaker reads this to decide when a recorded break demand
+     * is covered again; capacity is source-side only, so the reading works
+     * even while the breaker holds the downstream detached.
+     */
+    public static double providedSU(KineticBlockEntity be) {
+        KineticNetwork network = be.getOrCreateNetwork();
+        return network == null ? 0 : Math.max(0, network.calculateCapacity());
+    }
+
+    /**
      * The network's spare SU right now: total provided capacity minus the
      * stress its machines currently use. This is what the Weather Inducer
      * and the SU Charger charge from; a stopped or overstressed network has
      * nothing to spare.
+     *
+     * <p>Capacity contributed by a discharging SU Charger does not count.
+     * The charger spins the shafts it feeds, but its stored SU is only
+     * obtainable by draining the buffer ({@link #drawFromChargers});
+     * counting its capacity as spare would let consumers charge for free.
      */
     public static double remainingSU(KineticBlockEntity be) {
         KineticNetwork network = be.getOrCreateNetwork();
         if (network == null) {
             return 0;
         }
-        return Math.max(0, network.calculateCapacity() - network.calculateStress());
+        // calculateCapacity first: it also prunes stale source entries.
+        double capacity = network.calculateCapacity();
+        for (KineticBlockEntity source : network.sources.keySet()) {
+            if (source instanceof SUChargerBlockEntity) {
+                capacity -= network.getActualCapacityOf(source);
+            }
+        }
+        return Math.max(0, capacity - network.calculateStress());
+    }
+
+    /**
+     * The per-tick SU draw cap the SU Resistors around {@code consumer}
+     * impose: when every reachable generator sits behind a resistor, the
+     * consumer may pull at most the sum of their limits per tick, and a
+     * tripped resistor passes nothing. Unlimited when no resistor is
+     * nearby, or when some generator is reachable without crossing one.
+     * The walk is physical and bounded like the others; chargers end it
+     * (SU never crosses a charger).
+     */
+    public static double resistorIntakeCap(KineticBlockEntity consumer) {
+        Level level = consumer.getLevel();
+        if (level == null) {
+            return 0;
+        }
+        Set<BlockPos> visited = new HashSet<>();
+        Deque<BlockPos> queue = new ArrayDeque<>();
+        visited.add(consumer.getBlockPos());
+        for (Direction d : Direction.values()) {
+            queue.add(consumer.getBlockPos().relative(d));
+        }
+
+        boolean sawResistor = false;
+        double cap = 0;
+        while (!queue.isEmpty() && visited.size() < MAX_WALK) {
+            BlockPos pos = queue.poll();
+            if (!visited.add(pos)) {
+                continue;
+            }
+            if (!(level.getBlockEntity(pos) instanceof KineticBlockEntity member)) {
+                continue;
+            }
+            if (member instanceof SUChargerBlockEntity) {
+                continue;
+            }
+            if (member instanceof SUResistorBlockEntity resistor) {
+                sawResistor = true;
+                if (!resistor.isTripped()) {
+                    cap += resistor.getSuLimit();
+                }
+                continue;
+            }
+            if (member.getGeneratedSpeed() != 0) {
+                // A live generator with no resistor between us and it.
+                return Double.POSITIVE_INFINITY;
+            }
+            for (Direction d : Direction.values()) {
+                BlockPos next = pos.relative(d);
+                if (!visited.contains(next)) {
+                    queue.add(next);
+                }
+            }
+        }
+        return sawResistor ? cap : Double.POSITIVE_INFINITY;
     }
 
     /**

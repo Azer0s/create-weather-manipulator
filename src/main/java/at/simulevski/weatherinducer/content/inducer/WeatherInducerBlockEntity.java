@@ -111,8 +111,12 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
         // Charge from the network's spare SU (provided capacity minus what
         // the machines use), topping up from any discharging SU Charger. A
         // dead network has no spare capacity, so no speed gate is needed.
+        // SU Resistors on the way to the generators cap the per-tick draw
+        // (that is their original job: without one, a full charge is
+        // gulped down at 131,072 SU per tick).
         if (charge < MAX_CHARGE) {
             double wanted = Math.min(MAX_INTAKE_PER_TICK, MAX_CHARGE - charge);
+            wanted = Math.min(wanted, SUNetwork.resistorIntakeCap(this));
             double intake = Math.min(wanted, SUNetwork.remainingSU(this));
             if (intake < wanted) {
                 intake += SUNetwork.drawFromChargers(this, wanted - intake);

@@ -1,5 +1,6 @@
 {
   "parent": "minecraft:block/cube_bottom_top",
+  "render_type": "minecraft:cutout",
   "textures": {
     "bottom": "weatherinducer:block/lightning_medium_bottom",
     "side": "weatherinducer:block/lightning_medium_side",

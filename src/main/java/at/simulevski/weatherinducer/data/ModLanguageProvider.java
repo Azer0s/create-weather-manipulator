@@ -57,7 +57,7 @@ public class ModLanguageProvider extends LanguageProvider {
         add("weatherinducer.tooltip.su_resistor", "SU Resistor");
         add("weatherinducer.tooltip.su_limit", "Limit: %s SU");
         add("weatherinducer.tooltip.demand", "Downstream draw: %s SU");
-        add("weatherinducer.tooltip.tripped", "Tripped at %s SU, raise the limit to reset");
+        add("weatherinducer.tooltip.tripped", "Tripped at %s SU, resets when limit and supply cover it");
         add("weatherinducer.tooltip.stress_gate", "Stress Gate");
         add("weatherinducer.tooltip.threshold", "Unlocks at: %s SU provided");
         add("weatherinducer.tooltip.provided", "Network provides: %s SU");
@@ -86,19 +86,22 @@ public class ModLanguageProvider extends LanguageProvider {
                         + "it can see the sky, a redstone pulse then applies the selected weather - rain, clear, or "
                         + "a lightning strike at a configurable offset - and discharges it.");
         add("weatherinducer.info.su_resistor",
-                "The SU Resistor is a circuit breaker for kinetic stress. If the machines downstream of it "
-                        + "demand more SU than its limit, it trips and cuts rotation to that side, remembering "
-                        + "the demand that broke it. It closes again on its own once the limit is raised to "
-                        + "cover that demand.");
+                "The SU Resistor is a circuit breaker for kinetic stress. If the machines downstream demand "
+                        + "more SU than its limit, or more than the network provides, it trips and cuts rotation "
+                        + "to that side, remembering the demand that broke it. It closes again on its own once "
+                        + "both the limit and the network's supply cover that demand - build more generators or "
+                        + "raise the limit. It also caps how much SU per tick the Weather Inducer and SU Charger "
+                        + "may draw through it.");
         add("weatherinducer.info.weather_sensor",
                 "The Weather Sensor reads the sky like a daylight detector reads the sun: it emits redstone "
                         + "signal 0 under clear skies, 7 in rain and 15 during a thunderstorm. It needs to see "
                         + "the sky; covered, it reads 0.");
         add("weatherinducer.info.su_charger",
-                "The SU Charger is a kinetic capacitor. While the shaft turns it soaks the network's spare SU "
-                        + "into a 1,048,576 SU buffer, at up to 131,072 SU per tick. Stop the input, and machines "
-                        + "on its output side may drain the buffer instead; raw network SU never passes through. "
-                        + "It emits a redstone signal proportional to its fill level.");
+                "The SU Charger is a kinetic battery. While the shaft turns it soaks the network's spare SU "
+                        + "into a 1,048,576 SU buffer, at up to 131,072 SU per tick. Stop the input, and the "
+                        + "charger takes over: it drives its output side at the speed it charged with, providing "
+                        + "131,072 SU and draining the buffer by what the machines use. Raw network SU never "
+                        + "passes through. It emits a redstone signal proportional to its fill level.");
         add("weatherinducer.info.lightning_medium",
                 "A beacon and an end crystal encased in glass. Strike it with lightning (a Weather Inducer "
                         + "in lightning mode aims for you) and the block shatters into a Bottle o' Lightning, "

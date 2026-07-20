@@ -79,6 +79,16 @@ public class SUResistorBlockEntity extends SplitShaftBlockEntity implements IHav
         return 1;
     }
 
+    /**
+     * What the breaker will let through right now: its configured limit,
+     * but never more than the network actually provides. The provided side
+     * stays attached while tripped, so this needs no downstream scanning.
+     */
+    private double breakerCeiling() {
+        double provided = SUNetwork.providedSU(this);
+        return Math.min(getSuLimit(), provided);
+    }
+
     @Override
     public void tick() {
         super.tick();
@@ -86,10 +96,13 @@ public class SUResistorBlockEntity extends SplitShaftBlockEntity implements IHav
             return;
         }
         if (getBlockState().getValue(SUResistorBlock.TRIPPED)) {
-            // No scanning while tripped: close again once the limit covers
-            // the demand recorded at break time. Closing with limit >= that
-            // demand means the same load cannot immediately re-trip us.
-            if (getSuLimit() >= demandAtBreak) {
+            // No scanning while tripped: close again on its own once the
+            // recorded break demand is covered, either because the network
+            // provides that much SU now (someone built more generators) or
+            // the limit was raised to allow it. Closing only when both
+            // cover the demand means the same load cannot re-trip us, so
+            // the breaker latches instead of oscillating.
+            if (breakerCeiling() >= demandAtBreak) {
                 demandAtBreak = 0;
                 setTripped(false);
             }
@@ -103,7 +116,7 @@ public class SUResistorBlockEntity extends SplitShaftBlockEntity implements IHav
             return;
         }
         lastDemand = SUNetwork.downstreamStressDemand(this, getSourceFacing().getOpposite());
-        if (lastDemand > getSuLimit()) {
+        if (lastDemand > breakerCeiling()) {
             demandAtBreak = lastDemand;
             setChanged();
             setTripped(true);

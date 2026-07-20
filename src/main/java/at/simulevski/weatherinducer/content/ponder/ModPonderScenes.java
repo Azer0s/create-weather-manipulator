@@ -76,7 +76,7 @@ public final class ModPonderScenes {
         scene.idle(100);
 
         scene.overlay().showText(90)
-                .text("A tripped resistor remembers the demand that broke it, and closes again on its own once the limit is raised to cover it")
+                .text("A tripped resistor remembers the demand that broke it, and closes again on its own once the limit and the network's supply cover it")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(resistor));
         scene.idle(100);

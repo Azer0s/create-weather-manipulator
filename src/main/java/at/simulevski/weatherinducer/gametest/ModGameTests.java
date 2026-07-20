@@ -16,6 +16,7 @@ import at.simulevski.weatherinducer.content.lightning.ThrownBottleOLightning;
 import at.simulevski.weatherinducer.registry.ModEntityTypes;
 import at.simulevski.weatherinducer.registry.ModItems;
 import com.simibubi.create.content.kinetics.base.DirectionalKineticBlock;
+import com.simibubi.create.content.kinetics.base.HorizontalKineticBlock;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueSettingsBehaviour;
@@ -172,8 +173,9 @@ public class ModGameTests {
                     helper.setBlock(INDUCER, ModBlocks.SU_CHARGER.get());
                     SUChargerBlockEntity be = helper.getBlockEntity(INDUCER);
                     be.setBufferForTesting(SUChargerBlockEntity.MAX_BUFFER);
+                    be.setChargeSpeedForTesting(16); // as if it had charged at 16 rpm
                 })
-                .thenIdle(2) // let a tick publish the redstone level
+                .thenIdle(4) // let it flip to battery mode and publish redstone
                 .thenExecute(() -> {
                     SUChargerBlockEntity be = helper.getBlockEntity(INDUCER);
                     helper.assertTrue(be.isDischarging(),
@@ -192,7 +194,7 @@ public class ModGameTests {
                             "The buffer should shrink by exactly the drained amount");
                     be.drain(SUChargerBlockEntity.MAX_BUFFER);
                 })
-                .thenIdle(2)
+                .thenIdle(4)
                 .thenExecute(() -> {
                     SUChargerBlockEntity be = helper.getBlockEntity(INDUCER);
                     helper.assertTrue(!be.isDischarging(),
@@ -200,6 +202,62 @@ public class ModGameTests {
                     helper.assertBlockState(INDUCER,
                             state -> state.getValue(SUChargerBlock.POWER) == 0,
                             () -> "An empty charger should emit no redstone");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * The battery on real kinetics: a motor charges the charger while
+     * rotation passes through to a fan; cut the motor, and the charger
+     * takes over as the source, spinning the fan from its buffer and
+     * draining it by the stress the fan uses.
+     */
+    @GameTest(template = "empty", timeoutTicks = 300)
+    public static void chargerDrivesOutputFromBuffer(GameTestHelper helper) {
+        BlockPos motorPos = new BlockPos(2, 2, 3);
+        BlockPos chargerPos = new BlockPos(3, 2, 3);
+        BlockPos fanPos = new BlockPos(4, 2, 3);
+        double[] bufferBefore = new double[1];
+        helper.startSequence()
+                .thenExecute(() -> {
+                    placeFloor(helper);
+                    Block motor = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:creative_motor"));
+                    Block fan = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:encased_fan"));
+                    helper.setBlock(motorPos, motor.defaultBlockState()
+                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
+                    // Output face east, towards the fan; the motor feeds the back.
+                    helper.setBlock(chargerPos, ModBlocks.SU_CHARGER.get().defaultBlockState()
+                            .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.EAST));
+                    helper.setBlock(fanPos, fan.defaultBlockState()
+                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
+                })
+                .thenWaitUntil(() -> {
+                    KineticBlockEntity fanBe = helper.getBlockEntity(fanPos);
+                    helper.assertTrue(fanBe.getSpeed() != 0,
+                            "While charging, rotation should pass through to the fan");
+                })
+                .thenExecute(() -> {
+                    SUChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
+                    charger.setBufferForTesting(65_536); // 2^16
+                    helper.setBlock(motorPos, Blocks.AIR);
+                })
+                .thenWaitUntil(() -> {
+                    SUChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
+                    KineticBlockEntity fanBe = helper.getBlockEntity(fanPos);
+                    helper.assertTrue(charger.isDischarging() && fanBe.getSpeed() != 0,
+                            "With the input gone the charger must drive the fan from its buffer");
+                })
+                .thenExecute(() -> {
+                    SUChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
+                    bufferBefore[0] = charger.getBuffer();
+                })
+                .thenIdle(20)
+                .thenExecute(() -> {
+                    SUChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
+                    helper.assertTrue(charger.getBuffer() < bufferBefore[0],
+                            "Driving the fan must drain the buffer");
                 })
                 .thenSucceed();
     }
@@ -241,6 +299,46 @@ public class ModGameTests {
                     SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
                     helper.assertTrue(resistor.isTripped() && fanBe.getSpeed() == 0,
                             "Expected a tripped resistor with the fan cut off");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * The resistor's original job, for the mod's own consumers: a Weather
+     * Inducer whose only path to the generator crosses a resistor may draw
+     * at most the resistor's limit per tick, instead of gulping 131,072.
+     */
+    @GameTest(template = "empty", timeoutTicks = 300)
+    public static void resistorCapsInducerIntake(GameTestHelper helper) {
+        BlockPos motorPos = new BlockPos(1, 2, 3);
+        BlockPos resistorPos = new BlockPos(2, 2, 3);
+        BlockPos inducerPos = new BlockPos(3, 2, 3);
+        helper.startSequence()
+                .thenExecute(() -> {
+                    placeFloor(helper);
+                    Block motor = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:creative_motor"));
+                    helper.setBlock(motorPos, motor.defaultBlockState()
+                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
+                    helper.setBlock(resistorPos, ModBlocks.SU_RESISTOR.get().defaultBlockState()
+                            .setValue(SUResistorBlock.AXIS, Direction.Axis.X));
+                    helper.setBlock(inducerPos, ModBlocks.WEATHER_INDUCER.get().defaultBlockState()
+                            .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.EAST));
+                    SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
+                    // 1,024 SU: above the inducer's mechanical demand (so the
+                    // breaker stays closed), far below the uncapped intake.
+                    resistor.setLimitIndexForTesting(5);
+                })
+                .thenIdle(10)
+                .thenExecute(() -> {
+                    WeatherInducerBlockEntity inducer = helper.getBlockEntity(inducerPos);
+                    double charge = inducer.getCharge();
+                    helper.assertTrue(charge > 0,
+                            "The inducer should charge through a closed resistor");
+                    // 10 ticks at 1,024 SU each, give or take settling ticks;
+                    // uncapped it would be north of 100,000 by now.
+                    helper.assertTrue(charge <= 1_024 * 12,
+                            "The resistor must cap the charge rate, got " + charge + " SU");
                 })
                 .thenSucceed();
     }
