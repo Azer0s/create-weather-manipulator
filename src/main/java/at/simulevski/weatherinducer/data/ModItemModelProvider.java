@@ -107,16 +107,18 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .face(Direction.UP).texture("#blade").uvs(4, 12, 10, 14).end()
                 .face(Direction.DOWN).texture("#blade").uvs(4, 12, 10, 14).end()
                 .end();
-        // The blade: each segment shifts a quarter pixel toward the spine
-        // so the whole edge sweeps in a shallow curve, and the kissaki
+        // The blade: five segments, each stepping a third of a pixel
+        // toward the spine, sweep the edge in a long arc, and the kissaki
         // narrows onto the spine line the way a real tip does. The spine
         // rides the +x side, which in the baked diagonal puts the cutting
         // edge forward, the way the sword is actually swung.
-        bladeSegment(blade, 7.3f, 8.7f, 4.75f, 11.5f, 0.5f, 0, 5.5f);
-        bladeSegment(blade, 7.55f, 8.95f, 11.5f, 16, 0.46f, 5.5f, 9.2f);
-        bladeSegment(blade, 7.8f, 9.2f, 16, 19, 0.42f, 9.2f, 11.6f);
-        bladeSegment(blade, 8.1f, 9.2f, 19, 20.3f, 0.38f, 11.6f, 12.7f);
-        bladeSegment(blade, 8.6f, 9.2f, 20.3f, 21, 0.34f, 12.7f, 13.4f);
+        bladeSegment(blade, 7.3f, 8.7f, 4.75f, 9.5f, 0.5f, 0, 3.2f);
+        bladeSegment(blade, 7.6f, 9, 9.5f, 13.5f, 0.48f, 3.2f, 5.9f);
+        bladeSegment(blade, 7.9f, 9.3f, 13.5f, 17, 0.46f, 5.9f, 8.3f);
+        bladeSegment(blade, 8.2f, 9.6f, 17, 20, 0.44f, 8.3f, 10.3f);
+        bladeSegment(blade, 8.5f, 9.9f, 20, 22.5f, 0.42f, 10.3f, 12);
+        bladeSegment(blade, 8.85f, 9.9f, 22.5f, 23.8f, 0.38f, 12, 12.9f);
+        bladeSegment(blade, 9.35f, 9.9f, 23.8f, 24.6f, 0.34f, 12.9f, 13.4f);
 
         getBuilder("lightning_sword")
                 .customLoader(SeparateTransformsModelBuilder::begin)
