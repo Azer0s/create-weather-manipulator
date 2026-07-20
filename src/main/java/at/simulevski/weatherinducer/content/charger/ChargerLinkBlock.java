@@ -40,7 +40,8 @@ import java.util.UUID;
  * founds a new charger network; right-clicking any placed link with more
  * link items in hand binds that stack to its network, and every link
  * placed from a bound stack joins the same one. Chargers wearing links of
- * one network balance their buffers and read as a single big battery.
+ * one network coordinate their discharging: exactly one generates at a
+ * time, and each keeps its own buffer.
  */
 public class ChargerLinkBlock extends Block implements EntityBlock {
 

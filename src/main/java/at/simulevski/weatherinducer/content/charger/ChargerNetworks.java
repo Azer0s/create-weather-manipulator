@@ -16,10 +16,12 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * this needs no persistence; the network id itself lives on the Charger
  * Link blocks and each charger saves its own buffer.
  *
- * <p>Every second the member with the lowest position balances the
- * group's buffers, weighted by each member's flywheel capacity, so a link
- * network behaves like one big battery no matter which member happens to
- * charge or discharge.
+ * <p>A link network coordinates discharging and nothing else: no energy
+ * ever moves between chargers. At any moment exactly one member holds the
+ * discharge lead (the lowest position that still has energy in its
+ * buffer), the rest stand by, and when the lead runs dry the next in line
+ * takes over. That is what keeps several batteries on one shaft from
+ * pushing at once and shearing it apart.
  */
 public final class ChargerNetworks {
 
@@ -51,55 +53,24 @@ public final class ChargerNetworks {
     }
 
     /**
-     * True when {@code charger} is the member that runs the once-a-second
-     * group work (buffer balancing): simply the lowest position loaded.
+     * The one member currently allowed to discharge: the lowest position
+     * that still holds energy. Null when the whole group is empty.
      */
-    public static boolean runsGroupWork(UUID network, KineticChargerBlockEntity charger) {
+    public static KineticChargerBlockEntity dischargeLeader(UUID network) {
         return members(network).stream()
-                .min(Comparator.comparingLong(be -> be.getBlockPos().asLong()))
-                .map(be -> be == charger)
-                .orElse(false);
-    }
-
-    /**
-     * Evens the group's buffers out, weighted by each member's capacity,
-     * so the network reads and behaves like a single battery.
-     */
-    public static void balance(UUID network) {
-        Set<KineticChargerBlockEntity> members = members(network);
-        if (members.size() < 2) {
-            return;
-        }
-        double total = 0;
-        double capacity = 0;
-        for (KineticChargerBlockEntity member : members) {
-            total += member.getBuffer();
-            capacity += member.getMaxBuffer();
-        }
-        if (capacity <= 0) {
-            return;
-        }
-        for (KineticChargerBlockEntity member : members) {
-            double share = Math.min(member.getMaxBuffer(), total * (member.getMaxBuffer() / capacity));
-            member.setBufferBalanced(share);
-        }
-    }
-
-    /** Total stored SU-seconds across the loaded members. */
-    public static double totalEnergy(UUID network) {
-        return members(network).stream().mapToDouble(KineticChargerBlockEntity::getBuffer).sum();
-    }
-
-    /** Total capacity in SU-seconds across the loaded members. */
-    public static double totalCapacity(UUID network) {
-        return members(network).stream().mapToDouble(KineticChargerBlockEntity::getMaxBuffer).sum();
-    }
-
-    /** Sorting helper so the goggle line can name the balancing member. */
-    public static BlockPos leaderPos(UUID network) {
-        return members(network).stream()
-                .min(Comparator.comparingLong(be -> be.getBlockPos().asLong()))
-                .map(KineticChargerBlockEntity::getBlockPos)
+                .filter(member -> member.getBuffer() > 0)
+                .min(Comparator.comparingLong(member -> member.getBlockPos().asLong()))
                 .orElse(null);
+    }
+
+    /** True when {@code charger} holds the group's discharge lead. */
+    public static boolean isDischargeLeader(UUID network, KineticChargerBlockEntity charger) {
+        return dischargeLeader(network) == charger;
+    }
+
+    /** Position of the current discharge lead, for the goggle readout. */
+    public static BlockPos leaderPos(UUID network) {
+        KineticChargerBlockEntity leader = dischargeLeader(network);
+        return leader != null ? leader.getBlockPos() : null;
     }
 }

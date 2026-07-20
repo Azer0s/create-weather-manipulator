@@ -64,11 +64,14 @@ public class ModLanguageProvider extends LanguageProvider {
         add("weatherinducer.tooltip.buffer", "Buffer: %s / %s SU-seconds (%s%%)");
         add("weatherinducer.tooltip.flywheels", "Flywheels banked: %s (up to %s add capacity)");
         add("weatherinducer.tooltip.charger_link", "Charger Link");
-        add("weatherinducer.tooltip.link_network", "Network: %s / %s SU-seconds (%s chargers)");
+        add("weatherinducer.tooltip.link_network", "Network: %s chargers, discharge lead: %s");
+        add("weatherinducer.tooltip.link_lead_self", "this charger");
+        add("weatherinducer.tooltip.link_lead_none", "none (all empty)");
         add("weatherinducer.message.link_bound", "Link items bound to this charger network");
         add("weatherinducer.tooltip.charger_mode", "Mode: %s");
         add("weatherinducer.charger_mode.charging", "Charging");
         add("weatherinducer.charger_mode.discharging", "Discharging");
+        add("weatherinducer.charger_mode.standby", "Standing by (another charger leads)");
         add("weatherinducer.charger_mode.idle", "Idle");
 
         // Ponder scene text is authored inline in ModPonderScenes; Ponder looks
@@ -107,8 +110,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 "The Charger Link bolts onto a Kinetic Charger, display link style. Placing a fresh link "
                         + "founds a new charger network; right-click a placed link with more link items to bind "
                         + "them, and every link placed from a bound stack joins the same network. Linked "
-                        + "chargers balance their buffers and behave like one big battery, and goggles on any "
-                        + "link show the pooled numbers.");
+                        + "chargers coordinate their discharging: exactly one (the lowest position with energy) "
+                        + "generates at a time and the next takes over when it runs dry, so batteries on one "
+                        + "shaft never fight. No energy moves between chargers; each keeps its own buffer.");
         add("weatherinducer.info.lightning_medium",
                 "A beacon and an end crystal encased in glass. Strike it with lightning (a Weather Inducer "
                         + "in lightning mode aims for you) and the block shatters into a Bottle o' Lightning, "

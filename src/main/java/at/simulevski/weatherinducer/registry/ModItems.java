@@ -1,6 +1,7 @@
 package at.simulevski.weatherinducer.registry;
 
 import at.simulevski.weatherinducer.WeatherInducerMod;
+import at.simulevski.weatherinducer.content.charger.ChargerLinkItem;
 import at.simulevski.weatherinducer.content.lightning.BottleOLightningItem;
 import at.simulevski.weatherinducer.content.lightning.LightningGear;
 import net.minecraft.world.item.ArmorItem;
@@ -29,8 +30,11 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> KINETIC_CHARGER = ITEMS.registerSimpleBlockItem(
             "kinetic_charger", ModBlocks.KINETIC_CHARGER, new Item.Properties());
 
-    public static final DeferredItem<BlockItem> CHARGER_LINK = ITEMS.registerSimpleBlockItem(
-            "charger_link", ModBlocks.CHARGER_LINK, new Item.Properties());
+    // Registered with its own item class so a network-bound stack shimmers
+    // like an enchanted item.
+    public static final DeferredItem<BlockItem> CHARGER_LINK = ITEMS.register(
+            "charger_link",
+            () -> new ChargerLinkItem(ModBlocks.CHARGER_LINK.get(), new Item.Properties()));
 
     public static final DeferredItem<BlockItem> STRESS_GATE = ITEMS.registerSimpleBlockItem(
             "stress_gate", ModBlocks.STRESS_GATE, new Item.Properties());

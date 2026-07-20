@@ -59,6 +59,32 @@ public class ModBlockStateProvider extends BlockStateProvider {
         registerStressGate();
         registerLightningMedium();
         registerChargerLink();
+        registerInnerShaft();
+    }
+
+    /**
+     * The shaft partial the inducer and charger draw in their sockets:
+     * Create's own shaft geometry and textures, pulled in 0.02px at both
+     * ends. The full-length shaft puts its end caps exactly on the block
+     * boundary where an attached shaft block puts its own; the coplanar
+     * quads z-fight and the junction shimmers dark. The inset breaks the
+     * tie invisibly. No blockstate: this model is only ever baked as a
+     * Flywheel partial.
+     */
+    private void registerInnerShaft() {
+        models().getBuilder("inner_shaft")
+                .texture("axis", "create:block/axis")
+                .texture("axis_top", "create:block/axis_top")
+                .texture("particle", "create:block/axis")
+                .element()
+                .from(6, 0.02f, 6).to(10, 15.98f, 10)
+                .face(Direction.NORTH).texture("#axis").uvs(6, 0, 10, 16).end()
+                .face(Direction.SOUTH).texture("#axis").uvs(6, 0, 10, 16).end()
+                .face(Direction.EAST).texture("#axis").uvs(6, 0, 10, 16).end()
+                .face(Direction.WEST).texture("#axis").uvs(6, 0, 10, 16).end()
+                .face(Direction.UP).texture("#axis_top").uvs(6, 6, 10, 10).end()
+                .face(Direction.DOWN).texture("#axis_top").uvs(6, 6, 10, 10).end()
+                .end();
     }
 
     // ------------------------------------------------------------------

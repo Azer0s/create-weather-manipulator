@@ -99,11 +99,14 @@ public final class WeatherInducerClient {
         event.enqueueWork(() -> {
             PonderIndex.addPlugin(new ModPonderPlugin());
 
+            // The inset shaft partial, not Create's full-length one: its
+            // boundary end caps z-fight with attached shafts' own caps and
+            // the junctions shimmer dark (see ModPartialModels.INNER_SHAFT).
             SimpleBlockEntityVisualizer.builder(ModBlockEntities.WEATHER_INDUCER.get())
-                    .factory(SingleAxisRotatingVisual::shaft)
+                    .factory(SingleAxisRotatingVisual.of(ModPartialModels.INNER_SHAFT))
                     .apply();
             SimpleBlockEntityVisualizer.builder(ModBlockEntities.KINETIC_CHARGER.get())
-                    .factory(SingleAxisRotatingVisual::shaft)
+                    .factory(SingleAxisRotatingVisual.of(ModPartialModels.INNER_SHAFT))
                     .apply();
             SimpleBlockEntityVisualizer.builder(ModBlockEntities.STRESS_GATE.get())
                     .factory(SplitShaftVisual::new)

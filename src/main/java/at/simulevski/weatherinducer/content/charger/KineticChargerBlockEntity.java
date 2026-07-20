@@ -54,6 +54,12 @@ import java.util.UUID;
  * energy, it generates at the speed it was last charged with. No faces
  * ever disconnect. The buffer fill is published as a 0..15 redstone signal
  * via {@link KineticChargerBlock#POWER}.
+ *
+ * <p>Charger Links add discharge coordination on top, and only that: a
+ * linked charger generates only while it holds its link network's
+ * discharge lead, so batteries take turns instead of pushing at once.
+ * Every buffer stays where it was charged; nothing about the link moves
+ * energy around.
  */
 public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         implements IHaveGoggleInformation {
@@ -238,30 +244,22 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
     }
 
     /**
-     * Exactly one charger per kinetic network may generate: the one at the
-     * lowest position that still holds energy. The rest wait their turn,
-     * which is what keeps two batteries on one shaft from fighting over
-     * the speed and shearing it apart. When the leader runs dry, the next
-     * in line takes over seamlessly.
+     * Discharge coordination comes from Charger Links and nowhere else.
+     * A charger wearing a link only generates while it holds its link
+     * network's discharge lead (the lowest position with energy); when
+     * the lead runs dry the next in line takes over. Unlinked chargers do
+     * not coordinate at all: they all push at once, which is fine while
+     * their speeds agree and shears the shaft when they do not, exactly
+     * like any other pair of fighting sources in Create.
      */
     private boolean findElectedLeader() {
         if (buffer <= 0) {
             return false;
         }
-        KineticNetwork network = getOrCreateNetwork();
-        if (network == null) {
+        if (linkNetwork == null) {
             return true;
         }
-        long self = worldPosition.asLong();
-        for (KineticBlockEntity member : network.members.keySet()) {
-            if (member != this
-                    && member instanceof KineticChargerBlockEntity other
-                    && other.getBuffer() > 0
-                    && other.getBlockPos().asLong() < self) {
-                return false;
-            }
-        }
-        return true;
+        return ChargerNetworks.isDischargeLeader(linkNetwork, this);
     }
 
     @Override
@@ -299,10 +297,6 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         }
         if (linkNetwork != null) {
             ChargerNetworks.register(linkNetwork, this);
-            if (level.getGameTime() % 20 == 0
-                    && ChargerNetworks.runsGroupWork(linkNetwork, this)) {
-                ChargerNetworks.balance(linkNetwork);
-            }
         }
 
         // Neutral drain: a spinning bank is never free. Five SU-seconds
@@ -347,13 +341,27 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
             return;
         }
 
-        if (isGenerating()) {
-            // Battery mode: the machines' stress drains SU-seconds per
-            // second, one twentieth of it each tick.
+        if (isGenerating() && !hasSource()) {
+            // Battery mode, and this block really is a driving source (a
+            // same-speed battery that Create demoted to a driven member
+            // does no work and pays nothing). The machines' stress drains
+            // SU-seconds per second, one twentieth of it each tick; when
+            // several unlinked batteries co-drive one network, they split
+            // the bill.
             KineticNetwork network = getOrCreateNetwork();
             double used = network == null ? 0 : Math.max(0, network.calculateStress());
             if (used > 0) {
-                buffer = Math.max(0, buffer - used / 20.0);
+                int coDrivers = 1;
+                if (network != null) {
+                    for (KineticBlockEntity source : network.sources.keySet()) {
+                        if (source != this
+                                && source instanceof KineticChargerBlockEntity other
+                                && other.isGenerating() && !other.hasSource()) {
+                            coDrivers++;
+                        }
+                    }
+                }
+                buffer = Math.max(0, buffer - used / 20.0 / coDrivers);
                 setChanged();
                 level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
                 if (buffer <= 0) {
@@ -480,14 +488,6 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         return linkNetwork;
     }
 
-    /** Balancing writes bypass the comparator spam; POWER follows next tick. */
-    void setBufferBalanced(double value) {
-        if (value != buffer) {
-            buffer = value;
-            setChanged();
-        }
-    }
-
     @Override
     public void invalidate() {
         if (linkNetwork != null) {
@@ -565,16 +565,22 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
                         flywheels, MAX_FLYWHEELS)
                         .withStyle(ChatFormatting.GRAY)));
         if (linkNetwork != null) {
+            BlockPos lead = ChargerNetworks.leaderPos(linkNetwork);
             tooltip.add(Component.literal("    ").append(
                     Component.translatable("weatherinducer.tooltip.link_network",
-                            String.format("%,.0f", ChargerNetworks.totalEnergy(linkNetwork)),
-                            String.format("%,.0f", ChargerNetworks.totalCapacity(linkNetwork)),
-                            ChargerNetworks.members(linkNetwork).size())
+                            ChargerNetworks.members(linkNetwork).size(),
+                            lead == null
+                                    ? Component.translatable("weatherinducer.tooltip.link_lead_none")
+                                    : lead.equals(worldPosition)
+                                    ? Component.translatable("weatherinducer.tooltip.link_lead_self")
+                                    : Component.literal(lead.toShortString()))
                             .withStyle(ChatFormatting.AQUA)));
         }
 
         String modeKey = isGenerating() ? "discharging"
-                : (externallyPowered && getSpeed() != 0 && buffer < getMaxBuffer() ? "charging" : "idle");
+                : externallyPowered && getSpeed() != 0 && buffer < getMaxBuffer() ? "charging"
+                : linkNetwork != null && buffer > 0 && !electedLeader ? "standby"
+                : "idle";
         tooltip.add(Component.literal("    ").append(
                 Component.translatable("weatherinducer.tooltip.charger_mode",
                         Component.translatable("weatherinducer.charger_mode." + modeKey))

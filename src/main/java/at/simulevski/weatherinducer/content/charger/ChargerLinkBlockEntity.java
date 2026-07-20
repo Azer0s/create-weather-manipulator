@@ -18,7 +18,8 @@ import java.util.UUID;
  * Keeps a Charger Link's network id and wires it into the host charger:
  * every half second (and on load) the id is pushed onto the Kinetic
  * Charger the link is bolted to, and pulled off it again when the link
- * goes. Goggles on the link show the whole network's pooled numbers.
+ * goes. Goggles on the link show who currently holds the group's
+ * discharge lead.
  */
 public class ChargerLinkBlockEntity extends BlockEntity implements IHaveGoggleInformation {
 
@@ -97,11 +98,17 @@ public class ChargerLinkBlockEntity extends BlockEntity implements IHaveGoggleIn
         tooltip.add(Component.literal("    ").append(
                 Component.translatable("weatherinducer.tooltip.charger_link")
                         .withStyle(ChatFormatting.GRAY)));
+        BlockPos lead = ChargerNetworks.leaderPos(network);
+        BlockPos hostPos = worldPosition.relative(
+                getBlockState().getValue(ChargerLinkBlock.FACING).getOpposite());
         tooltip.add(Component.literal("    ").append(
                 Component.translatable("weatherinducer.tooltip.link_network",
-                        String.format("%,.0f", ChargerNetworks.totalEnergy(network)),
-                        String.format("%,.0f", ChargerNetworks.totalCapacity(network)),
-                        ChargerNetworks.members(network).size())
+                        ChargerNetworks.members(network).size(),
+                        lead == null
+                                ? Component.translatable("weatherinducer.tooltip.link_lead_none")
+                                : lead.equals(hostPos)
+                                ? Component.translatable("weatherinducer.tooltip.link_lead_self")
+                                : Component.literal(lead.toShortString()))
                         .withStyle(ChatFormatting.AQUA)));
         return true;
     }

@@ -269,13 +269,13 @@ public class ModGameTests {
     }
 
     /**
-     * Several chargers on one kinetic network take turns instead of
-     * fighting: exactly one generates at a time (the lowest position with
-     * energy), so nothing oscillates and no shaft shears. Both chargers
-     * point their I/O faces at the shared middle shaft.
+     * Unlinked chargers do not coordinate: with matching speeds they
+     * simply push together, the shared shaft spins, and nothing shears.
+     * (With mismatched speeds they would fight like any two conflicting
+     * sources in Create; turn taking is what Charger Links are for.)
      */
     @GameTest(template = "empty", timeoutTicks = 300)
-    public static void twoChargersTakeTurns(GameTestHelper helper) {
+    public static void unlinkedChargersShareTheShaft(GameTestHelper helper) {
         BlockPos chargerA = new BlockPos(2, 2, 3);
         BlockPos shaftPos = new BlockPos(3, 2, 3);
         BlockPos chargerB = new BlockPos(4, 2, 3);
@@ -297,69 +297,88 @@ public class ModGameTests {
                     b.setBufferForTesting(600);
                     b.setChargeSpeedForTesting(16);
                 })
-                .thenIdle(20)
-                .thenExecute(() -> {
-                    KineticChargerBlockEntity a = helper.getBlockEntity(chargerA);
-                    KineticChargerBlockEntity b = helper.getBlockEntity(chargerB);
-                    KineticBlockEntity shaft = helper.getBlockEntity(shaftPos);
-                    helper.assertTrue(a.isGenerating() && !b.isGenerating(),
-                            "Only the lowest charger with energy may generate");
-                    helper.assertTrue(shaft.getSpeed() != 0,
-                            "The shared shaft should spin off the leading battery");
-                })
                 .thenIdle(40)
                 .thenExecute(() -> {
-                    // Still exactly one leader, still spinning: no oscillation.
                     KineticChargerBlockEntity a = helper.getBlockEntity(chargerA);
                     KineticChargerBlockEntity b = helper.getBlockEntity(chargerB);
                     KineticBlockEntity shaft = helper.getBlockEntity(shaftPos);
-                    helper.assertTrue(a.isGenerating() ^ b.isGenerating(),
-                            "Exactly one battery generates at a time");
                     helper.assertTrue(shaft.getSpeed() != 0,
-                            "The shared shaft must keep spinning");
+                            "The shared shaft should spin off the batteries");
+                    helper.assertTrue(a.isGenerating() && b.isGenerating(),
+                            "Without links both batteries push");
+                    helper.assertTrue(a.getBuffer() > 0 && b.getBuffer() > 0,
+                            "Neither battery may be robbed of its energy");
                 })
                 .thenSucceed();
     }
 
     /**
-     * Charger Links pool their hosts: two linked chargers balance their
-     * buffers within a second, capacity weighted, so the group reads as a
-     * single battery.
+     * Charger Links coordinate discharging, and only that: of two linked
+     * chargers on one shaft exactly one generates at a time (the lowest
+     * position with energy), the other stands by with its buffer
+     * untouched, and when the leader runs dry the standby takes over.
      */
-    @GameTest(template = "empty", timeoutTicks = 200)
-    public static void linkedChargersBalanceBuffers(GameTestHelper helper) {
+    @GameTest(template = "empty", timeoutTicks = 300)
+    public static void linkedChargersTakeTurns(GameTestHelper helper) {
         BlockPos chargerA = new BlockPos(2, 2, 3);
+        BlockPos shaftPos = new BlockPos(3, 2, 3);
         BlockPos chargerB = new BlockPos(4, 2, 3);
         BlockPos linkA = chargerA.above();
         BlockPos linkB = chargerB.above();
         helper.startSequence()
                 .thenExecute(() -> {
                     placeFloor(helper);
+                    Block shaft = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:shaft"));
                     helper.setBlock(chargerA, ModBlocks.KINETIC_CHARGER.get().defaultBlockState()
                             .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.EAST));
+                    helper.setBlock(shaftPos, shaft.defaultBlockState()
+                            .setValue(RotatedPillarKineticBlock.AXIS, Direction.Axis.X));
                     helper.setBlock(chargerB, ModBlocks.KINETIC_CHARGER.get().defaultBlockState()
-                            .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.EAST));
+                            .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.WEST));
                     helper.setBlock(linkA, ModBlocks.CHARGER_LINK.get().defaultBlockState()
                             .setValue(ChargerLinkBlock.FACING, Direction.UP));
                     helper.setBlock(linkB, ModBlocks.CHARGER_LINK.get().defaultBlockState()
                             .setValue(ChargerLinkBlock.FACING, Direction.UP));
-                    ChargerLinkBlockEntity a = helper.getBlockEntity(linkA);
-                    ChargerLinkBlockEntity b = helper.getBlockEntity(linkB);
+                    ChargerLinkBlockEntity la = helper.getBlockEntity(linkA);
+                    ChargerLinkBlockEntity lb = helper.getBlockEntity(linkB);
                     java.util.UUID network = java.util.UUID.randomUUID();
-                    a.setNetwork(network);
-                    b.setNetwork(network);
-                    KineticChargerBlockEntity host = helper.getBlockEntity(chargerA);
-                    host.setBufferForTesting(1600);
+                    la.setNetwork(network);
+                    lb.setNetwork(network);
+                    KineticChargerBlockEntity a = helper.getBlockEntity(chargerA);
+                    KineticChargerBlockEntity b = helper.getBlockEntity(chargerB);
+                    a.setBufferForTesting(600);
+                    a.setChargeSpeedForTesting(16);
+                    b.setBufferForTesting(600);
+                    b.setChargeSpeedForTesting(16);
                 })
-                .thenIdle(45)
+                .thenIdle(40)
                 .thenExecute(() -> {
                     KineticChargerBlockEntity a = helper.getBlockEntity(chargerA);
                     KineticChargerBlockEntity b = helper.getBlockEntity(chargerB);
-                    helper.assertTrue(b.getBuffer() > 400,
-                            "The empty member should receive a share, has " + b.getBuffer());
-                    helper.assertTrue(Math.abs(a.getBuffer() - b.getBuffer()) < 100,
-                            "Linked buffers should even out, got " + a.getBuffer()
-                                    + " vs " + b.getBuffer());
+                    KineticBlockEntity shaft = helper.getBlockEntity(shaftPos);
+                    helper.assertTrue(a.isGenerating() && !b.isGenerating(),
+                            "Only the group's discharge lead may generate");
+                    helper.assertTrue(shaft.getSpeed() != 0,
+                            "The shared shaft should spin off the leading battery");
+                })
+                .thenExecute(() -> {
+                    // The lead runs dry; the standby must take over. Its
+                    // buffer only ever saw its own neutral drain: energy
+                    // never moves between linked chargers.
+                    KineticChargerBlockEntity a = helper.getBlockEntity(chargerA);
+                    KineticChargerBlockEntity b = helper.getBlockEntity(chargerB);
+                    helper.assertTrue(b.getBuffer() > 500,
+                            "The standby's own buffer must stay untouched, has " + b.getBuffer());
+                    a.setBufferForTesting(0);
+                })
+                .thenWaitUntil(() -> {
+                    KineticChargerBlockEntity a = helper.getBlockEntity(chargerA);
+                    KineticChargerBlockEntity b = helper.getBlockEntity(chargerB);
+                    KineticBlockEntity shaft = helper.getBlockEntity(shaftPos);
+                    helper.assertTrue(b.isGenerating() && !a.isGenerating()
+                                    && shaft.getSpeed() != 0,
+                            "When the lead runs dry the next in line takes over");
                 })
                 .thenSucceed();
     }
