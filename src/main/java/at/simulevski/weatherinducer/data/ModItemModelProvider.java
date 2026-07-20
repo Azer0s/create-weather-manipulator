@@ -62,55 +62,66 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .texture("blade", modLoc("item/lightning_sword_blade"))
                 .texture("particle", modLoc("item/lightning_sword_blade"))
                 .guiLight(net.minecraft.client.renderer.block.model.BlockModel.GuiLight.FRONT);
+        // Vanilla's own handheld pose numbers. They assume the sword runs
+        // diagonally through the model like every vanilla sword sprite,
+        // which is why each element below carries the shared -45 degree
+        // roll: authored upright for sane coordinates, baked diagonal.
         blade.transforms()
                 .transform(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
-                .rotation(0, -90, 10).translation(0, 4, 0.5f).scale(0.85f).end()
+                .rotation(0, -90, 55).translation(0, 4, 0.5f).scale(0.85f).end()
                 .transform(ItemDisplayContext.THIRD_PERSON_LEFT_HAND)
-                .rotation(0, 90, -10).translation(0, 4, 0.5f).scale(0.85f).end()
+                .rotation(0, 90, -55).translation(0, 4, 0.5f).scale(0.85f).end()
                 .transform(ItemDisplayContext.FIRST_PERSON_RIGHT_HAND)
-                .rotation(0, -90, -20).translation(1.13f, 3.2f, 1.13f).scale(0.68f).end()
+                .rotation(0, -90, 25).translation(1.13f, 3.2f, 1.13f).scale(0.68f).end()
                 .transform(ItemDisplayContext.FIRST_PERSON_LEFT_HAND)
-                .rotation(0, 90, 20).translation(1.13f, 3.2f, 1.13f).scale(0.68f).end()
+                .rotation(0, 90, -25).translation(1.13f, 3.2f, 1.13f).scale(0.68f).end()
                 .end();
-        // Grip, low on the model so the fist wraps it.
+        // Pommel, slightly wider than the grip, capped top and bottom.
         blade.element()
-                .from(7, 0, 7).to(9, 4, 9)
+                .from(6.5f, -2, 7).to(9.5f, -0.5f, 9)
+                .rotation().angle(-45).axis(Direction.Axis.Z).origin(8, 8, 8).end()
+                .face(Direction.NORTH).texture("#blade").uvs(4, 12, 7, 14).end()
+                .face(Direction.SOUTH).texture("#blade").uvs(4, 12, 7, 14).end()
+                .face(Direction.EAST).texture("#blade").uvs(4, 12, 6, 14).end()
+                .face(Direction.WEST).texture("#blade").uvs(4, 12, 6, 14).end()
+                .face(Direction.UP).texture("#blade").uvs(4, 12, 7, 14).end()
+                .face(Direction.DOWN).texture("#blade").uvs(4, 12, 7, 14).end()
+                .end();
+        // Grip, long enough for the whole fist.
+        blade.element()
+                .from(7.25f, -0.5f, 7.4f).to(8.75f, 4, 8.6f)
+                .rotation().angle(-45).axis(Direction.Axis.Z).origin(8, 8, 8).end()
                 .face(Direction.NORTH).texture("#blade").uvs(12, 12, 14, 16).end()
                 .face(Direction.SOUTH).texture("#blade").uvs(12, 12, 14, 16).end()
                 .face(Direction.EAST).texture("#blade").uvs(12, 12, 14, 16).end()
                 .face(Direction.WEST).texture("#blade").uvs(12, 12, 14, 16).end()
-                .face(Direction.DOWN).texture("#blade").uvs(12, 12, 14, 14).end()
-                .end();
-        // Pommel cap.
-        blade.element()
-                .from(6.5f, -1.5f, 6.5f).to(9.5f, 0, 9.5f)
-                .face(Direction.NORTH).texture("#blade").uvs(4, 12, 7, 14).end()
-                .face(Direction.SOUTH).texture("#blade").uvs(4, 12, 7, 14).end()
-                .face(Direction.EAST).texture("#blade").uvs(4, 12, 7, 14).end()
-                .face(Direction.WEST).texture("#blade").uvs(4, 12, 7, 14).end()
-                .face(Direction.DOWN).texture("#blade").uvs(4, 12, 7, 14).end()
                 .end();
         // Cross guard.
         blade.element()
-                .from(5, 4, 6.5f).to(11, 5.5f, 9.5f)
+                .from(5, 4, 6.8f).to(11, 5.5f, 9.2f)
+                .rotation().angle(-45).axis(Direction.Axis.Z).origin(8, 8, 8).end()
                 .face(Direction.NORTH).texture("#blade").uvs(4, 12, 10, 14).end()
                 .face(Direction.SOUTH).texture("#blade").uvs(4, 12, 10, 14).end()
-                .face(Direction.EAST).texture("#blade").uvs(4, 12, 7, 14).end()
-                .face(Direction.WEST).texture("#blade").uvs(4, 12, 7, 14).end()
+                .face(Direction.EAST).texture("#blade").uvs(4, 12, 6, 14).end()
+                .face(Direction.WEST).texture("#blade").uvs(4, 12, 6, 14).end()
                 .face(Direction.UP).texture("#blade").uvs(4, 12, 10, 14).end()
                 .face(Direction.DOWN).texture("#blade").uvs(4, 12, 10, 14).end()
                 .end();
-        // The blade, wearing the animated arc texture.
+        // The blade, wearing the animated arc texture, shoulder capped so
+        // there is no hollow to look into from above.
         blade.element()
-                .from(7, 5.5f, 7.6f).to(9, 14.5f, 8.4f)
-                .face(Direction.NORTH).texture("#blade").uvs(0, 0, 2, 9).end()
-                .face(Direction.SOUTH).texture("#blade").uvs(0, 0, 2, 9).end()
-                .face(Direction.EAST).texture("#blade").uvs(2, 0, 3, 9).end()
-                .face(Direction.WEST).texture("#blade").uvs(2, 0, 3, 9).end()
+                .from(7, 5.5f, 7.6f).to(9, 15.5f, 8.4f)
+                .rotation().angle(-45).axis(Direction.Axis.Z).origin(8, 8, 8).end()
+                .face(Direction.NORTH).texture("#blade").uvs(0, 0, 2, 10).end()
+                .face(Direction.SOUTH).texture("#blade").uvs(0, 0, 2, 10).end()
+                .face(Direction.EAST).texture("#blade").uvs(2, 0, 3, 10).end()
+                .face(Direction.WEST).texture("#blade").uvs(2, 0, 3, 10).end()
+                .face(Direction.UP).texture("#blade").uvs(0, 0, 2, 1).end()
                 .end();
         // Tapered tip.
         blade.element()
-                .from(7.5f, 14.5f, 7.7f).to(8.5f, 16, 8.3f)
+                .from(7.5f, 15.5f, 7.7f).to(8.5f, 17.5f, 8.3f)
+                .rotation().angle(-45).axis(Direction.Axis.Z).origin(8, 8, 8).end()
                 .face(Direction.NORTH).texture("#blade").uvs(0, 9, 1, 11).end()
                 .face(Direction.SOUTH).texture("#blade").uvs(0, 9, 1, 11).end()
                 .face(Direction.EAST).texture("#blade").uvs(2, 9, 3, 11).end()
