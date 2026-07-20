@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "bottom": "weatherinducer:block/lightning_medium_bottom",
+    "side": "weatherinducer:block/lightning_medium_side",
+    "top": "weatherinducer:block/lightning_medium_top"
+  }
+}

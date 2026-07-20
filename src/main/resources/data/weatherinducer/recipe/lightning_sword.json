@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "equipment",
+    "pattern": [
+        "B",
+        "B",
+        "S"
+    ],
+    "key": {
+        "B": {
+            "item": "weatherinducer:lightning_bolt"
+        },
+        "S": {
+            "tag": "weatherinducer:stripped_logs"
+        }
+    },
+    "result": {
+        "id": "weatherinducer:lightning_sword",
+        "count": 1
+    }
+}

@@ -56,6 +56,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         registerWeatherSensor();
         registerSuCharger();
         registerStressGate();
+        registerLightningMedium();
     }
 
     // ------------------------------------------------------------------
@@ -429,6 +430,15 @@ public class ModBlockStateProvider extends BlockStateProvider {
             ModelFile model = state.getValue(StressGateBlock.LOCKED) ? locked : open;
             return ConfiguredModel.builder().modelFile(model).rotationX(x).rotationY(y).build();
         });
+    }
+
+    /** The Lightning Medium: beacon and end crystal encased in glass. */
+    private void registerLightningMedium() {
+        ModelFile medium = models().cubeBottomTop("lightning_medium",
+                modLoc("block/lightning_medium_side"),
+                modLoc("block/lightning_medium_bottom"),
+                modLoc("block/lightning_medium_top"));
+        simpleBlock(ModBlocks.LIGHTNING_MEDIUM.get(), medium);
     }
 
 }

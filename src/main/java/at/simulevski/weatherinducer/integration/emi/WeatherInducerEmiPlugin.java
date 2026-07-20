@@ -46,5 +46,10 @@ public class WeatherInducerEmiPlugin implements EmiPlugin {
                 List.<EmiIngredient>of(EmiStack.of(ModItems.STRESS_GATE.get())),
                 List.of(Component.translatable("weatherinducer.info.stress_gate")),
                 WeatherInducerMod.asResource("info/stress_gate")));
+
+        registry.addRecipe(new EmiInfoRecipe(
+                List.<EmiIngredient>of(EmiStack.of(ModItems.LIGHTNING_MEDIUM.get())),
+                List.of(Component.translatable("weatherinducer.info.lightning_medium")),
+                WeatherInducerMod.asResource("info/lightning_medium")));
     }
 }

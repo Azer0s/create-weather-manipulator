@@ -3,6 +3,7 @@ package at.simulevski.weatherinducer.data;
 import at.simulevski.weatherinducer.WeatherInducerMod;
 import at.simulevski.weatherinducer.content.ponder.ModPonderPlugin;
 import at.simulevski.weatherinducer.registry.ModBlocks;
+import at.simulevski.weatherinducer.registry.ModItems;
 import net.createmod.ponder.foundation.PonderIndex;
 import net.createmod.ponder.foundation.registration.PonderLocalization;
 import net.minecraft.data.PackOutput;
@@ -23,6 +24,19 @@ public class ModLanguageProvider extends LanguageProvider {
         add(ModBlocks.WEATHER_SENSOR.get(), "Weather Sensor");
         add(ModBlocks.SU_CHARGER.get(), "SU Charger");
         add(ModBlocks.STRESS_GATE.get(), "Stress Gate");
+        add(ModBlocks.LIGHTNING_MEDIUM.get(), "Lightning Medium");
+
+        add(ModItems.BOTTLE_O_LIGHTNING.get(), "Bottle o' Lightning");
+        add(ModItems.LIGHTNING_BOLT.get(), "Lightning Bolt");
+        add(ModItems.LIGHTNING_SWORD.get(), "Lightning Sword");
+        add(ModItems.LIGHTNING_PICKAXE.get(), "Lightning Pickaxe");
+        add(ModItems.LIGHTNING_AXE.get(), "Lightning Axe");
+        add(ModItems.LIGHTNING_SHOVEL.get(), "Lightning Shovel");
+        add(ModItems.LIGHTNING_HOE.get(), "Lightning Hoe");
+        add(ModItems.LIGHTNING_HELMET.get(), "Lightning Helmet");
+        add(ModItems.LIGHTNING_CHESTPLATE.get(), "Lightning Chestplate");
+        add(ModItems.LIGHTNING_LEGGINGS.get(), "Lightning Leggings");
+        add(ModItems.LIGHTNING_BOOTS.get(), "Lightning Boots");
 
         add("weatherinducer.value.mode", "Weather Mode");
         add("weatherinducer.value.offset_x", "Lightning Offset X");
@@ -82,6 +96,10 @@ public class ModLanguageProvider extends LanguageProvider {
                         + "into a 1,048,576 SU buffer, at up to 131,072 SU per tick. Stop the input, and machines "
                         + "on its output side may drain the buffer instead; raw network SU never passes through. "
                         + "It emits a redstone signal proportional to its fill level.");
+        add("weatherinducer.info.lightning_medium",
+                "A beacon and an end crystal encased in glass. Strike it with lightning (a Weather Inducer "
+                        + "in lightning mode aims for you) and the block shatters into a Bottle o' Lightning, "
+                        + "the raw ingredient of the lightning gear.");
         add("weatherinducer.info.stress_gate",
                 "The Stress Gate stays locked, passing no rotation downstream, until its kinetic network "
                         + "provides at least the set amount of total SU. Use it to keep a contraption dormant "

@@ -11,6 +11,7 @@ A [Create](https://github.com/Creators-of-Create/Create) addon for **Minecraft 1
 | **Stress Gate** | An inline shaft block that stays **locked** until the kinetic network provides at least a set amount of total SU. Use it to keep contraptions dormant until the power plant is big enough. |
 | **SU Charger** | A kinetic capacitor. Rotation passes through it, **SU never does**. While the shaft turns it fills a **1,048,576 SU** buffer from its input side; once the input stops, machines on its output side drain the buffer. Emits a redstone signal proportional to its fill level. |
 | **Weather Sensor** | A daylight-detector-shaped slab that reads the sky: redstone **0** when clear, **7** in rain, **15** in a thunderstorm. Covered, it reads 0. |
+| **Lightning Medium** | A beacon and an end crystal encased in glass. Struck by lightning, it shatters into a **Bottle o' Lightning**, the base of the lightning gear. |
 
 ---
 
@@ -48,6 +49,28 @@ A [Create](https://github.com/Creators-of-Create/Create) addon for **Minecraft 1
 - **Daylight detector, but for weather:** a 6px slab that must see the sky.
 - **Output:** redstone 0 under clear skies, 7 in rain, 15 during a thunderstorm; 0 when covered. It re-reads the weather every half second.
 - Feed it into the Weather Inducer's trigger line to build self-acting weather machines, for example one that clears every storm as it rolls in.
+
+### Lightning gear
+The endgame chain, powered by the Weather Inducer's own lightning:
+
+1. **Lightning Medium**: craft a beacon and an end crystal into a glass shell
+   (recipe below). Place it under open sky and strike it with lightning; the
+   block is consumed and drops a **Bottle o' Lightning**. An inducer in
+   lightning mode with a matching offset automates the whole thing, and the
+   bottle survives the strike that creates it.
+2. **Lightning Bolt**: one ancient debris plus two bottles, laid out as a
+   diagonal in the crafting grid.
+3. **Tools** (sword, pickaxe, axe, shovel, hoe): the usual shapes, with
+   stripped logs instead of sticks. 4,096 durability, mining speed 16, and
+   the diggers come out of the crafting table with Efficiency V already on
+   them. The sword hits for 1,024 damage, which one-shots everything up to
+   and including the warden. Holding any lightning tool grants Speed II.
+4. **Armor**: Thor-styled steel with gold discs and a winged helm. The
+   chestplate recipe also takes an elytra. Each piece comes with Thorns III;
+   the full set grants water breathing, fire resistance, Resistance IV,
+   Strength II, Speed II, Regeneration, creative flight, and no fall damage.
+   With 40 armor points, toughness 16, and full knockback resistance on top,
+   it is practically invincible.
 
 ---
 
@@ -87,6 +110,24 @@ G G G      G = Glass
 C E C      C = Copper Sheet         E = Electron Tube
 A A A      A = Andesite Alloy
 ```
+
+**Lightning Medium**:
+```
+G G G      G = Glass
+G C G      C = End Crystal
+G B G      B = Beacon
+```
+
+**Lightning Bolt** (a diagonal, like its namesake):
+```
+. . B      B = Bottle o' Lightning
+. B .      A = Ancient Debris
+A . .
+```
+
+**Lightning tools and armor**: vanilla shapes with Lightning Bolts as the
+material; tools take stripped logs (any kind) instead of sticks, and the
+chestplate takes an elytra in its centre slot.
 
 ---
 
@@ -143,7 +184,8 @@ Runtime game tests cover the Weather Inducer's fire logic. Run them headlessly:
 ```
 They verify: full-charge + sky + redstone fires and discharges; lightning mode
 spawns a bolt; a blocked sky prevents firing; firing below full charge is a
-no-op; the Weather Sensor's signal follows thunder and clear skies (in its own
+no-op; a lightning strike consumes a Lightning Medium and bottles the strike
+(the drop surviving the bolt); the Weather Sensor's signal follows thunder and clear skies (in its own
 test batch, since weather is global); the SU Charger offers its buffer only
 while its input is stopped, publishes the fill level as redstone, and drains
 exactly what is taken; the SU Resistor trips on a real motor-and-fan overload

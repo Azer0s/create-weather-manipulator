@@ -4,6 +4,7 @@ import at.simulevski.weatherinducer.WeatherInducerMod;
 import at.simulevski.weatherinducer.content.charger.SUChargerBlock;
 import at.simulevski.weatherinducer.content.gate.StressGateBlock;
 import at.simulevski.weatherinducer.content.inducer.WeatherInducerBlock;
+import at.simulevski.weatherinducer.content.lightning.LightningMediumBlock;
 import at.simulevski.weatherinducer.content.resistor.SUResistorBlock;
 import at.simulevski.weatherinducer.content.sensor.WeatherSensorBlock;
 import net.minecraft.world.level.block.Block;
@@ -63,6 +64,13 @@ public final class ModBlocks {
                     .sound(SoundType.NETHERITE_BLOCK)
                     .noOcclusion()
                     .requiresCorrectToolForDrops()));
+
+    public static final DeferredBlock<LightningMediumBlock> LIGHTNING_MEDIUM = BLOCKS.register(
+            "lightning_medium",
+            () -> new LightningMediumBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_BLUE)
+                    .strength(1.5f)
+                    .sound(SoundType.GLASS)));
 
     private ModBlocks() {
     }

@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "  B",
+        " B ",
+        "A  "
+    ],
+    "key": {
+        "B": {
+            "item": "weatherinducer:bottle_o_lightning"
+        },
+        "A": {
+            "item": "minecraft:ancient_debris"
+        }
+    },
+    "result": {
+        "id": "weatherinducer:lightning_bolt",
+        "count": 1
+    }
+}

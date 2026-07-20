@@ -1,0 +1,24 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "equipment",
+    "pattern": [
+        "BBB",
+        "B B"
+    ],
+    "key": {
+        "B": {
+            "item": "weatherinducer:lightning_bolt"
+        }
+    },
+    "result": {
+        "id": "weatherinducer:lightning_helmet",
+        "count": 1,
+        "components": {
+            "minecraft:enchantments": {
+                "levels": {
+                    "minecraft:thorns": 3
+                }
+            }
+        }
+    }
+}

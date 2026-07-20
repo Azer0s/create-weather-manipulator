@@ -12,6 +12,7 @@ import at.simulevski.weatherinducer.content.resistor.SUResistorBlock;
 import at.simulevski.weatherinducer.content.resistor.SUResistorBlockEntity;
 import at.simulevski.weatherinducer.content.sensor.WeatherSensorBlock;
 import at.simulevski.weatherinducer.registry.ModBlocks;
+import at.simulevski.weatherinducer.registry.ModItems;
 import com.simibubi.create.content.kinetics.base.DirectionalKineticBlock;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import net.minecraft.core.BlockPos;
@@ -20,10 +21,13 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -275,6 +279,31 @@ public class ModGameTests {
                     KineticBlockEntity fanBe = helper.getBlockEntity(fanPos);
                     helper.assertTrue(!gate.isLocked() && fanBe.getSpeed() != 0,
                             "The gate should unlock and pass rotation once the threshold is met");
+                })
+                .thenSucceed();
+    }
+
+    /** A lightning strike consumes the Lightning Medium and bottles the strike. */
+    @GameTest(template = "empty")
+    public static void lightningMediumBottlesStrikes(GameTestHelper helper) {
+        BlockPos mediumPos = new BlockPos(3, 2, 3);
+        helper.startSequence()
+                .thenExecute(() -> {
+                    placeFloor(helper);
+                    helper.setBlock(mediumPos, ModBlocks.LIGHTNING_MEDIUM.get());
+                    LightningBolt bolt = EntityType.LIGHTNING_BOLT.create(helper.getLevel());
+                    bolt.moveTo(Vec3.atBottomCenterOf(helper.absolutePos(mediumPos.above())));
+                    helper.getLevel().addFreshEntity(bolt);
+                })
+                .thenIdle(2)
+                .thenExecute(() -> {
+                    helper.assertBlockPresent(Blocks.AIR, mediumPos);
+                    AABB area = new AABB(helper.absolutePos(mediumPos)).inflate(3);
+                    boolean found = helper.getLevel()
+                            .getEntitiesOfClass(ItemEntity.class, area).stream()
+                            .anyMatch(e -> e.getItem().is(ModItems.BOTTLE_O_LIGHTNING.get()));
+                    helper.assertTrue(found,
+                            "The strike should bottle into a Bottle o' Lightning");
                 })
                 .thenSucceed();
     }

@@ -33,7 +33,10 @@ public final class ModDataGenerators {
 
         generator.addProvider(event.includeServer(),
                 new ModLootTableProvider(output, event.getLookupProvider()));
-        generator.addProvider(event.includeServer(),
+        ModBlockTagsProvider blockTags = generator.addProvider(event.includeServer(),
                 new ModBlockTagsProvider(output, event.getLookupProvider(), event.getExistingFileHelper()));
+        generator.addProvider(event.includeServer(),
+                new ModItemTagsProvider(output, event.getLookupProvider(),
+                        blockTags.contentsGetter(), event.getExistingFileHelper()));
     }
 }

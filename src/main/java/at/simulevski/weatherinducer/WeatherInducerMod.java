@@ -1,5 +1,6 @@
 package at.simulevski.weatherinducer;
 
+import at.simulevski.weatherinducer.registry.ModArmorMaterials;
 import at.simulevski.weatherinducer.registry.ModBlockEntities;
 import at.simulevski.weatherinducer.registry.ModBlocks;
 import at.simulevski.weatherinducer.registry.ModCreativeTabs;
@@ -39,6 +40,7 @@ public class WeatherInducerMod {
 
     public WeatherInducerMod(IEventBus modEventBus, ModContainer modContainer) {
         ModBlocks.register(modEventBus);
+        ModArmorMaterials.register(modEventBus);
         ModBlockEntities.register(modEventBus);
         ModItems.register(modEventBus);
         ModCreativeTabs.register(modEventBus);

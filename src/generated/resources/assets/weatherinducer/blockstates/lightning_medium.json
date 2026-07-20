@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "weatherinducer:block/lightning_medium"
+    }
+  }
+}
