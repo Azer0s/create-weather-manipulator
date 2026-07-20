@@ -1,7 +1,7 @@
 package at.simulevski.weatherinducer.registry;
 
 import at.simulevski.weatherinducer.WeatherInducerMod;
-import at.simulevski.weatherinducer.content.charger.SUChargerBlock;
+import at.simulevski.weatherinducer.content.charger.KineticChargerBlock;
 import at.simulevski.weatherinducer.content.gate.StressGateBlock;
 import at.simulevski.weatherinducer.content.inducer.WeatherInducerBlock;
 import at.simulevski.weatherinducer.content.lightning.LightningMediumBlock;
@@ -37,9 +37,9 @@ public final class ModBlocks {
                     .strength(1.0f)
                     .sound(SoundType.WOOD)));
 
-    public static final DeferredBlock<SUChargerBlock> SU_CHARGER = BLOCKS.register(
-            "su_charger",
-            () -> new SUChargerBlock(BlockBehaviour.Properties.of()
+    public static final DeferredBlock<KineticChargerBlock> KINETIC_CHARGER = BLOCKS.register(
+            "kinetic_charger",
+            () -> new KineticChargerBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.PODZOL)
                     .strength(3.0f, 6.0f)
                     .sound(SoundType.NETHERITE_BLOCK)

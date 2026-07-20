@@ -1,7 +1,7 @@
 package at.simulevski.weatherinducer.registry;
 
 import at.simulevski.weatherinducer.WeatherInducerMod;
-import at.simulevski.weatherinducer.content.charger.SUChargerBlockEntity;
+import at.simulevski.weatherinducer.content.charger.KineticChargerBlockEntity;
 import at.simulevski.weatherinducer.content.gate.StressGateBlockEntity;
 import at.simulevski.weatherinducer.content.inducer.WeatherInducerBlockEntity;
 import at.simulevski.weatherinducer.content.lightning.LightningMediumBlockEntity;
@@ -37,12 +37,12 @@ public final class ModBlockEntities {
                                     ModBlockEntities.WEATHER_SENSOR.get(), pos, state),
                             ModBlocks.WEATHER_SENSOR.get()).build(null));
 
-    public static final Supplier<BlockEntityType<SUChargerBlockEntity>> SU_CHARGER =
-            BLOCK_ENTITIES.register("su_charger",
+    public static final Supplier<BlockEntityType<KineticChargerBlockEntity>> KINETIC_CHARGER =
+            BLOCK_ENTITIES.register("kinetic_charger",
                     () -> BlockEntityType.Builder.of(
-                            (pos, state) -> new SUChargerBlockEntity(
-                                    ModBlockEntities.SU_CHARGER.get(), pos, state),
-                            ModBlocks.SU_CHARGER.get()).build(null));
+                            (pos, state) -> new KineticChargerBlockEntity(
+                                    ModBlockEntities.KINETIC_CHARGER.get(), pos, state),
+                            ModBlocks.KINETIC_CHARGER.get()).build(null));
 
     public static final Supplier<BlockEntityType<LightningMediumBlockEntity>> LIGHTNING_MEDIUM =
             BLOCK_ENTITIES.register("lightning_medium",

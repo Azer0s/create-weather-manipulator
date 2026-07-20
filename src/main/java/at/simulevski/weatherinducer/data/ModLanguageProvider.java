@@ -22,7 +22,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
         add(ModBlocks.WEATHER_INDUCER.get(), "Weather Inducer");
         add(ModBlocks.WEATHER_SENSOR.get(), "Weather Sensor");
-        add(ModBlocks.SU_CHARGER.get(), "SU Charger");
+        add(ModBlocks.KINETIC_CHARGER.get(), "Kinetic Charger");
         add(ModBlocks.STRESS_GATE.get(), "Stress Gate");
         add(ModBlocks.LIGHTNING_MEDIUM.get(), "Lightning Medium");
 
@@ -53,14 +53,15 @@ public class ModLanguageProvider extends LanguageProvider {
 
         add("weatherinducer.tooltip.title", "Weather Inducer");
         add("weatherinducer.tooltip.charge", "Charge: %s / %s SU (%s%%)");
-        add("weatherinducer.tooltip.charge_time", "Full charge in %s s (%s SU per second)");
+        add("weatherinducer.tooltip.charge_time", "Full charge in %s s (loads the network with %s SU)");
         add("weatherinducer.tooltip.mode", "Mode: %s");
         add("weatherinducer.tooltip.stress_gate", "Stress Gate");
         add("weatherinducer.tooltip.threshold", "Unlocks at: %s SU provided");
         add("weatherinducer.tooltip.provided", "Network provides: %s SU");
         add("weatherinducer.tooltip.locked", "Locked: the network provides too little SU");
-        add("weatherinducer.tooltip.su_charger", "SU Charger");
+        add("weatherinducer.tooltip.kinetic_charger", "Kinetic Charger");
         add("weatherinducer.tooltip.buffer", "Buffer: %s / %s SU (%s%%)");
+        add("weatherinducer.tooltip.flywheels", "Flywheels: %s (up to %s add capacity)");
         add("weatherinducer.tooltip.charger_mode", "Mode: %s");
         add("weatherinducer.charger_mode.charging", "Charging");
         add("weatherinducer.charger_mode.discharging", "Discharging");
@@ -78,20 +79,25 @@ public class ModLanguageProvider extends LanguageProvider {
 
         // JEI / EMI information pages
         add("weatherinducer.info.weather_inducer",
-                "The Weather Inducer charges from the network's spare Stress Units (whatever the sources provide "
-                        + "beyond what the machines use), up to 1,048,576 SU at 131,072 SU per tick at most. While "
-                        + "it can see the sky, a redstone pulse then applies the selected weather - rain, clear, or "
-                        + "a lightning strike at a configurable offset - and discharges it.");
+                "The Weather Inducer charges while its shaft turns, loading the kinetic network with real "
+                        + "stress: the 1,048,576 SU it needs divided by its charge time (10 seconds at the "
+                        + "fastest, so it fires at most once every 10 seconds). The charge time locks while any "
+                        + "charge is in the block. While it can see the sky, a redstone pulse applies the "
+                        + "selected weather - rain, clear, or a lightning strike at a configurable offset - and "
+                        + "discharges it.");
         add("weatherinducer.info.weather_sensor",
                 "The Weather Sensor reads the sky like a daylight detector reads the sun: it emits redstone "
                         + "signal 0 under clear skies, 7 in rain and 15 during a thunderstorm. It needs to see "
                         + "the sky; covered, it reads 0.");
-        add("weatherinducer.info.su_charger",
-                "The SU Charger is a kinetic battery. While the shaft turns it soaks the network's spare SU "
-                        + "into a 1,048,576 SU buffer, at up to 131,072 SU per tick. Stop the input, and the "
-                        + "charger takes over: it drives its output side at the speed it charged with, providing "
-                        + "131,072 SU and draining the buffer by what the machines use. Raw network SU never "
-                        + "passes through. It emits a redstone signal proportional to its fill level.");
+        add("weatherinducer.info.kinetic_charger",
+                "The Kinetic Charger is a kinetic battery. While the shaft turns it charges like the Weather "
+                        + "Inducer does, loading the network with its buffer divided by its charge time (10 "
+                        + "seconds at the fastest; the slider locks while the buffer holds anything). Flywheels "
+                        + "attached on the input side set the capacity: 2,048 SU bare, about 104,858 more per "
+                        + "flywheel, up to ten of them. More than ten jams the charger and overstresses the "
+                        + "network. Stop the input and it takes over: it drives its output side at the speed it "
+                        + "charged with, providing 131,072 SU and draining the buffer by what the machines use. "
+                        + "It emits a redstone signal proportional to its fill level.");
         add("weatherinducer.info.lightning_medium",
                 "A beacon and an end crystal encased in glass. Strike it with lightning (a Weather Inducer "
                         + "in lightning mode aims for you) and the block shatters into a Bottle o' Lightning, "

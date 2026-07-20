@@ -49,7 +49,7 @@ public final class WeatherInducerClient {
                 context -> new ShaftRenderer<>(context));
         // The gate is a split shaft: its two halves can turn at different
         // speeds while locked, so it gets the matching renderer.
-        event.registerBlockEntityRenderer(ModBlockEntities.SU_CHARGER.get(),
+        event.registerBlockEntityRenderer(ModBlockEntities.KINETIC_CHARGER.get(),
                 context -> new ShaftRenderer<>(context));
         event.registerBlockEntityRenderer(ModBlockEntities.STRESS_GATE.get(),
                 context -> new SplitShaftRenderer(context));
@@ -102,7 +102,7 @@ public final class WeatherInducerClient {
             SimpleBlockEntityVisualizer.builder(ModBlockEntities.WEATHER_INDUCER.get())
                     .factory(SingleAxisRotatingVisual::shaft)
                     .apply();
-            SimpleBlockEntityVisualizer.builder(ModBlockEntities.SU_CHARGER.get())
+            SimpleBlockEntityVisualizer.builder(ModBlockEntities.KINETIC_CHARGER.get())
                     .factory(SingleAxisRotatingVisual::shaft)
                     .apply();
             SimpleBlockEntityVisualizer.builder(ModBlockEntities.STRESS_GATE.get())

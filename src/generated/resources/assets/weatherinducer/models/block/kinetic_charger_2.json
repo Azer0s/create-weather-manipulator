@@ -4,37 +4,167 @@
     {
       "faces": {
         "down": {
-          "cullface": "down",
           "texture": "#plate"
         },
         "east": {
-          "cullface": "east",
-          "texture": "#side"
+          "texture": "#side",
+          "uv": [
+            0.0,
+            0.0,
+            3.0,
+            16.0
+          ]
         },
         "north": {
           "texture": "#out"
         },
         "south": {
-          "texture": "#in"
+          "texture": "#plate"
         },
         "up": {
-          "cullface": "up",
           "texture": "#plate"
         },
         "west": {
-          "cullface": "west",
           "texture": "#side"
         }
       },
       "from": [
         0,
         0,
-        2
+        0
       ],
       "to": [
         16,
         16,
-        14
+        3
+      ]
+    },
+    {
+      "faces": {
+        "down": {
+          "texture": "#plate"
+        },
+        "east": {
+          "texture": "#side",
+          "uv": [
+            13.0,
+            0.0,
+            16.0,
+            16.0
+          ]
+        },
+        "north": {
+          "texture": "#plate"
+        },
+        "south": {
+          "texture": "#in"
+        },
+        "up": {
+          "texture": "#plate"
+        },
+        "west": {
+          "texture": "#side"
+        }
+      },
+      "from": [
+        0,
+        0,
+        13
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ]
+    },
+    {
+      "faces": {
+        "down": {
+          "texture": "#side",
+          "uv": [
+            3.0,
+            1.0,
+            13.0,
+            15.0
+          ]
+        },
+        "east": {
+          "texture": "#side"
+        },
+        "up": {
+          "texture": "#side",
+          "uv": [
+            3.0,
+            1.0,
+            13.0,
+            15.0
+          ]
+        },
+        "west": {
+          "texture": "#side"
+        }
+      },
+      "from": [
+        1,
+        1,
+        3
+      ],
+      "to": [
+        15,
+        15,
+        13
+      ]
+    },
+    {
+      "faces": {
+        "down": {
+          "texture": "#band"
+        },
+        "east": {
+          "texture": "#band"
+        },
+        "up": {
+          "texture": "#band"
+        },
+        "west": {
+          "texture": "#band"
+        }
+      },
+      "from": [
+        0.5,
+        0.5,
+        4.5
+      ],
+      "to": [
+        15.5,
+        15.5,
+        6
+      ]
+    },
+    {
+      "faces": {
+        "down": {
+          "texture": "#band"
+        },
+        "east": {
+          "texture": "#band"
+        },
+        "up": {
+          "texture": "#band"
+        },
+        "west": {
+          "texture": "#band"
+        }
+      },
+      "from": [
+        0.5,
+        0.5,
+        10
+      ],
+      "to": [
+        15.5,
+        15.5,
+        11.5
       ]
     },
     {
@@ -319,10 +449,11 @@
     }
   ],
   "textures": {
-    "in": "weatherinducer:block/su_charger_in",
-    "out": "weatherinducer:block/su_charger_out",
-    "particle": "weatherinducer:block/su_charger_side_2",
+    "band": "minecraft:block/copper_block",
+    "in": "weatherinducer:block/kinetic_charger_in",
+    "out": "weatherinducer:block/kinetic_charger_out",
+    "particle": "weatherinducer:block/kinetic_charger_side_2",
     "plate": "weatherinducer:block/weather_inducer_bottom",
-    "side": "weatherinducer:block/su_charger_side_2"
+    "side": "weatherinducer:block/kinetic_charger_side_2"
   }
 }

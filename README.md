@@ -8,7 +8,7 @@ A [Create](https://github.com/Creators-of-Create/Create) addon for **Minecraft 1
 | ----- | ------------ |
 | **Weather Inducer** | Charges from the network's **spare SU** (provided capacity minus used stress) up to **1,048,576 SU** (2^20), at up to **131,072 SU per tick** (2^17). When fully charged and pulsed with redstone, it applies the selected weather effect: **rain**, **clear**, or **lightning** at a configurable position, provided it can see the sky. |
 | **Stress Gate** | An inline shaft block that stays **locked** until the kinetic network provides at least a set amount of total SU. Use it to keep contraptions dormant until the power plant is big enough. |
-| **SU Charger** | A kinetic battery. Rotation passes through while charging, **SU never does**. While the shaft turns it fills a **1,048,576 SU** buffer; once the input stops, the charger itself drives its output side at the speed it charged with, draining the buffer by what the machines use. Emits a redstone signal proportional to its fill level. |
+| **Kinetic Charger** | A kinetic battery. Flywheels attached on its input side set the capacity (2,048 SU bare, ~104,858 per wheel, up to ten; more jams it). While the shaft turns it charges like the inducer, loading the network with capacity divided by charge time; once the input stops, it drives its output side at the speed it charged with, draining the buffer by what the machines use. Emits a redstone signal proportional to its fill level. |
 | **Weather Sensor** | A daylight-detector-shaped slab that reads the sky: redstone **0** when clear, **7** in rain, **15** in a thunderstorm. Covered, it reads 0. |
 | **Lightning Medium** | A beacon and an end crystal encased in glass; the crystal bobs and spins inside the shell like a real end crystal. Struck by lightning, it shatters into a **Bottle o' Lightning**, the base of the lightning gear. |
 
@@ -18,8 +18,8 @@ A [Create](https://github.com/Creators-of-Create/Create) addon for **Minecraft 1
 
 ### Weather Inducer
 - **Kinetic input:** a shaft on the front/back faces (the facing axis).
-- **Charging:** each tick the inducer soaks up the network's spare SU (`capacity - stress`) until it holds 1,048,576 SU, paced by its charge time slider. A network busy running machines charges it with whatever is left over. A discharging SU Charger tops it up when the network itself has nothing to spare.
-- **Charge time (value boxes on the shaft faces):** picks how long a full charge takes, from 10 seconds (the floor: even flat out, the inducer fires at most once every 10 seconds) up a doubling ladder to 1,280 seconds. Goggles show the configured time and the SU per second it works out to.
+- **Charging:** the inducer charges while its shaft turns, and it pays for it: the network carries a real stress load of the 1,048,576 SU it needs divided by the charge time in seconds. Ten seconds costs a monstrous 104,858 SU; 1,280 seconds a gentle 819. Overstress the network and everything, charging included, halts.
+- **Charge time (value boxes on the shaft faces):** picks how long a full charge takes, from 10 seconds (the floor: even flat out, the inducer fires at most once every 10 seconds) up a doubling ladder to 1,280 seconds. The slider locks while any charge is in the block, and goggles show the configured time and the stress it costs.
 - **Sky line-of-sight:** the block directly above must be able to see the sky, or firing is blocked.
 - **Mode (top value box):** Create's option menu with an icon and label per entry; scroll or drag to pick `Rain` / `Clear` / `Lightning`.
 - **Lightning offset (side value boxes):** two scrolls set the X/Z offset (-64 to +64) of the lightning strike, measured from the inducer. The strike lands on the surface at that column.
@@ -27,9 +27,10 @@ A [Create](https://github.com/Creators-of-Create/Create) addon for **Minecraft 1
 - **Charge indicator:** the bolt emblem on the sides lights up gold from the tip upward in sixths of a full charge, so the fill level is readable at a glance. Goggles show a live charge bar plus the exact SU numbers, updated tick by tick.
 - **Comparator:** emits a redstone signal (0 to 15) proportional to charge.
 
-### SU Charger
+### Kinetic Charger
 - **Inline shaft with a direction:** rotation passes through along the facing axis, but SU never crosses the block. Placed dropper-style, the output face points away from you.
-- **Charge mode (shaft turning):** the charger soaks the network's spare SU into a 1,048,576 SU buffer, at up to 131,072 SU per tick.
+- **Flywheel bank:** the buffer's size comes from flywheels attached on the input side: 2,048 SU bare, about 104,858 SU per wheel, ten wheels tops (1,050,624 SU). An eleventh wheel is more inertia than the charger can spin: it grinds the network to an overstressed halt until removed.
+- **Charge mode (shaft turning):** the charger fills its buffer the way the inducer charges, loading the network with real stress: the capacity divided by its charge time slider (10 s at the fastest; the slider locks while the buffer holds anything).
 - **Battery mode (input stopped):** stop the input (a clutch works nicely) and the charger takes over as a kinetic source: it disconnects its input face, spins the **output** side at the speed it charged with, and provides 131,072 SU. The buffer drops each tick by the stress the driven machines use, and when it runs dry (or the input starts turning again) the charger reconnects and goes back to charging. A Weather Inducer on the output side may additionally drain the buffer directly, so a charger-fed inducer fires exactly once per buffer fill.
 - **Redstone output:** the block itself emits a signal of 0 to 15 proportional to the buffer fill, so wires (or the clutch feeding it) can react to the charge level directly. A comparator reads the same value, and goggles show the exact numbers and the current mode.
 - **Fill indicator:** the gap between the capacitor plates on the side faces fills with teal as the buffer charges.
@@ -80,7 +81,7 @@ E P E      E = Electron Tube        P = Precision Mechanism
 B S B      B = Brass Sheet          S = Shaft
 ```
 
-**SU Charger**:
+**Kinetic Charger**:
 ```
 B C B      B = Brass Sheet          C = Copper Block
 S E S      S = Shaft                E = Electron Tube
@@ -111,7 +112,7 @@ G B G      B = Beacon
 **Lightning Bolt** (a diagonal, like its namesake):
 ```
 . . B      B = Bottle o' Lightning
-. B .      A = Ancient Debris
+. B .      A = Netherite Ingot
 A . .
 ```
 
@@ -129,11 +130,12 @@ All integrations are optional; the mod runs with none of them installed, and eac
 integration class only loads when its mod is present.
 
 ### Ponder
-The Weather Inducer ships an in-game Ponder scene (the newer Weather
-Sensor, SU Charger, and Stress Gate do not have scenes yet; their JEI/EMI
-info pages cover the mechanics). See it via the item tooltip's Ponder key or
-in JEI/EMI. It demonstrates a creative motor driving a Weather Inducer, and
-explains SU charging, the sky requirement, and redstone firing. The scene text is
+The Weather Inducer and Kinetic Charger ship in-game Ponder scenes (the
+Weather Sensor and Stress Gate do not have scenes yet; their JEI/EMI info
+pages cover the mechanics). See them via the item tooltip's Ponder key or in
+JEI/EMI. They explain stress-paid charging, the charge time slider, the
+flywheel capacity bank, battery discharge, the sky requirement and redstone
+firing. The scene text is
 authored inline in `ModPonderScenes`; datagen runs Ponder's registration and
 writes the generated lang entries into `en_us.json` (`ModLanguageProvider`),
 which is what makes the text actually show up in game.
@@ -177,7 +179,7 @@ They verify: full-charge + sky + redstone fires and discharges; lightning mode
 spawns a bolt; a blocked sky prevents firing; firing below full charge is a
 no-op; a lightning strike consumes a Lightning Medium and bottles the strike
 (the drop surviving the bolt); the Weather Sensor's signal follows thunder and clear skies (in its own
-test batch, since weather is global); the SU Charger offers its buffer only
+test batch, since weather is global); the Kinetic Charger offers its buffer only
 while its input is stopped, publishes the fill level as redstone, and drains
 exactly what is taken; the charger drives its output side from the buffer,
 with and without a clutch on the input; the charge time slider paces the
@@ -248,13 +250,14 @@ easy to follow and maintain:
    vanilla rod's thicker tip.
 
 ### The SU model, in short
-There is no custom SU bookkeeping layer. Consumers (Weather Inducer, SU
-Charger) simply soak up their network's spare capacity each tick:
-`min(calculateCapacity() - calculateStress(), 131,072)`. A stopped or fully
-loaded network offers nothing. The SU Charger is the one battery-like
-exception: it stores that spare SU in a buffer and, while its shaft stands
-still, hands it to consumers found through a short physical walk from its
-output face (`SUNetwork.drawFromChargers`); raw network SU never crosses it.
+There is no custom SU bookkeeping layer. The two capacitors (Weather
+Inducer, Kinetic Charger) charge by being honest Create consumers: while
+filling, each loads its network with real stress equal to its capacity
+divided by its charge time, and banks a tick's worth of that every tick.
+Stopped or overstressed shafts charge nothing. The Kinetic Charger is the
+battery half: once its input stops it becomes a kinetic source itself,
+driving its output side and draining the buffer by exactly the stress the
+driven machines use.
 
 The Stress Gate
 uses Create's clutch mechanism (`SplitShaftBlockEntity`): it stays locked until

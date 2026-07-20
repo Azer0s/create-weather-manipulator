@@ -11,11 +11,11 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "weatherinducer:su_charger"
+          "name": "weatherinducer:kinetic_charger"
         }
       ],
       "rolls": 1.0
     }
   ],
-  "random_sequence": "weatherinducer:blocks/su_charger"
+  "random_sequence": "weatherinducer:blocks/kinetic_charger"
 }

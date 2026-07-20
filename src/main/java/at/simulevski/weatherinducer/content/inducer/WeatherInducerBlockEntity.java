@@ -3,7 +3,6 @@ package at.simulevski.weatherinducer.content.inducer;
 import at.simulevski.weatherinducer.content.util.KeyedScrollOptionBehaviour;
 import at.simulevski.weatherinducer.content.util.KeyedScrollValueBehaviour;
 import at.simulevski.weatherinducer.content.util.SideValueBoxTransform;
-import at.simulevski.weatherinducer.network.SUNetwork;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.content.kinetics.base.HorizontalKineticBlock;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
@@ -30,11 +29,10 @@ import java.util.List;
 /**
  * Drives the Weather Inducer:
  * <ul>
- *   <li>charges from the kinetic network's spare SU (provided capacity minus
- *       used stress, see {@link SUNetwork}) up to {@link #MAX_CHARGE}. The
- *       charge time slider decides how fast: a full charge takes the set
- *       number of seconds, ten at the fastest. A stopped line offers
- *       nothing unless a discharging SU Charger feeds it;</li>
+ *   <li>charges while its shaft turns, loading the kinetic network with
+ *       real stress: the {@link #MAX_CHARGE} it needs divided by the
+ *       configured charge time (ten seconds at the fastest). A stopped or
+ *       overstressed line charges nothing;</li>
  *   <li>when fully charged, a rising redstone edge fires the selected weather
  *       effect, provided the block above can see the sky;</li>
  *   <li>exposes four scroll value boxes: mode (top), the lightning X/Z
@@ -104,10 +102,14 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
         offsetZScroll.between(-OFFSET_RANGE, OFFSET_RANGE);
         behaviours.add(offsetZScroll);
 
-        // Charge time slider on the two shaft faces (front and back).
+        // Charge time slider on the two shaft faces (front and back). It
+        // locks the moment any charge is in the block: the load was drawn
+        // at the configured pace, so the pace stays put until the inducer
+        // fires and returns to empty.
         chargeTime = new ChargeTimeScrollBehaviour(this,
                 new SideValueBoxTransform((state, dir) ->
                         dir.getAxis() == state.getValue(HorizontalKineticBlock.HORIZONTAL_FACING).getAxis()));
+        chargeTime.onlyActiveWhen(() -> charge <= 0);
         behaviours.add(chargeTime);
     }
 
@@ -116,9 +118,21 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
         return ChargeTimeScrollBehaviour.seconds(chargeTime != null ? chargeTime.getValue() : 0);
     }
 
-    /** SU pulled in per tick so a full charge takes the configured seconds. */
+    /** SU gained per tick so a full charge takes the configured seconds. */
     public double intakePerTick() {
         return MAX_CHARGE / (getChargeTimeSeconds() * 20.0);
+    }
+
+    /** The stress the inducer puts on its network while charging: the
+     * total it needs divided by the charge time, so ten seconds costs a
+     * hefty 104,858 SU and 1,280 seconds a mere 819. */
+    public double chargeLoad() {
+        return MAX_CHARGE / getChargeTimeSeconds();
+    }
+
+    /** True while the block still wants SU and the shaft turns. */
+    public boolean isCharging() {
+        return charge < MAX_CHARGE && getSpeed() != 0;
     }
 
     @Override
@@ -128,30 +142,22 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
             return;
         }
 
-        // Charge from the network's spare SU (provided capacity minus what
-        // the machines use), topping up from any discharging SU Charger. A
-        // dead network has no spare capacity, so no speed gate is needed.
-        // The charge time slider paces the intake so a full charge takes
-        // the configured number of seconds.
-        if (charge < MAX_CHARGE) {
-            double wanted = Math.min(intakePerTick(), MAX_CHARGE - charge);
-            double intake = Math.min(wanted, SUNetwork.remainingSU(this));
-            if (intake < wanted) {
-                intake += SUNetwork.drawFromChargers(this, wanted - intake);
-            }
-            if (intake > 0) {
-                double before = charge;
-                charge = Math.min(MAX_CHARGE, charge + intake);
-                if (charge != before) {
-                    setChanged();
-                    // Keep the comparator output in step with the charge level.
-                    level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
-                    updateChargeIndicator();
-                    // Sync every change: the goggle charge bar animates off
-                    // the client copy, so it needs to track tick by tick.
-                    sendData();
-                }
-            }
+        // The inducer is an honest Create consumer: while charging it puts
+        // a real stress load on its network (the total it needs divided by
+        // the charge seconds; 10 s costs 104,858 SU) and banks a tick's
+        // worth of that each tick. Overstress the network and everything
+        // halts, charging included, until the power plant grows. The load
+        // lifts once the block is full.
+        refreshLoad();
+        if (isCharging()) {
+            charge = Math.min(MAX_CHARGE, charge + intakePerTick());
+            setChanged();
+            // Keep the comparator output in step with the charge level.
+            level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
+            updateChargeIndicator();
+            // Sync every change: the goggle charge bar animates off the
+            // client copy, so it needs to track tick by tick.
+            sendData();
         }
 
         boolean powered = level.hasNeighborSignal(worldPosition);
@@ -293,12 +299,37 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
         }
     }
 
-    // The Weather Inducer is a pure consumer: it applies stress to the network.
+    // The Weather Inducer is a pure consumer: while charging it applies
+    // its charge load as stress (total divided by charge seconds). Create
+    // stores stress as impact times speed, hence the division; the
+    // theoretical speed keeps the load in place even while the network is
+    // overstressed, so it cannot flap.
     @Override
     public float calculateStressApplied() {
-        float impact = 8f; // SU per RPM
+        float impact = targetImpact();
         this.lastStressApplied = impact;
         return impact;
+    }
+
+    private float targetImpact() {
+        float speed = Math.abs(getTheoreticalSpeed());
+        if (charge >= MAX_CHARGE || speed < 0.01f) {
+            return 0;
+        }
+        return (float) (chargeLoad() / speed);
+    }
+
+    /** Re-books our stress with the network whenever the load changes. */
+    private void refreshLoad() {
+        if (!hasNetwork()) {
+            return;
+        }
+        float target = targetImpact();
+        if (Math.abs(target - lastStressApplied) > 1.0e-4f) {
+            getOrCreateNetwork().updateStressFor(this, target);
+            getOrCreateNetwork().sync();
+            lastStressApplied = target;
+        }
     }
 
     @Override
@@ -341,7 +372,7 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
         tooltip.add(Component.literal("    ").append(
                 Component.translatable("weatherinducer.tooltip.charge_time",
                         getChargeTimeSeconds(),
-                        String.format("%,.0f", MAX_CHARGE / getChargeTimeSeconds()))
+                        String.format("%,.0f", chargeLoad()))
                         .withStyle(ChatFormatting.GRAY)));
 
         WeatherMode mode = WeatherMode.fromIndex(modeScroll.getValue());

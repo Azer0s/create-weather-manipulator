@@ -1,8 +1,8 @@
 package at.simulevski.weatherinducer.gametest;
 
 import at.simulevski.weatherinducer.WeatherInducerMod;
-import at.simulevski.weatherinducer.content.charger.SUChargerBlock;
-import at.simulevski.weatherinducer.content.charger.SUChargerBlockEntity;
+import at.simulevski.weatherinducer.content.charger.KineticChargerBlock;
+import at.simulevski.weatherinducer.content.charger.KineticChargerBlockEntity;
 import at.simulevski.weatherinducer.content.gate.StressGateBlock;
 import at.simulevski.weatherinducer.content.gate.StressGateBlockEntity;
 import at.simulevski.weatherinducer.content.util.SUValueLadder;
@@ -137,8 +137,10 @@ public class ModGameTests {
 
     /**
      * The charge time slider paces the intake: at the slowest setting
-     * (1,280 s) the inducer sips about 41 SU per tick, so after a second
-     * it must hold only a few hundred SU even on an oversized network.
+     * (1,280 s) the inducer banks about 41 SU per tick (an 819 SU load),
+     * so after a second it must hold only a few hundred SU even on an
+     * oversized network. And once charge sits in the block, the slider
+     * has to lock.
      */
     @GameTest(template = "empty", timeoutTicks = 200)
     public static void chargeTimeSliderPacesIntake(GameTestHelper helper) {
@@ -157,11 +159,61 @@ public class ModGameTests {
                 })
                 .thenIdle(20)
                 .thenExecute(() -> {
-                    double charge = inducer(helper).getCharge();
+                    WeatherInducerBlockEntity be = inducer(helper);
+                    double charge = be.getCharge();
                     helper.assertTrue(charge > 0,
-                            "The inducer should charge from the motor's spare SU");
+                            "The inducer should charge while spinning");
                     helper.assertTrue(charge <= 41 * 24,
                             "The slider must pace the intake, got " + charge + " SU");
+                    // While charge sits in the block the slider is locked.
+                    boolean sliderActive = be.getAllBehaviours().stream()
+                            .filter(ValueSettingsBehaviour.class::isInstance)
+                            .map(ValueSettingsBehaviour.class::cast)
+                            .filter(b -> b.netId() == 4)
+                            .allMatch(ValueSettingsBehaviour::isActive);
+                    helper.assertTrue(!sliderActive,
+                            "The charge time slider must lock while charging");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * Flywheels on the input side set the Kinetic Charger's capacity:
+     * 2,048 SU bare, about 104,858 more per wheel. Two wheels in the line
+     * must therefore read as roughly 211,763 SU.
+     */
+    @GameTest(template = "empty", timeoutTicks = 200)
+    public static void flywheelsSetChargerCapacity(GameTestHelper helper) {
+        BlockPos motorPos = new BlockPos(1, 2, 3);
+        BlockPos wheelA = new BlockPos(2, 2, 3);
+        BlockPos wheelB = new BlockPos(3, 2, 3);
+        BlockPos chargerPos = new BlockPos(4, 2, 3);
+        helper.startSequence()
+                .thenExecute(() -> {
+                    placeFloor(helper);
+                    Block motor = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:creative_motor"));
+                    Block flywheel = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:flywheel"));
+                    helper.setBlock(motorPos, motor.defaultBlockState()
+                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
+                    helper.setBlock(wheelA, flywheel.defaultBlockState()
+                            .setValue(RotatedPillarKineticBlock.AXIS, Direction.Axis.X));
+                    helper.setBlock(wheelB, flywheel.defaultBlockState()
+                            .setValue(RotatedPillarKineticBlock.AXIS, Direction.Axis.X));
+                    helper.setBlock(chargerPos, ModBlocks.KINETIC_CHARGER.get().defaultBlockState()
+                            .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.EAST));
+                })
+                .thenIdle(15)
+                .thenExecute(() -> {
+                    KineticChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
+                    charger.recountFlywheelsForTesting();
+                    helper.assertTrue(charger.getFlywheels() == 2,
+                            "Expected 2 flywheels, counted " + charger.getFlywheels());
+                    double expected = KineticChargerBlockEntity.BASE_CAPACITY
+                            + 2 * KineticChargerBlockEntity.FLYWHEEL_CAPACITY;
+                    helper.assertTrue(Math.abs(charger.getMaxBuffer() - expected) < 1,
+                            "Capacity should follow the flywheel bank, got " + charger.getMaxBuffer());
                 })
                 .thenSucceed();
     }
@@ -201,37 +253,41 @@ public class ModGameTests {
         helper.startSequence()
                 .thenExecute(() -> {
                     placeFloor(helper);
-                    helper.setBlock(INDUCER, ModBlocks.SU_CHARGER.get());
-                    SUChargerBlockEntity be = helper.getBlockEntity(INDUCER);
-                    be.setBufferForTesting(SUChargerBlockEntity.MAX_BUFFER);
+                    helper.setBlock(INDUCER, ModBlocks.KINETIC_CHARGER.get());
+                    KineticChargerBlockEntity be = helper.getBlockEntity(INDUCER);
+                    be.setBufferForTesting(KineticChargerBlockEntity.MAX_BUFFER);
                     be.setChargeSpeedForTesting(16); // as if it had charged at 16 rpm
                 })
                 .thenIdle(4) // let it flip to battery mode and publish redstone
                 .thenExecute(() -> {
-                    SUChargerBlockEntity be = helper.getBlockEntity(INDUCER);
+                    KineticChargerBlockEntity be = helper.getBlockEntity(INDUCER);
                     helper.assertTrue(be.isDischarging(),
                             "A stopped charger with a full buffer must be discharging");
+                    // No flywheels attached, so the bank holds the bare 2,048.
+                    double capacity = be.getMaxBuffer();
+                    helper.assertTrue(capacity == KineticChargerBlockEntity.BASE_CAPACITY,
+                            "A bare charger holds only the base capacity");
                     helper.assertTrue(
-                            be.availableDischarge() == SUChargerBlockEntity.MAX_RATE_PER_TICK,
+                            be.availableDischarge() == Math.min(capacity,
+                                    KineticChargerBlockEntity.MAX_RATE_PER_TICK),
                             "Discharge offer should be capped at the per-tick rate");
                     helper.assertBlockState(INDUCER,
-                            state -> state.getValue(SUChargerBlock.POWER) == 15,
+                            state -> state.getValue(KineticChargerBlock.POWER) == 15,
                             () -> "A full charger should emit redstone 15");
                     double taken = be.drain(1234);
                     helper.assertTrue(taken == 1234,
                             "Draining should hand out the requested amount");
-                    helper.assertTrue(
-                            be.getBuffer() == SUChargerBlockEntity.MAX_BUFFER - 1234,
+                    helper.assertTrue(be.getBuffer() == capacity - 1234,
                             "The buffer should shrink by exactly the drained amount");
-                    be.drain(SUChargerBlockEntity.MAX_BUFFER);
+                    be.drain(KineticChargerBlockEntity.MAX_BUFFER);
                 })
                 .thenIdle(4)
                 .thenExecute(() -> {
-                    SUChargerBlockEntity be = helper.getBlockEntity(INDUCER);
+                    KineticChargerBlockEntity be = helper.getBlockEntity(INDUCER);
                     helper.assertTrue(!be.isDischarging(),
                             "An empty charger has nothing to discharge");
                     helper.assertBlockState(INDUCER,
-                            state -> state.getValue(SUChargerBlock.POWER) == 0,
+                            state -> state.getValue(KineticChargerBlock.POWER) == 0,
                             () -> "An empty charger should emit no redstone");
                 })
                 .thenSucceed();
@@ -259,7 +315,7 @@ public class ModGameTests {
                     helper.setBlock(motorPos, motor.defaultBlockState()
                             .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
                     // Output face east, towards the fan; the motor feeds the back.
-                    helper.setBlock(chargerPos, ModBlocks.SU_CHARGER.get().defaultBlockState()
+                    helper.setBlock(chargerPos, ModBlocks.KINETIC_CHARGER.get().defaultBlockState()
                             .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.EAST));
                     helper.setBlock(fanPos, fan.defaultBlockState()
                             .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
@@ -270,23 +326,23 @@ public class ModGameTests {
                             "While charging, rotation should pass through to the fan");
                 })
                 .thenExecute(() -> {
-                    SUChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
+                    KineticChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
                     charger.setBufferForTesting(65_536); // 2^16
                     helper.setBlock(motorPos, Blocks.AIR);
                 })
                 .thenWaitUntil(() -> {
-                    SUChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
+                    KineticChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
                     KineticBlockEntity fanBe = helper.getBlockEntity(fanPos);
                     helper.assertTrue(charger.isDischarging() && fanBe.getSpeed() != 0,
                             "With the input gone the charger must drive the fan from its buffer");
                 })
                 .thenExecute(() -> {
-                    SUChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
+                    KineticChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
                     bufferBefore[0] = charger.getBuffer();
                 })
                 .thenIdle(20)
                 .thenExecute(() -> {
-                    SUChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
+                    KineticChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
                     helper.assertTrue(charger.getBuffer() < bufferBefore[0],
                             "Driving the fan must drain the buffer");
                 })
@@ -320,7 +376,7 @@ public class ModGameTests {
                             .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
                     helper.setBlock(clutchPos, clutch.defaultBlockState()
                             .setValue(RotatedPillarKineticBlock.AXIS, Direction.Axis.X));
-                    helper.setBlock(chargerPos, ModBlocks.SU_CHARGER.get().defaultBlockState()
+                    helper.setBlock(chargerPos, ModBlocks.KINETIC_CHARGER.get().defaultBlockState()
                             .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.EAST));
                     helper.setBlock(fanPos, fan.defaultBlockState()
                             .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
@@ -331,14 +387,14 @@ public class ModGameTests {
                             "The fan should spin through the open clutch and charger");
                 })
                 .thenExecute(() -> {
-                    SUChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
+                    KineticChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
                     charger.setBufferForTesting(65_536); // 2^16
                     // Power the clutch: the input side keeps spinning, the
                     // charger side stops.
                     helper.setBlock(clutchPos.above(), Blocks.REDSTONE_BLOCK);
                 })
                 .thenWaitUntil(() -> {
-                    SUChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
+                    KineticChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
                     KineticBlockEntity fanBe = helper.getBlockEntity(fanPos);
                     helper.assertTrue(charger.isDischarging() && fanBe.getSpeed() != 0,
                             "Behind a powered clutch the charger must drive the fan from its buffer");
@@ -346,7 +402,7 @@ public class ModGameTests {
                 .thenIdle(20)
                 .thenExecute(() -> {
                     // Still in battery mode after a second: no flip-flopping.
-                    SUChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
+                    KineticChargerBlockEntity charger = helper.getBlockEntity(chargerPos);
                     KineticBlockEntity fanBe = helper.getBlockEntity(fanPos);
                     helper.assertTrue(charger.isDischarging() && fanBe.getSpeed() != 0,
                             "The charger must stay in battery mode while the clutch is powered");

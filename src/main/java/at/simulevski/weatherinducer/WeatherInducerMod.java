@@ -24,7 +24,7 @@ import net.neoforged.fml.common.Mod;
  *       configurable offset), provided it has line of sight to the sky.</li>
  *   <li><b>Stress Gate</b> &mdash; stays locked until the network provides
  *       at least a set amount of total SU.</li>
- *   <li><b>SU Charger</b> &mdash; a kinetic capacitor: passes rotation but
+ *   <li><b>Kinetic Charger</b> &mdash; a kinetic capacitor: passes rotation but
  *       never SU, fills a buffer from its input side while the shaft turns,
  *       discharges it to consumers on its output side once the input stops,
  *       and emits a redstone signal proportional to its fill level.</li>

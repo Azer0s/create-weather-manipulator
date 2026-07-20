@@ -23,7 +23,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.ticks.TickPriority;
 
 /**
- * The SU Charger: a kinetic battery. While driven, rotation passes straight
+ * The Kinetic Charger: a kinetic battery. While driven, rotation passes straight
  * through along the facing axis and the internal buffer fills from the
  * network's spare SU; raw SU never crosses the block. Once the input stops,
  * the charger flips to discharge: it disconnects its input face, becomes a
@@ -31,8 +31,8 @@ import net.minecraft.world.ticks.TickPriority;
  * charged with, draining the buffer by whatever stress the machines use.
  * The block also emits a redstone signal proportional to the buffer fill.
  */
-public class SUChargerBlock extends HorizontalKineticBlock
-        implements IBE<SUChargerBlockEntity> {
+public class KineticChargerBlock extends HorizontalKineticBlock
+        implements IBE<KineticChargerBlockEntity> {
 
     /** Redstone output, kept in step with the buffer fill by the block entity. */
     public static final IntegerProperty POWER = BlockStateProperties.POWER;
@@ -40,7 +40,7 @@ public class SUChargerBlock extends HorizontalKineticBlock
     /** Battery mode: generating into the output face, input disconnected. */
     public static final BooleanProperty DISCHARGING = BooleanProperty.create("discharging");
 
-    public SUChargerBlock(Properties properties) {
+    public KineticChargerBlock(Properties properties) {
         super(properties);
         registerDefaultState(defaultBlockState()
                 .setValue(POWER, 0)
@@ -114,13 +114,13 @@ public class SUChargerBlock extends HorizontalKineticBlock
     }
 
     @Override
-    public Class<SUChargerBlockEntity> getBlockEntityClass() {
-        return SUChargerBlockEntity.class;
+    public Class<KineticChargerBlockEntity> getBlockEntityClass() {
+        return KineticChargerBlockEntity.class;
     }
 
     @Override
-    public BlockEntityType<? extends SUChargerBlockEntity> getBlockEntityType() {
-        return ModBlockEntities.SU_CHARGER.get();
+    public BlockEntityType<? extends KineticChargerBlockEntity> getBlockEntityType() {
+        return ModBlockEntities.KINETIC_CHARGER.get();
     }
 
     @Override
@@ -133,7 +133,7 @@ public class SUChargerBlock extends HorizontalKineticBlock
     @Override
     @SuppressWarnings("deprecation")
     public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
-        if (level.getBlockEntity(pos) instanceof SUChargerBlockEntity be) {
+        if (level.getBlockEntity(pos) instanceof KineticChargerBlockEntity be) {
             return be.getComparatorOutput();
         }
         return 0;

@@ -1,9 +1,98 @@
 {
-  "parent": "minecraft:block/cube_bottom_top",
+  "parent": "minecraft:block/block",
+  "elements": [
+    {
+      "faces": {
+        "down": {
+          "texture": "#bottom"
+        },
+        "east": {
+          "texture": "#base",
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            4.0
+          ]
+        },
+        "north": {
+          "texture": "#base",
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            4.0
+          ]
+        },
+        "south": {
+          "texture": "#base",
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            4.0
+          ]
+        },
+        "up": {
+          "texture": "#base"
+        },
+        "west": {
+          "texture": "#base",
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            4.0
+          ]
+        }
+      },
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        4,
+        16
+      ]
+    },
+    {
+      "faces": {
+        "east": {
+          "texture": "#glass"
+        },
+        "north": {
+          "texture": "#glass"
+        },
+        "south": {
+          "texture": "#glass"
+        },
+        "up": {
+          "texture": "#glass_top"
+        },
+        "west": {
+          "texture": "#glass"
+        }
+      },
+      "from": [
+        1,
+        4,
+        1
+      ],
+      "to": [
+        15,
+        16,
+        15
+      ]
+    }
+  ],
   "render_type": "minecraft:cutout",
   "textures": {
+    "base": "weatherinducer:block/lightning_medium_base",
     "bottom": "weatherinducer:block/lightning_medium_bottom",
-    "side": "weatherinducer:block/lightning_medium_side",
-    "top": "weatherinducer:block/lightning_medium_top"
+    "glass": "weatherinducer:block/lightning_medium_side",
+    "glass_top": "weatherinducer:block/lightning_medium_top",
+    "particle": "weatherinducer:block/lightning_medium_base"
   }
 }

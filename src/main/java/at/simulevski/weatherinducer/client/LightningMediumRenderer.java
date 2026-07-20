@@ -60,8 +60,9 @@ public class LightningMediumRenderer implements BlockEntityRenderer<LightningMed
         int overlay = OverlayTexture.NO_OVERLAY;
 
         poseStack.pushPose();
-        poseStack.translate(0.5f, 0.5f + bob * 0.16f, 0.5f);
-        poseStack.scale(0.6f, 0.6f, 0.6f);
+        // Float above the obsidian pedestal (4px tall), below the glass roof.
+        poseStack.translate(0.5f, 0.62f + bob * 0.13f, 0.5f);
+        poseStack.scale(0.55f, 0.55f, 0.55f);
 
         poseStack.mulPose(Axis.YP.rotationDegrees(spin));
         poseStack.mulPose(new Quaternionf().setAngleAxis(TILT, SIN_45, 0.0f, SIN_45));

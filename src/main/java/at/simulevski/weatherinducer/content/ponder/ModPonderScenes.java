@@ -49,4 +49,44 @@ public final class ModPonderScenes {
         scene.markAsFinished();
     }
 
+    public static void kineticCharger(SceneBuilder scene, SceneBuildingUtil util) {
+        scene.title("kinetic_charger", "Storing rotation with the Kinetic Charger");
+        scene.configureBasePlate(0, 0, 5);
+        scene.showBasePlate();
+        scene.idle(10);
+        scene.world().showSection(util.select().layer(0), Direction.UP);
+        scene.idle(10);
+        scene.world().showSection(util.select().layersFrom(1), Direction.DOWN);
+        scene.idle(20);
+
+        BlockPos charger = util.grid().at(2, 1, 2);
+
+        scene.overlay().showText(90)
+                .text("The Kinetic Charger is a battery: while its input shaft turns, it banks the network's power into a buffer")
+                .attachKeyFrame()
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(charger));
+        scene.idle(100);
+
+        scene.overlay().showText(100)
+                .text("Flywheels attached on the input side set the capacity: 2,048 SU bare, about 104,858 more per wheel, up to ten. Any more jams the charger")
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(charger));
+        scene.idle(110);
+
+        scene.overlay().showText(90)
+                .text("Filling loads the network like a machine: the capacity divided by the charge time on its side value box, ten seconds at the fastest")
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(charger));
+        scene.idle(100);
+
+        scene.overlay().showText(90)
+                .text("Stop the input, and the charger takes over: it spins its output side at the speed it charged with until the buffer runs dry")
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(charger));
+        scene.idle(100);
+
+        scene.markAsFinished();
+    }
+
 }

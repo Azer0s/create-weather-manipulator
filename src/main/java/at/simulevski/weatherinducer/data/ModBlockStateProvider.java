@@ -1,7 +1,7 @@
 package at.simulevski.weatherinducer.data;
 
 import at.simulevski.weatherinducer.WeatherInducerMod;
-import at.simulevski.weatherinducer.content.charger.SUChargerBlock;
+import at.simulevski.weatherinducer.content.charger.KineticChargerBlock;
 import at.simulevski.weatherinducer.content.gate.StressGateBlock;
 import at.simulevski.weatherinducer.content.inducer.WeatherInducerBlock;
 import at.simulevski.weatherinducer.registry.ModBlocks;
@@ -24,7 +24,7 @@ import net.neoforged.neoforge.common.data.ExistingFileHelper;
  *   <li>Every shaft connection sits in a 2px deep socket (an 8x8 hole framed
  *       by four rim boxes), so the spinning shaft drawn by the block entity
  *       renderer is visible, like on other Create machines.</li>
- *   <li>The Weather Inducer and SU Charger bake their fill level into the
+ *   <li>The Weather Inducer and Kinetic Charger bake their fill level into the
  *       block: six models each, selected by the CHARGE property (inducer) or
  *       the POWER signal (charger), pointing at per-level side textures.</li>
  * </ul>
@@ -328,11 +328,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
     }
 
     // ------------------------------------------------------------------
-    // SU Charger
+    // Kinetic Charger
     // ------------------------------------------------------------------
 
     /**
-     * The SU Charger is a full cube in the encased-block family, with shaft
+     * The Kinetic Charger is a full cube in the encased-block family, with shaft
      * sockets on both ends of the facing axis. The model's north face is the
      * output (marked with a teal discharge ring), south the input; the top
      * and bottom reuse the shared brass plate texture. One model per fill
@@ -345,34 +345,58 @@ public class ModBlockStateProvider extends BlockStateProvider {
             byLevel[lvl] = chargerModel(lvl);
         }
         // DISCHARGING only changes behaviour (battery mode), not the model.
-        getVariantBuilder(ModBlocks.SU_CHARGER.get()).forAllStatesExcept(state ->
+        getVariantBuilder(ModBlocks.KINETIC_CHARGER.get()).forAllStatesExcept(state ->
                 // ceil-map 0..15 onto 0..5 so any non-empty buffer shows a pip
                 ConfiguredModel.builder()
-                        .modelFile(byLevel[(state.getValue(SUChargerBlock.POWER)
+                        .modelFile(byLevel[(state.getValue(KineticChargerBlock.POWER)
                                 * (CHARGE_LEVELS - 1) + 14) / 15])
-                        .rotationY(((int) state.getValue(SUChargerBlock.HORIZONTAL_FACING)
+                        .rotationY(((int) state.getValue(KineticChargerBlock.HORIZONTAL_FACING)
                                 .toYRot() + 180) % 360)
                         .build(),
-                SUChargerBlock.DISCHARGING);
+                KineticChargerBlock.DISCHARGING);
     }
 
     private BlockModelBuilder chargerModel(int fillLevel) {
-        BlockModelBuilder b = models().getBuilder("su_charger_" + fillLevel)
+        BlockModelBuilder b = models().getBuilder("kinetic_charger_" + fillLevel)
                 .parent(models().getExistingFile(mcLoc("block/block")))
-                .texture("side", modLoc("block/su_charger_side_" + fillLevel))
-                .texture("out", modLoc("block/su_charger_out"))
-                .texture("in", modLoc("block/su_charger_in"))
+                .texture("side", modLoc("block/kinetic_charger_side_" + fillLevel))
+                .texture("out", modLoc("block/kinetic_charger_out"))
+                .texture("in", modLoc("block/kinetic_charger_in"))
                 .texture("plate", modLoc("block/weather_inducer_bottom"))
-                .texture("particle", modLoc("block/su_charger_side_" + fillLevel));
+                .texture("particle", modLoc("block/kinetic_charger_side_" + fillLevel));
+        // A battery drum between two flanged end plates: the full-size
+        // collars carry the shaft sockets, the recessed body shows the fill
+        // gauge on its sides, and two proud copper bands hoop the drum.
+        for (boolean north : new boolean[]{true, false}) {
+            float z0 = north ? 0 : 13;
+            float z1 = north ? 3 : 16;
+            b.element()
+                    .from(0, 0, z0).to(16, 16, z1)
+                    .face(Direction.DOWN).texture("#plate").end()
+                    .face(Direction.UP).texture("#plate").end()
+                    .face(Direction.NORTH).texture(north ? "#out" : "#plate").end()
+                    .face(Direction.SOUTH).texture(north ? "#plate" : "#in").end()
+                    .face(Direction.EAST).texture("#side").uvs(z0, 0, z1, 16).end()
+                    .face(Direction.WEST).texture("#side").uvs(z0, 0, z1, 16).end()
+                    .end();
+        }
         b.element()
-                .from(0, 0, 2).to(16, 16, 14)
-                .face(Direction.DOWN).texture("#plate").cullface(Direction.DOWN).end()
-                .face(Direction.UP).texture("#plate").cullface(Direction.UP).end()
-                .face(Direction.NORTH).texture("#out").end()
-                .face(Direction.SOUTH).texture("#in").end()
-                .face(Direction.EAST).texture("#side").cullface(Direction.EAST).end()
-                .face(Direction.WEST).texture("#side").cullface(Direction.WEST).end()
+                .from(1, 1, 3).to(15, 15, 13)
+                .face(Direction.DOWN).texture("#side").uvs(3, 1, 13, 15).end()
+                .face(Direction.UP).texture("#side").uvs(3, 1, 13, 15).end()
+                .face(Direction.EAST).texture("#side").uvs(3, 1, 13, 15).end()
+                .face(Direction.WEST).texture("#side").uvs(3, 1, 13, 15).end()
                 .end();
+        for (float bandZ : new float[]{4.5f, 10}) {
+            b.element()
+                    .from(0.5f, 0.5f, bandZ).to(15.5f, 15.5f, bandZ + 1.5f)
+                    .face(Direction.DOWN).texture("#band").end()
+                    .face(Direction.UP).texture("#band").end()
+                    .face(Direction.EAST).texture("#band").end()
+                    .face(Direction.WEST).texture("#band").end()
+                    .end();
+        }
+        b.texture("band", mcLoc("block/copper_block"));
         zSocket(b, 16, true, "out", "plate");
         zSocket(b, 16, false, "in", "plate");
         return b;
@@ -405,12 +429,35 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
     /** The Lightning Medium: beacon and end crystal encased in glass. */
     private void registerLightningMedium() {
-        ModelFile medium = models().cubeBottomTop("lightning_medium",
-                        modLoc("block/lightning_medium_side"),
-                        modLoc("block/lightning_medium_bottom"),
-                        modLoc("block/lightning_medium_top"))
+        // End crystal architecture: an obsidian pedestal slab with the glass
+        // shell sitting inset on top of it. The crystal inside is drawn by
+        // the block entity renderer.
+        BlockModelBuilder medium = models().getBuilder("lightning_medium")
+                .parent(models().getExistingFile(mcLoc("block/block")))
+                .texture("glass", modLoc("block/lightning_medium_side"))
+                .texture("glass_top", modLoc("block/lightning_medium_top"))
+                .texture("base", modLoc("block/lightning_medium_base"))
+                .texture("bottom", modLoc("block/lightning_medium_bottom"))
+                .texture("particle", modLoc("block/lightning_medium_base"))
                 // The glass shell is mostly transparent pixels.
                 .renderType("cutout");
+        medium.element()
+                .from(0, 0, 0).to(16, 4, 16)
+                .face(Direction.UP).texture("#base").end()
+                .face(Direction.DOWN).texture("#bottom").end()
+                .face(Direction.NORTH).texture("#base").uvs(0, 0, 16, 4).end()
+                .face(Direction.SOUTH).texture("#base").uvs(0, 0, 16, 4).end()
+                .face(Direction.EAST).texture("#base").uvs(0, 0, 16, 4).end()
+                .face(Direction.WEST).texture("#base").uvs(0, 0, 16, 4).end()
+                .end();
+        medium.element()
+                .from(1, 4, 1).to(15, 16, 15)
+                .face(Direction.UP).texture("#glass_top").uvs(1, 1, 15, 15).end()
+                .face(Direction.NORTH).texture("#glass").uvs(1, 0, 15, 12).end()
+                .face(Direction.SOUTH).texture("#glass").uvs(1, 0, 15, 12).end()
+                .face(Direction.EAST).texture("#glass").uvs(1, 0, 15, 12).end()
+                .face(Direction.WEST).texture("#glass").uvs(1, 0, 15, 12).end()
+                .end();
         simpleBlock(ModBlocks.LIGHTNING_MEDIUM.get(), medium);
     }
 
