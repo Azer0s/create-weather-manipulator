@@ -37,6 +37,8 @@ public class ModLanguageProvider extends LanguageProvider {
         add("weatherinducer.tooltip.mode", "Mode: %s");
         add("weatherinducer.tooltip.su_resistor", "SU Resistor");
         add("weatherinducer.tooltip.su_limit", "Limit: %s SU");
+        add("weatherinducer.tooltip.demand", "Downstream draw: %s SU");
+        add("weatherinducer.tooltip.tripped", "Tripped: draw exceeds the limit, retrying");
         add("weatherinducer.tooltip.su_charger", "SU Charger");
         add("weatherinducer.tooltip.buffer", "Buffer: %s / %s SU (%s%%)");
         add("weatherinducer.tooltip.charger_mode", "Mode: %s");
@@ -63,7 +65,9 @@ public class ModLanguageProvider extends LanguageProvider {
         add("weatherinducer.info.su_resistor",
                 "The SU Resistor sits inline on a shaft and caps how much SU whatever is hooked up through it may "
                         + "draw from the network. Set the limit with a value box. A Weather Inducer behind a "
-                        + "resistor charges no faster than the cap allows.");
+                        + "resistor charges no faster than the cap allows, and real machines are policed too: "
+                        + "if everything downstream demands more SU than the cap, the resistor trips like a "
+                        + "breaker and cuts rotation, retrying every few seconds until the load fits.");
         add("weatherinducer.info.weather_sensor",
                 "The Weather Sensor reads the sky like a daylight detector reads the sun: it emits redstone "
                         + "signal 0 under clear skies, 7 in rain and 15 during a thunderstorm. It needs to see "

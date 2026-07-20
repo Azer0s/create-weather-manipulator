@@ -75,6 +75,12 @@ public final class ModPonderScenes {
                 .pointAt(util.vector().topOf(inducer));
         scene.idle(100);
 
+        scene.overlay().showText(90)
+                .text("Real machines are limited too: if the load behind the resistor demands more SU than the cap, it trips like a breaker and cuts rotation until the load drops")
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(resistor));
+        scene.idle(100);
+
         scene.markAsFinished();
     }
 }

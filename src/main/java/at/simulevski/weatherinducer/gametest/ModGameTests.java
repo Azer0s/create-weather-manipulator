@@ -5,12 +5,20 @@ import at.simulevski.weatherinducer.content.charger.SUChargerBlock;
 import at.simulevski.weatherinducer.content.charger.SUChargerBlockEntity;
 import at.simulevski.weatherinducer.content.inducer.WeatherInducerBlockEntity;
 import at.simulevski.weatherinducer.content.inducer.WeatherMode;
+import at.simulevski.weatherinducer.content.resistor.SUResistorBlock;
+import at.simulevski.weatherinducer.content.resistor.SUResistorBlockEntity;
 import at.simulevski.weatherinducer.content.sensor.WeatherSensorBlock;
 import at.simulevski.weatherinducer.registry.ModBlocks;
+import com.simibubi.create.content.kinetics.base.DirectionalKineticBlock;
+import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LightningBolt;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -176,6 +184,47 @@ public class ModGameTests {
                     helper.assertBlockState(INDUCER,
                             state -> state.getValue(SUChargerBlock.POWER) == 0,
                             () -> "An empty charger should emit no redstone");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * The breaker on real Create kinetics: a creative motor drives an encased
+     * fan through a resistor whose cap is 0 SU, so any demand at all must
+     * trip it and cut the fan off, while the resistor itself keeps spinning
+     * on the source side.
+     */
+    @GameTest(template = "empty", timeoutTicks = 200)
+    public static void resistorTripsOnOverload(GameTestHelper helper) {
+        BlockPos motorPos = new BlockPos(2, 2, 3);
+        BlockPos resistorPos = new BlockPos(3, 2, 3);
+        BlockPos fanPos = new BlockPos(4, 2, 3);
+        helper.startSequence()
+                .thenExecute(() -> {
+                    placeFloor(helper);
+                    Block motor = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:creative_motor"));
+                    Block fan = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:encased_fan"));
+                    helper.setBlock(motorPos, motor.defaultBlockState()
+                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
+                    helper.setBlock(resistorPos, ModBlocks.SU_RESISTOR.get().defaultBlockState()
+                            .setValue(SUResistorBlock.AXIS, Direction.Axis.X));
+                    helper.setBlock(fanPos, fan.defaultBlockState()
+                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
+                    SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
+                    resistor.setLimitIndexForTesting(0); // cap: 0 SU
+                })
+                .thenWaitUntil(() -> {
+                    SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
+                    helper.assertTrue(resistor.isTripped(),
+                            "The resistor should trip when downstream draw exceeds the cap");
+                })
+                .thenWaitUntil(() -> {
+                    KineticBlockEntity fanBe = helper.getBlockEntity(fanPos);
+                    SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
+                    helper.assertTrue(resistor.isTripped() && fanBe.getSpeed() == 0,
+                            "Expected a tripped resistor with the fan cut off");
                 })
                 .thenSucceed();
     }

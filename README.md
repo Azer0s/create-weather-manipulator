@@ -26,9 +26,10 @@ A [Create](https://github.com/Creators-of-Create/Create) addon for **Minecraft 1
 - **Comparator:** emits a redstone signal (0 to 15) proportional to charge.
 
 ### SU Resistor
-- **Inline shaft:** rotation passes straight through along its axis, exactly like a shaft.
-- **SU draw cap (value box on the four side faces):** the limit scrolls through a logarithmic ladder (0, 100, 250, 500, 1k, 2.5k, 5k, 10k, 25k, 50k, 100k, 250k, 500k, 1M; default 1,000) instead of counting single SU. Whatever is hooked up behind the resistor can draw at most this much SU from the network, regardless of what the network could deliver.
-- Place one (or several) on the shaft feeding an inducer to throttle its charging. In series the tightest resistor wins; in parallel the caps add.
+- **Inline shaft:** rotation passes straight through along its axis, exactly like a shaft, until the breaker trips.
+- **SU draw cap (value box on the four side faces):** the limit scrolls through a logarithmic ladder (0, 100, 250, 500, 1k, 2.5k, 5k, 10k, 25k, 50k, 100k, 250k, 500k, 1M; default 1,000) instead of counting single SU. Whatever is hooked up behind the resistor can draw at most this much SU, and that is enforced for everything, not just this mod's blocks.
+- **Breaker for real machines:** every half second the resistor sums the stress demand of the machines downstream of it (impact times RPM, so two encased fans at 256 RPM read 1,024 SU). If that exceeds the cap, it trips: rotation to the downstream side cuts out clutch-style, the ceramic body glows overload-hot, and goggles show the measured draw. A tripped resistor retries every three seconds and stays down while the load stays too high.
+- **For this mod's consumers** (Weather Inducer, SU Charger) the cap additionally limits their SU intake directly. Place one (or several) on the shaft feeding an inducer to throttle its charging. In series the tightest resistor wins; in parallel the caps add.
 
 ### SU Charger
 - **Inline shaft with a direction:** rotation passes through along the facing axis, but SU never crosses the block. Placed dropper-style, the output face points away from you.
@@ -215,6 +216,15 @@ applies. The charger itself charges through the same walk, restricted to its
 input face. So: *unthrottled, a large network fills the 1M charge in ten
 ticks; add resistors to slow the draw down, or feed machines exclusively
 from chargers to ration SU by the buffer.*
+
+For real Create machines the resistor enforces its cap as a breaker: its
+block entity is a `SplitShaftBlockEntity` (the same mechanism as Create's
+clutch), and `SUNetwork.downstreamStressDemand` walks the physical shaft
+line downstream summing `calculateStressApplied() * |speed|`. Demand over
+the cap flips the TRIPPED blockstate and re-propagates rotation
+gearshift-style, cutting the downstream side to zero; a scheduled retry
+re-closes the breaker so recoverable overloads sort themselves out. This is
+covered by a game test that spins a real creative motor and encased fan.
 
 ## License
 MIT

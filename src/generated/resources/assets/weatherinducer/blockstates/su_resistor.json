@@ -1,15 +1,27 @@
 {
   "variants": {
-    "axis=x": {
+    "axis=x,tripped=false": {
       "model": "weatherinducer:block/su_resistor",
       "x": 90,
       "y": 90
     },
-    "axis=y": {
+    "axis=x,tripped=true": {
+      "model": "weatherinducer:block/su_resistor_tripped",
+      "x": 90,
+      "y": 90
+    },
+    "axis=y,tripped=false": {
       "model": "weatherinducer:block/su_resistor"
     },
-    "axis=z": {
+    "axis=y,tripped=true": {
+      "model": "weatherinducer:block/su_resistor_tripped"
+    },
+    "axis=z,tripped=false": {
       "model": "weatherinducer:block/su_resistor",
+      "x": 90
+    },
+    "axis=z,tripped=true": {
+      "model": "weatherinducer:block/su_resistor_tripped",
       "x": 90
     }
   }

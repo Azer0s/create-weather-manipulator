@@ -6,6 +6,7 @@ import com.simibubi.create.content.kinetics.KineticNetwork;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
 import java.util.ArrayDeque;
@@ -166,5 +167,49 @@ public final class SUNetwork {
             fromChargers -= charger.drain(fromChargers);
         }
         return granted;
+    }
+
+    /**
+     * Total stress demand, in SU, of the kinetic machines strictly downstream
+     * of {@code origin} through {@code face}: a physical 6-neighbour walk over
+     * loaded kinetic block entities, summing each member's
+     * {@code calculateStressApplied() * |speed|}. Other resistors and
+     * chargers end the walk (their segments answer for themselves, and SU
+     * never crosses a charger anyway), though their own impact still counts.
+     * The walk is bounded, so pathological shaft mazes cannot make the
+     * breaker expensive.
+     */
+    public static double downstreamStressDemand(KineticBlockEntity origin, Direction face) {
+        Level level = origin.getLevel();
+        if (level == null) {
+            return 0;
+        }
+        Set<BlockPos> visited = new HashSet<>();
+        Deque<BlockPos> queue = new ArrayDeque<>();
+        visited.add(origin.getBlockPos());
+        queue.add(origin.getBlockPos().relative(face));
+
+        double demand = 0;
+        while (!queue.isEmpty() && visited.size() < 512) {
+            BlockPos pos = queue.poll();
+            if (!visited.add(pos)) {
+                continue;
+            }
+            if (!(level.getBlockEntity(pos) instanceof KineticBlockEntity member)) {
+                continue;
+            }
+            demand += member.calculateStressApplied() * Math.abs(member.getSpeed());
+            if (member instanceof SUResistorBlockEntity
+                    || member instanceof SUChargerBlockEntity) {
+                continue;
+            }
+            for (Direction d : Direction.values()) {
+                BlockPos next = pos.relative(d);
+                if (!visited.contains(next)) {
+                    queue.add(next);
+                }
+            }
+        }
+        return demand;
     }
 }

@@ -216,22 +216,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
      * every face sets its UVs explicitly.
      */
     private void registerSuResistor() {
-        BlockModelBuilder resistor = models().getBuilder("su_resistor")
-                .parent(models().getExistingFile(mcLoc("block/block")))
-                .texture("side", modLoc("block/su_resistor_side"))
-                .texture("end", modLoc("block/su_resistor_end"))
-                .texture("particle", modLoc("block/su_resistor_end"));
-        collar(resistor, true);
-        collar(resistor, false);
-        resistor.element()
-                .from(4, 3, 4).to(12, 13, 12)
-                .face(Direction.NORTH).texture("#side").uvs(4, 4, 12, 14).end()
-                .face(Direction.SOUTH).texture("#side").uvs(4, 4, 12, 14).end()
-                .face(Direction.EAST).texture("#side").uvs(4, 4, 12, 14).end()
-                .face(Direction.WEST).texture("#side").uvs(4, 4, 12, 14).end()
-                .end();
-
-        ModelFile model = resistor;
+        ModelFile closed = resistorModel("su_resistor", "su_resistor_side");
+        ModelFile tripped = resistorModel("su_resistor_tripped", "su_resistor_side_tripped");
         getVariantBuilder(ModBlocks.SU_RESISTOR.get()).forAllStates(state -> {
             Direction.Axis axis = state.getValue(SUResistorBlock.AXIS);
             int x = 0;
@@ -246,8 +232,27 @@ public class ModBlockStateProvider extends BlockStateProvider {
                     // Y: default orientation.
                 }
             }
+            ModelFile model = state.getValue(SUResistorBlock.TRIPPED) ? tripped : closed;
             return ConfiguredModel.builder().modelFile(model).rotationX(x).rotationY(y).build();
         });
+    }
+
+    private BlockModelBuilder resistorModel(String name, String sideTexture) {
+        BlockModelBuilder resistor = models().getBuilder(name)
+                .parent(models().getExistingFile(mcLoc("block/block")))
+                .texture("side", modLoc("block/" + sideTexture))
+                .texture("end", modLoc("block/su_resistor_end"))
+                .texture("particle", modLoc("block/su_resistor_end"));
+        collar(resistor, true);
+        collar(resistor, false);
+        resistor.element()
+                .from(4, 3, 4).to(12, 13, 12)
+                .face(Direction.NORTH).texture("#side").uvs(4, 4, 12, 14).end()
+                .face(Direction.SOUTH).texture("#side").uvs(4, 4, 12, 14).end()
+                .face(Direction.EAST).texture("#side").uvs(4, 4, 12, 14).end()
+                .face(Direction.WEST).texture("#side").uvs(4, 4, 12, 14).end()
+                .end();
+        return resistor;
     }
 
     /**
