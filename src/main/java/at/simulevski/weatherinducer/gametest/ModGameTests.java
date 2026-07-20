@@ -19,10 +19,12 @@ import com.simibubi.create.content.kinetics.base.DirectionalKineticBlock;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueSettingsBehaviour;
+import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollOptionBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
@@ -340,6 +342,36 @@ public class ModGameTests {
         }
         Vec3 world = Vec3.atLowerCornerOf(helper.absolutePos(pos)).add(localHit);
         return box.testHit(world);
+    }
+
+    /**
+     * A save from before the keyed value boxes holds one shared
+     * "ScrollValue" tag, written last by the Z offset box, so the mode
+     * selector could read a lightning offset (say 13) as its enum index and
+     * crash Create's option renderer on hover. Replays that save shape and
+     * walks the same array access the renderer uses.
+     */
+    @GameTest(template = "empty")
+    public static void legacyNbtDoesNotBreakModeSelector(GameTestHelper helper) {
+        BlockPos pos = new BlockPos(3, 2, 3);
+        helper.setBlock(pos, ModBlocks.WEATHER_INDUCER.get().defaultBlockState());
+        WeatherInducerBlockEntity be = helper.getBlockEntity(pos);
+
+        CompoundTag tag = be.saveWithoutMetadata(helper.getLevel().registryAccess());
+        tag.putInt("ScrollValue", 13);
+        tag.remove("ScrollValueMode");
+        tag.remove("ScrollValueOffsetX");
+        tag.remove("ScrollValueOffsetZ");
+        be.loadWithComponents(tag, helper.getLevel().registryAccess());
+
+        for (var behaviour : be.getAllBehaviours()) {
+            if (behaviour instanceof ScrollOptionBehaviour<?> options) {
+                helper.assertTrue(options.get() != null,
+                        "The mode selector must survive a legacy shared ScrollValue tag");
+            }
+        }
+        helper.assertTrue(be.getMode() != null, "Mode lookup must survive legacy NBT");
+        helper.succeed();
     }
 
     /**

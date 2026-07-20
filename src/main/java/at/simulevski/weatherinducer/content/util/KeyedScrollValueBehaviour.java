@@ -7,6 +7,7 @@ import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollVa
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 
 /**
  * A {@link ScrollValueBehaviour} that can coexist with siblings on the same
@@ -29,12 +30,26 @@ public class KeyedScrollValueBehaviour extends ScrollValueBehaviour {
     private final String nbtKey;
     private final int packetId;
 
+    // Shadow copies of the bounds: the originals are not visible here (min
+    // is package-private in Create) but read() below needs them to clamp.
+    // No initializers on purpose: between() runs from the super constructor,
+    // and an initializer would wipe what it stored.
+    private int minValue;
+    private int maxValue;
+
     public KeyedScrollValueBehaviour(String key, int packetId, Component label,
                                      SmartBlockEntity be, ValueBoxTransform slot) {
         super(label, be, slot);
         this.type = new BehaviourType<>(key);
         this.nbtKey = "ScrollValue" + key;
         this.packetId = packetId;
+    }
+
+    @Override
+    public ScrollValueBehaviour between(int min, int max) {
+        minValue = min;
+        maxValue = max;
+        return super.between(min, max);
     }
 
     @Override
@@ -55,9 +70,15 @@ public class KeyedScrollValueBehaviour extends ScrollValueBehaviour {
 
     @Override
     public void read(CompoundTag nbt, HolderLookup.Provider registries, boolean clientPacket) {
+        int before = value;
         super.read(nbt, registries, clientPacket);
-        if (nbt.contains(nbtKey)) {
-            value = nbt.getInt(nbtKey);
-        }
+        // super.read pulled the legacy shared "ScrollValue" tag, which on a
+        // pre-keyed save belongs to whichever sibling box wrote it last.
+        // Never trust it: use this box's own tag, or keep the value we had.
+        // Clamp regardless; setValue() guards every other write path, but
+        // read() assigns the field raw, and an out-of-range index crashes
+        // Create's option renderer.
+        value = nbt.contains(nbtKey) ? nbt.getInt(nbtKey) : before;
+        value = Mth.clamp(value, minValue, maxValue);
     }
 }
