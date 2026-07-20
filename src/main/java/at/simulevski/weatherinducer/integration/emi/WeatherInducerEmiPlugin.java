@@ -28,11 +28,6 @@ public class WeatherInducerEmiPlugin implements EmiPlugin {
                 WeatherInducerMod.asResource("info/weather_inducer")));
 
         registry.addRecipe(new EmiInfoRecipe(
-                List.<EmiIngredient>of(EmiStack.of(ModItems.SU_RESISTOR.get())),
-                List.of(Component.translatable("weatherinducer.info.su_resistor")),
-                WeatherInducerMod.asResource("info/su_resistor")));
-
-        registry.addRecipe(new EmiInfoRecipe(
                 List.<EmiIngredient>of(EmiStack.of(ModItems.WEATHER_SENSOR.get())),
                 List.of(Component.translatable("weatherinducer.info.weather_sensor")),
                 WeatherInducerMod.asResource("info/weather_sensor")));

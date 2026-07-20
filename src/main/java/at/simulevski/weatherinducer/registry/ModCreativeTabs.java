@@ -21,7 +21,6 @@ public final class ModCreativeTabs {
                     .icon(() -> new ItemStack(ModItems.WEATHER_INDUCER.get()))
                     .displayItems((params, output) -> {
                         output.accept(ModItems.WEATHER_INDUCER.get());
-                        output.accept(ModItems.SU_RESISTOR.get());
                         output.accept(ModItems.SU_CHARGER.get());
                         output.accept(ModItems.STRESS_GATE.get());
                         output.accept(ModItems.WEATHER_SENSOR.get());

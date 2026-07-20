@@ -5,7 +5,6 @@ import at.simulevski.weatherinducer.content.charger.SUChargerBlockEntity;
 import at.simulevski.weatherinducer.content.gate.StressGateBlockEntity;
 import at.simulevski.weatherinducer.content.inducer.WeatherInducerBlockEntity;
 import at.simulevski.weatherinducer.content.lightning.LightningMediumBlockEntity;
-import at.simulevski.weatherinducer.content.resistor.SUResistorBlockEntity;
 import at.simulevski.weatherinducer.content.sensor.WeatherSensorBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -30,13 +29,6 @@ public final class ModBlockEntities {
                             (pos, state) -> new WeatherInducerBlockEntity(
                                     ModBlockEntities.WEATHER_INDUCER.get(), pos, state),
                             ModBlocks.WEATHER_INDUCER.get()).build(null));
-
-    public static final Supplier<BlockEntityType<SUResistorBlockEntity>> SU_RESISTOR =
-            BLOCK_ENTITIES.register("su_resistor",
-                    () -> BlockEntityType.Builder.of(
-                            (pos, state) -> new SUResistorBlockEntity(
-                                    ModBlockEntities.SU_RESISTOR.get(), pos, state),
-                            ModBlocks.SU_RESISTOR.get()).build(null));
 
     public static final Supplier<BlockEntityType<WeatherSensorBlockEntity>> WEATHER_SENSOR =
             BLOCK_ENTITIES.register("weather_sensor",

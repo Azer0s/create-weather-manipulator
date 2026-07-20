@@ -23,10 +23,5 @@ public class ModPonderPlugin implements PonderPlugin {
                 WeatherInducerMod.asResource("weather_inducer"),
                 WeatherInducerMod.asResource("weather_devices"),
                 ModPonderScenes::weatherInducer);
-
-        helper.addStoryBoard(
-                WeatherInducerMod.asResource("su_resistor"),
-                WeatherInducerMod.asResource("weather_devices"),
-                ModPonderScenes::suResistor);
     }
 }

@@ -5,6 +5,9 @@ import at.simulevski.weatherinducer.registry.ModBlocks;
 import at.simulevski.weatherinducer.registry.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -29,8 +32,9 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  *   <li>holding any lightning tool grants Speed II;</li>
  *   <li>a full armor set grants water breathing, fire resistance,
  *       Resistance IV, Strength II, Speed II, Regeneration, creative flight
- *       (via NeoForge's flight attribute) and negates fall damage. Thorns
- *       comes baked onto the armor pieces by their crafting recipes;</li>
+ *       (via NeoForge's flight attribute) and negates fall damage, and wraps
+ *       the wearer in a crackling electric aura. Thorns comes baked onto
+ *       the armor pieces by their crafting recipes;</li>
  *   <li>a lightning strike on a Lightning Medium consumes the block and pops
  *       out a Bottle o' Lightning.</li>
  * </ul>
@@ -71,8 +75,41 @@ public final class LightningGearHandler {
                 flight.addTransientModifier(new AttributeModifier(FLIGHT_ID, 1,
                         AttributeModifier.Operation.ADD_VALUE));
             }
+            crackle(player);
         } else if (flight != null && flight.hasModifier(FLIGHT_ID)) {
             flight.removeModifier(FLIGHT_ID);
+        }
+    }
+
+    /**
+     * The storm aura around a full set: electric sparks crawl over the
+     * armor every few ticks, denser while sprinting or airborne, plus a
+     * slow white shimmer. Sent from the server so everyone sees the
+     * wearer crackle.
+     */
+    private static void crackle(Player player) {
+        if (!(player.level() instanceof ServerLevel server)) {
+            return;
+        }
+        RandomSource random = server.getRandom();
+        long time = server.getGameTime();
+        boolean charged = player.isSprinting() || !player.onGround();
+        if (time % (charged ? 2 : 5) == 0) {
+            int sparks = 1 + random.nextInt(charged ? 3 : 2);
+            for (int i = 0; i < sparks; i++) {
+                server.sendParticles(ParticleTypes.ELECTRIC_SPARK,
+                        player.getX() + (random.nextDouble() - 0.5) * 0.9,
+                        player.getY() + random.nextDouble() * 1.9,
+                        player.getZ() + (random.nextDouble() - 0.5) * 0.9,
+                        1, 0.05, 0.05, 0.05, 0.02);
+            }
+        }
+        if (time % 16 == 0) {
+            server.sendParticles(ParticleTypes.END_ROD,
+                    player.getX() + (random.nextDouble() - 0.5) * 0.6,
+                    player.getY() + 0.8 + random.nextDouble() * 0.8,
+                    player.getZ() + (random.nextDouble() - 0.5) * 0.6,
+                    1, 0.02, 0.02, 0.02, 0.005);
         }
     }
 

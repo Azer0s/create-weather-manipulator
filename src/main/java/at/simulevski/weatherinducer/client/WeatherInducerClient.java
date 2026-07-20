@@ -33,8 +33,8 @@ import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsE
  * backend active (Create's default), kinetic block entities render through
  * Flywheel visuals and {@code KineticBlockEntityRenderer} bails out early,
  * so each block registers a visual: the plain rotating shaft for the
- * inducer and charger, the two-half split shaft for the resistor and gate
- * (their halves can spin at different speeds when tripped or locked). With
+ * inducer and charger, the two-half split shaft for the gate (its halves
+ * can spin at different speeds while locked). With
  * Flywheel off, the classic block entity renderers below take over.
  */
 @EventBusSubscriber(modid = WeatherInducerMod.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
@@ -47,10 +47,8 @@ public final class WeatherInducerClient {
     public static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(ModBlockEntities.WEATHER_INDUCER.get(),
                 context -> new ShaftRenderer<>(context));
-        // The resistor is a split shaft (breaker): its two shaft halves can
-        // turn at different speeds, so it gets the matching renderer.
-        event.registerBlockEntityRenderer(ModBlockEntities.SU_RESISTOR.get(),
-                context -> new SplitShaftRenderer(context));
+        // The gate is a split shaft: its two halves can turn at different
+        // speeds while locked, so it gets the matching renderer.
         event.registerBlockEntityRenderer(ModBlockEntities.SU_CHARGER.get(),
                 context -> new ShaftRenderer<>(context));
         event.registerBlockEntityRenderer(ModBlockEntities.STRESS_GATE.get(),
@@ -106,9 +104,6 @@ public final class WeatherInducerClient {
                     .apply();
             SimpleBlockEntityVisualizer.builder(ModBlockEntities.SU_CHARGER.get())
                     .factory(SingleAxisRotatingVisual::shaft)
-                    .apply();
-            SimpleBlockEntityVisualizer.builder(ModBlockEntities.SU_RESISTOR.get())
-                    .factory(SplitShaftVisual::new)
                     .apply();
             SimpleBlockEntityVisualizer.builder(ModBlockEntities.STRESS_GATE.get())
                     .factory(SplitShaftVisual::new)

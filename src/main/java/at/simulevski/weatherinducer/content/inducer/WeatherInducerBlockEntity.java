@@ -31,13 +31,15 @@ import java.util.List;
  * Drives the Weather Inducer:
  * <ul>
  *   <li>charges from the kinetic network's spare SU (provided capacity minus
- *       used stress, see {@link SUNetwork}) up to {@link #MAX_CHARGE},
- *       taking at most {@link #MAX_INTAKE_PER_TICK} per tick. A stopped line
- *       offers nothing unless a discharging SU Charger feeds it;</li>
+ *       used stress, see {@link SUNetwork}) up to {@link #MAX_CHARGE}. The
+ *       charge time slider decides how fast: a full charge takes the set
+ *       number of seconds, ten at the fastest. A stopped line offers
+ *       nothing unless a discharging SU Charger feeds it;</li>
  *   <li>when fully charged, a rising redstone edge fires the selected weather
  *       effect, provided the block above can see the sky;</li>
- *   <li>exposes three scroll value boxes: mode (top), and the lightning X/Z
- *       offsets (the two side faces).</li>
+ *   <li>exposes four scroll value boxes: mode (top), the lightning X/Z
+ *       offsets (the two side faces), and the charge time (the shaft
+ *       faces).</li>
  * </ul>
  */
 public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHaveGoggleInformation {
@@ -45,14 +47,15 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
     /** The Weather Inducer must accumulate this many SU before it can fire. */
     public static final double MAX_CHARGE = 1_048_576.0; // 2^20
 
-    /** The most SU the inducer itself can pull in per tick, resistors aside. */
-    public static final double MAX_INTAKE_PER_TICK = 131_072.0; // 2^17, full in 8 ticks
 
     /** Weather effect durations (ticks). 6000 ticks = 5 in-game minutes. */
     private static final int RAIN_TIME = 6000;
     private static final int CLEAR_TIME = 6000;
 
     private static final int OFFSET_RANGE = 64;
+
+    /** Width of the goggle charge bar, in text segments. */
+    private static final int BAR_SEGMENTS = 20;
 
     private double charge;
     private boolean wasPowered;
@@ -63,6 +66,7 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
     private ScrollOptionBehaviour<WeatherMode> modeScroll;
     private ScrollValueBehaviour offsetXScroll;
     private ScrollValueBehaviour offsetZScroll;
+    private ChargeTimeScrollBehaviour chargeTime;
 
     public WeatherInducerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -99,6 +103,22 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
                         dir == state.getValue(HorizontalKineticBlock.HORIZONTAL_FACING).getCounterClockWise()));
         offsetZScroll.between(-OFFSET_RANGE, OFFSET_RANGE);
         behaviours.add(offsetZScroll);
+
+        // Charge time slider on the two shaft faces (front and back).
+        chargeTime = new ChargeTimeScrollBehaviour(this,
+                new SideValueBoxTransform((state, dir) ->
+                        dir.getAxis() == state.getValue(HorizontalKineticBlock.HORIZONTAL_FACING).getAxis()));
+        behaviours.add(chargeTime);
+    }
+
+    /** The configured full-charge duration in seconds (10 at the fastest). */
+    public int getChargeTimeSeconds() {
+        return ChargeTimeScrollBehaviour.seconds(chargeTime != null ? chargeTime.getValue() : 0);
+    }
+
+    /** SU pulled in per tick so a full charge takes the configured seconds. */
+    public double intakePerTick() {
+        return MAX_CHARGE / (getChargeTimeSeconds() * 20.0);
     }
 
     @Override
@@ -111,12 +131,10 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
         // Charge from the network's spare SU (provided capacity minus what
         // the machines use), topping up from any discharging SU Charger. A
         // dead network has no spare capacity, so no speed gate is needed.
-        // SU Resistors on the way to the generators cap the per-tick draw
-        // (that is their original job: without one, a full charge is
-        // gulped down at 131,072 SU per tick).
+        // The charge time slider paces the intake so a full charge takes
+        // the configured number of seconds.
         if (charge < MAX_CHARGE) {
-            double wanted = Math.min(MAX_INTAKE_PER_TICK, MAX_CHARGE - charge);
-            wanted = Math.min(wanted, SUNetwork.resistorIntakeCap(this));
+            double wanted = Math.min(intakePerTick(), MAX_CHARGE - charge);
             double intake = Math.min(wanted, SUNetwork.remainingSU(this));
             if (intake < wanted) {
                 intake += SUNetwork.drawFromChargers(this, wanted - intake);
@@ -129,11 +147,9 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
                     // Keep the comparator output in step with the charge level.
                     level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
                     updateChargeIndicator();
-                    // Sync the exact value now and then so the goggle
-                    // readout tracks the charge, not just chunk loads.
-                    if (charge >= MAX_CHARGE || level.getGameTime() % 8 == 0) {
-                        sendData();
-                    }
+                    // Sync every change: the goggle charge bar animates off
+                    // the client copy, so it needs to track tick by tick.
+                    sendData();
                 }
             }
         }
@@ -271,6 +287,12 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
         }
     }
 
+    public void setChargeTimeIndexForTesting(int index) {
+        if (chargeTime != null) {
+            chargeTime.setValue(index);
+        }
+    }
+
     // The Weather Inducer is a pure consumer: it applies stress to the network.
     @Override
     public float calculateStressApplied() {
@@ -301,11 +323,26 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
                 Component.translatable("weatherinducer.tooltip.title")
                         .withStyle(ChatFormatting.GRAY)));
 
-        int percent = (int) Math.floor(100.0 * Math.min(1.0, charge / MAX_CHARGE));
+        // A live charge bar, then the exact numbers under it.
+        double fraction = Math.min(1.0, charge / MAX_CHARGE);
+        int filled = (int) Math.round(BAR_SEGMENTS * fraction);
+        tooltip.add(Component.literal("    ")
+                .append(Component.literal("|".repeat(filled))
+                        .withStyle(charge >= MAX_CHARGE ? ChatFormatting.GREEN : ChatFormatting.AQUA))
+                .append(Component.literal("|".repeat(BAR_SEGMENTS - filled))
+                        .withStyle(ChatFormatting.DARK_GRAY)));
+
+        int percent = (int) Math.floor(100.0 * fraction);
         tooltip.add(Component.literal("    ").append(
                 Component.translatable("weatherinducer.tooltip.charge",
                         String.format("%,.0f", charge), String.format("%,.0f", MAX_CHARGE), percent)
                         .withStyle(charge >= MAX_CHARGE ? ChatFormatting.GREEN : ChatFormatting.AQUA)));
+
+        tooltip.add(Component.literal("    ").append(
+                Component.translatable("weatherinducer.tooltip.charge_time",
+                        getChargeTimeSeconds(),
+                        String.format("%,.0f", MAX_CHARGE / getChargeTimeSeconds()))
+                        .withStyle(ChatFormatting.GRAY)));
 
         WeatherMode mode = WeatherMode.fromIndex(modeScroll.getValue());
         tooltip.add(Component.literal("    ").append(

@@ -36,7 +36,7 @@ public class StressGateBlock extends RotatedPillarKineticBlock
     /** Locked gates do not pass rotation downstream. */
     public static final BooleanProperty LOCKED = BooleanProperty.create("locked");
 
-    /** Same flanged silhouette as the SU Resistor: collars, body between. */
+    /** Flanged silhouette: two shaft collars with the body between. */
     private static final VoxelShape SHAPE_Y = Shapes.or(
             Block.box(2, 0, 2, 14, 3, 14),
             Block.box(2, 13, 2, 14, 16, 14),

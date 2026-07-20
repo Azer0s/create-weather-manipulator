@@ -1,7 +1,6 @@
 {
   "values": [
     "weatherinducer:weather_inducer",
-    "weatherinducer:su_resistor",
     "weatherinducer:su_charger",
     "weatherinducer:stress_gate"
   ]

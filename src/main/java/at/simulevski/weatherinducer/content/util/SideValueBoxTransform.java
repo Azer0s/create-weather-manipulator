@@ -17,7 +17,7 @@ import java.util.function.BiPredicate;
  * us; we only supply which faces are valid for a given block state, and
  * optionally how deep into the block the box sits. The default depth of 15.5
  * hugs a full-cube face; blocks whose faces are recessed (the flanged
- * resistor and gate bodies stop at 12 of 16) pass a smaller depth so the box
+ * gate body stops at 12 of 16) pass a smaller depth so the box
  * sits on the actual surface. That matters beyond looks: Create only accepts
  * a click within a quarter block of the box, so a box buried at full-cube
  * depth behind a recessed face is nearly impossible to hit.

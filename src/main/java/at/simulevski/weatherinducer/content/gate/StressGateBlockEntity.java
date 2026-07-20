@@ -47,8 +47,8 @@ public class StressGateBlockEntity extends SplitShaftBlockEntity implements IHav
         super.addBehaviours(behaviours);
 
         // Value box on the four faces perpendicular to the shaft axis, at
-        // depth 11.5 so it sits on the flanged body's surface (see the
-        // resistor for the reasoning).
+        // depth 11.5 so it sits on the flanged body's surface, where the
+        // quarter-block click test can actually be met.
         threshold = new SUScrollValueBehaviour(
                 Component.translatable("weatherinducer.value.threshold"),
                 this,

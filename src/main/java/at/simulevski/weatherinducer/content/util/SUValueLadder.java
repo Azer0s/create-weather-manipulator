@@ -1,8 +1,8 @@
 package at.simulevski.weatherinducer.content.util;
 
 /**
- * The ladder of SU values the scroll boxes use (SU Resistor limit, Stress
- * Gate threshold): zero, then every power of two from 64 up to 1,048,576
+ * The ladder of SU values the scroll boxes use (the Stress Gate
+ * threshold): zero, then every power of two from 64 up to 1,048,576
  * (2^20, one full inducer charge). Scrolling linearly over that range was
  * hopeless, so the scroll behaviours store an index into this table and
  * their formatters show the SU value it stands for.

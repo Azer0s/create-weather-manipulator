@@ -20,7 +20,7 @@ public class ModBlockTagsProvider extends BlockTagsProvider {
     @Override
     protected void addTags(HolderLookup.Provider provider) {
         tag(BlockTags.MINEABLE_WITH_PICKAXE)
-                .add(ModBlocks.WEATHER_INDUCER.get(), ModBlocks.SU_RESISTOR.get(),
+                .add(ModBlocks.WEATHER_INDUCER.get(),
                         ModBlocks.SU_CHARGER.get(), ModBlocks.STRESS_GATE.get());
         // The sensor is a wood-and-glass slab, axe territory like the
         // daylight detector.

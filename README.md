@@ -7,7 +7,6 @@ A [Create](https://github.com/Creators-of-Create/Create) addon for **Minecraft 1
 | Block | What it does |
 | ----- | ------------ |
 | **Weather Inducer** | Charges from the network's **spare SU** (provided capacity minus used stress) up to **1,048,576 SU** (2^20), at up to **131,072 SU per tick** (2^17). When fully charged and pulsed with redstone, it applies the selected weather effect: **rain**, **clear**, or **lightning** at a configurable position, provided it can see the sky. |
-| **SU Resistor** | A **circuit breaker** for kinetic stress: if the machines downstream of it draw more SU than its limit, it trips and cuts rotation to that side, and latches until the limit is raised to cover the recorded demand. |
 | **Stress Gate** | An inline shaft block that stays **locked** until the kinetic network provides at least a set amount of total SU. Use it to keep contraptions dormant until the power plant is big enough. |
 | **SU Charger** | A kinetic battery. Rotation passes through while charging, **SU never does**. While the shaft turns it fills a **1,048,576 SU** buffer; once the input stops, the charger itself drives its output side at the speed it charged with, draining the buffer by what the machines use. Emits a redstone signal proportional to its fill level. |
 | **Weather Sensor** | A daylight-detector-shaped slab that reads the sky: redstone **0** when clear, **7** in rain, **15** in a thunderstorm. Covered, it reads 0. |
@@ -19,20 +18,14 @@ A [Create](https://github.com/Creators-of-Create/Create) addon for **Minecraft 1
 
 ### Weather Inducer
 - **Kinetic input:** a shaft on the front/back faces (the facing axis).
-- **Charging:** each tick the inducer soaks up the network's spare SU, `min(capacity - stress, 131,072)`, until it holds 1,048,576 SU. A network with plenty of free capacity fills it in eight ticks; a network busy running machines charges it with whatever is left over. A discharging SU Charger tops it up when the network itself has nothing to spare.
+- **Charging:** each tick the inducer soaks up the network's spare SU (`capacity - stress`) until it holds 1,048,576 SU, paced by its charge time slider. A network busy running machines charges it with whatever is left over. A discharging SU Charger tops it up when the network itself has nothing to spare.
+- **Charge time (value boxes on the shaft faces):** picks how long a full charge takes, from 10 seconds (the floor: even flat out, the inducer fires at most once every 10 seconds) up a doubling ladder to 1,280 seconds. Goggles show the configured time and the SU per second it works out to.
 - **Sky line-of-sight:** the block directly above must be able to see the sky, or firing is blocked.
 - **Mode (top value box):** Create's option menu with an icon and label per entry; scroll or drag to pick `Rain` / `Clear` / `Lightning`.
 - **Lightning offset (side value boxes):** two scrolls set the X/Z offset (-64 to +64) of the lightning strike, measured from the inducer. The strike lands on the surface at that column.
 - **Trigger:** a **rising redstone edge** fires the selected effect when fully charged, then discharges the block back to 0 SU (it must recharge before firing again).
-- **Charge indicator:** the bolt emblem on the sides lights up gold from the tip upward in sixths of a full charge, so the fill level is readable at a glance. Goggles show the exact SU numbers.
+- **Charge indicator:** the bolt emblem on the sides lights up gold from the tip upward in sixths of a full charge, so the fill level is readable at a glance. Goggles show a live charge bar plus the exact SU numbers, updated tick by tick.
 - **Comparator:** emits a redstone signal (0 to 15) proportional to charge.
-
-### SU Resistor
-- **Inline shaft:** rotation passes straight through along its axis, exactly like a shaft, until the breaker trips.
-- **Limit (value box on the four side faces):** scrolls through a power-of-two ladder (0, then 64 up to 1,048,576; default 1,024) instead of counting single SU.
-- **Breaker:** every half second the resistor sums the stress demand of everything Create powers through it, read off Create's own rotation graph, so machines behind belts, cogwheel meshes and gear ratios are measured exactly as the stress network charges them (impact times actual RPM, so two encased fans at 256 RPM read 1,024 SU). Demand above the limit, or above what the network provides, trips it: rotation to the downstream side cuts out clutch-style and the ceramic body glows overload-hot.
-- **Automatic latching reset, no oscillation:** the trip records the demand that broke it, and a tripped resistor does no re-scanning at all. It closes again on its own the moment both the limit and the network's provided SU cover that recorded demand, so building more generators resets it just like raising the limit. Since closing requires the load to be covered, the same load can never re-trip it. Goggles show the live draw while closed and the break demand while tripped.
-- **Draw throttle:** the resistor also caps how much SU per tick the mod's own consumers (Weather Inducer, SU Charger) may pull through it: every resistor on the consumer's power path throttles the draw, the tightest one wins. With a 1,024 SU resistor in the line, a full inducer charge takes 1,024 ticks instead of 8.
 
 ### SU Charger
 - **Inline shaft with a direction:** rotation passes through along the facing axis, but SU never crosses the block. Placed dropper-style, the output face points away from you.
@@ -43,7 +36,7 @@ A [Create](https://github.com/Creators-of-Create/Create) addon for **Minecraft 1
 
 ### Stress Gate
 - **Inline shaft with a lock:** below its threshold the gate passes no rotation downstream, like a disengaged clutch; the padlock on its body shows a red pip.
-- **Threshold (value box on the four side faces):** the same power-of-two ladder as the resistor (default 131,072 SU). Once the network's **total provided SU** reaches it, the gate unlocks and rotation flows.
+- **Threshold (value box on the four side faces):** a power-of-two ladder from 0 to 1,048,576 SU (default 131,072 SU). Once the network's **total provided SU** reaches it, the gate unlocks and rotation flows.
 - The provided capacity comes purely from the source side, so locking the downstream away never changes the reading: the gate cannot oscillate. Goggles show the threshold, the current provision, and the lock state.
 
 ### Weather Sensor
@@ -85,13 +78,6 @@ The endgame chain, powered by the Weather Inducer's own lightning:
 L C L      L = Lightning Rod        C = Copper Block
 E P E      E = Electron Tube        P = Precision Mechanism
 B S B      B = Brass Sheet          S = Shaft
-```
-
-**SU Resistor** (yields 2):
-```
-N B N      N = Andesite Alloy       B = Brass Sheet
-S G S      S = Shaft                G = Cogwheel
-N B N
 ```
 
 **SU Charger**:
@@ -143,12 +129,11 @@ All integrations are optional; the mod runs with none of them installed, and eac
 integration class only loads when its mod is present.
 
 ### Ponder
-The Weather Inducer and SU Resistor ship in-game Ponder scenes (the newer
-Weather Sensor, SU Charger, and Stress Gate do not have scenes yet; their
-JEI/EMI info pages cover the mechanics). See them via the item tooltip's Ponder key or in
-JEI/EMI. They demonstrate a creative motor driving a shaft through an SU
-Resistor into a Weather Inducer, and explain SU charging, the sky
-requirement, redstone firing, and the resistor throttle. The scene text is
+The Weather Inducer ships an in-game Ponder scene (the newer Weather
+Sensor, SU Charger, and Stress Gate do not have scenes yet; their JEI/EMI
+info pages cover the mechanics). See it via the item tooltip's Ponder key or
+in JEI/EMI. It demonstrates a creative motor driving a Weather Inducer, and
+explains SU charging, the sky requirement, and redstone firing. The scene text is
 authored inline in `ModPonderScenes`; datagen runs Ponder's registration and
 writes the generated lang entries into `en_us.json` (`ModLanguageProvider`),
 which is what makes the text actually show up in game.
@@ -194,8 +179,9 @@ no-op; a lightning strike consumes a Lightning Medium and bottles the strike
 (the drop surviving the bolt); the Weather Sensor's signal follows thunder and clear skies (in its own
 test batch, since weather is global); the SU Charger offers its buffer only
 while its input is stopped, publishes the fill level as redstone, and drains
-exactly what is taken; the SU Resistor trips on a real motor-and-fan overload
-and cuts the fan off; and the Stress Gate stays locked below its threshold
+exactly what is taken; the charger drives its output side from the buffer,
+with and without a clutch on the input; the charge time slider paces the
+inducer's intake; and the Stress Gate stays locked below its threshold
 and opens once the network provides enough.
 
 ---
@@ -229,15 +215,15 @@ easy to follow and maintain:
 1. **`network/SUNetwork.java`** is the only class that reads Create's kinetic
    internals: `KineticBlockEntity#getOrCreateNetwork()`,
    `KineticNetwork#calculateCapacity()` (total provided SU), and the public
-   `KineticNetwork.members` / `KineticNetwork.sources` maps used for the
-   inline-resistor traversal.
+   `KineticNetwork.sources` map used to keep battery-provided capacity out
+   of the spare-SU reading.
 
 2. **Value boxes**: the inducer's mode selector is a
    `ScrollOptionBehaviour<WeatherMode>` (the enum implements
    `INamedIconOptions`, so Create renders its option menu with icons); the
-   offsets and the resistor cap are `ScrollValueBehaviour`s, the latter
-   scrolling over an index into the logarithmic `STEPS` table rather than
-   raw SU. All are positioned via `CenteredSideValueBoxTransform`
+   offsets, the charge time and the gate threshold are
+   `ScrollValueBehaviour`s scrolling over ladder indices rather than raw
+   values. All are positioned via `CenteredSideValueBoxTransform`
    (`content/util/SideValueBoxTransform.java`).
 
 3. **Rendering**: `client/WeatherInducerClient.java` registers Create's
@@ -259,11 +245,7 @@ easy to follow and maintain:
    side-texture variants where the bolt lights up gold (inducer) or the
    capacitor gap fills with teal (charger). A little copper lightning rod stands centered
    on the cap, plugged into the emitter aperture: a 2x2 pole with the
-   vanilla rod's thicker tip. The SU Resistor is shaped like its namesake: two
-   andesite collar flanges at the shaft ends with the banded ceramic body
-   suspended between them; the bands read brown-black-red with a gold
-   tolerance band, which is 1000 in the resistor color code and also its
-   default SU draw cap.
+   vanilla rod's thicker tip.
 
 ### The SU model, in short
 There is no custom SU bookkeeping layer. Consumers (Weather Inducer, SU
@@ -274,15 +256,8 @@ exception: it stores that spare SU in a buffer and, while its shaft stands
 still, hands it to consumers found through a short physical walk from its
 output face (`SUNetwork.drawFromChargers`); raw network SU never crosses it.
 
-The SU Resistor polices real stress as a breaker: its block entity is a
-`SplitShaftBlockEntity` (the same mechanism as Create's clutch), and while
-closed it periodically sums downstream demand via a bounded physical walk
-(`SUNetwork.downstreamStressDemand`, impact times the resistor's own speed).
-Demand over the limit flips the TRIPPED blockstate and re-propagates rotation
-gearshift-style. The trip records the offending demand; a tripped breaker
-does no scanning and simply closes once the limit covers that recorded
-number, which makes oscillation structurally impossible. The Stress Gate
-uses the same clutch mechanism in reverse: it stays locked until
+The Stress Gate
+uses Create's clutch mechanism (`SplitShaftBlockEntity`): it stays locked until
 `calculateCapacity()` reaches its threshold, a reading that only depends on
 the source side, so it cannot flap either. Both are covered by game tests
 that spin a real creative motor and encased fan.

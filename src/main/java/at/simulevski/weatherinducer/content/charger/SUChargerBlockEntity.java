@@ -24,8 +24,8 @@ import java.util.List;
  *
  * <p>While the input shaft turns, the charger passes rotation through and
  * soaks the network's spare SU into an internal buffer, up to
- * {@link #MAX_RATE_PER_TICK} per tick (SU Resistors on the way cap that
- * further). Once the input stops and the buffer holds charge, it flips to
+ * {@link #MAX_RATE_PER_TICK} per tick. Once the input stops and the
+ * buffer holds charge, it flips to
  * discharge: the input face disconnects, the charger itself becomes the
  * kinetic source of its output side, spinning it at the speed it was
  * charged with and providing {@link #DISCHARGE_CAPACITY} SU. Each tick the
@@ -112,7 +112,6 @@ public class SUChargerBlockEntity extends GeneratingKineticBlockEntity
                 return;
             }
             double wanted = Math.min(MAX_RATE_PER_TICK, MAX_BUFFER - buffer);
-            wanted = Math.min(wanted, SUNetwork.resistorIntakeCap(this));
             double intake = Math.min(wanted, SUNetwork.remainingSU(this));
             if (intake > 0) {
                 buffer = Math.min(MAX_BUFFER, buffer + intake);

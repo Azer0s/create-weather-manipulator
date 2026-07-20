@@ -31,7 +31,6 @@ public class ModLootTableProvider extends LootTableProvider {
         @Override
         protected void generate() {
             dropSelf(ModBlocks.WEATHER_INDUCER.get());
-            dropSelf(ModBlocks.SU_RESISTOR.get());
             dropSelf(ModBlocks.WEATHER_SENSOR.get());
             dropSelf(ModBlocks.SU_CHARGER.get());
             dropSelf(ModBlocks.STRESS_GATE.get());
@@ -40,7 +39,7 @@ public class ModLootTableProvider extends LootTableProvider {
 
         @Override
         protected Iterable<Block> getKnownBlocks() {
-            return List.of(ModBlocks.WEATHER_INDUCER.get(), ModBlocks.SU_RESISTOR.get(),
+            return List.of(ModBlocks.WEATHER_INDUCER.get(),
                     ModBlocks.WEATHER_SENSOR.get(), ModBlocks.SU_CHARGER.get(),
                     ModBlocks.STRESS_GATE.get(), ModBlocks.LIGHTNING_MEDIUM.get());
         }

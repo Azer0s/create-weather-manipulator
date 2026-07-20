@@ -5,7 +5,6 @@ import at.simulevski.weatherinducer.content.charger.SUChargerBlock;
 import at.simulevski.weatherinducer.content.gate.StressGateBlock;
 import at.simulevski.weatherinducer.content.inducer.WeatherInducerBlock;
 import at.simulevski.weatherinducer.content.lightning.LightningMediumBlock;
-import at.simulevski.weatherinducer.content.resistor.SUResistorBlock;
 import at.simulevski.weatherinducer.content.sensor.WeatherSensorBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
@@ -28,16 +27,6 @@ public final class ModBlocks {
                     .sound(SoundType.NETHERITE_BLOCK)
                     // The model is a stepped machine (casing base + raised
                     // emitter cap), not a full cube.
-                    .noOcclusion()
-                    .requiresCorrectToolForDrops()));
-
-    public static final DeferredBlock<SUResistorBlock> SU_RESISTOR = BLOCKS.register(
-            "su_resistor",
-            () -> new SUResistorBlock(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.PODZOL)
-                    .strength(2.0f, 4.0f)
-                    .sound(SoundType.NETHERITE_BLOCK)
-                    // Flanged resistor silhouette, not a full cube.
                     .noOcclusion()
                     .requiresCorrectToolForDrops()));
 

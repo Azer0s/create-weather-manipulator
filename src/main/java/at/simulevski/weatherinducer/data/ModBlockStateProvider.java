@@ -4,7 +4,6 @@ import at.simulevski.weatherinducer.WeatherInducerMod;
 import at.simulevski.weatherinducer.content.charger.SUChargerBlock;
 import at.simulevski.weatherinducer.content.gate.StressGateBlock;
 import at.simulevski.weatherinducer.content.inducer.WeatherInducerBlock;
-import at.simulevski.weatherinducer.content.resistor.SUResistorBlock;
 import at.simulevski.weatherinducer.registry.ModBlocks;
 import net.minecraft.core.Direction;
 import net.minecraft.data.PackOutput;
@@ -20,7 +19,7 @@ import net.neoforged.neoforge.common.data.ExistingFileHelper;
  * <ul>
  *   <li>Textures map 1:1 to world pixels, so faces mostly ride on vanilla's
  *       default UV projection; explicit UVs only appear where a texture is a
- *       small atlas (resistor side, inducer cap/rod) or where a face samples
+ *       small atlas (gate side, inducer cap/rod) or where a face samples
  *       the dark hole crop.</li>
  *   <li>Every shaft connection sits in a 2px deep socket (an 8x8 hole framed
  *       by four rim boxes), so the spinning shaft drawn by the block entity
@@ -52,7 +51,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
     @Override
     protected void registerStatesAndModels() {
         registerWeatherInducer();
-        registerSuResistor();
         registerWeatherSensor();
         registerSuCharger();
         registerStressGate();
@@ -208,60 +206,31 @@ public class ModBlockStateProvider extends BlockStateProvider {
     }
 
     // ------------------------------------------------------------------
-    // SU Resistor
+    // Stress Gate
     // ------------------------------------------------------------------
 
     /**
-     * The resistor looks like its namesake: two andesite collar flanges at
-     * the shaft ends and the banded ceramic body suspended between them.
-     * Each collar carries a 2px deep shaft socket. The side texture is an
-     * atlas (rows 0..3 the collar band, the 8x10 patch at 4,4 the body), so
-     * every face sets its UVs explicitly.
-     */
-    private void registerSuResistor() {
-        ModelFile closed = flangedModel("su_resistor", "su_resistor_side", "su_resistor_end");
-        ModelFile tripped = flangedModel("su_resistor_tripped", "su_resistor_side_tripped", "su_resistor_end");
-        getVariantBuilder(ModBlocks.SU_RESISTOR.get()).forAllStates(state -> {
-            Direction.Axis axis = state.getValue(SUResistorBlock.AXIS);
-            int x = 0;
-            int y = 0;
-            switch (axis) {
-                case Z -> x = 90;
-                case X -> {
-                    x = 90;
-                    y = 90;
-                }
-                default -> {
-                    // Y: default orientation.
-                }
-            }
-            ModelFile model = state.getValue(SUResistorBlock.TRIPPED) ? tripped : closed;
-            return ConfiguredModel.builder().modelFile(model).rotationX(x).rotationY(y).build();
-        });
-    }
-
-    /**
-     * The flanged inline-shaft silhouette the SU Resistor and Stress Gate
-     * share: two socketed collars and an 8x10 body between them. The side
+     * The Stress Gate's flanged inline-shaft silhouette: two socketed
+     * collars and an 8x10 body between them. The side
      * texture is an atlas (rows 0..3 the collar band, the patch at 4,4 the
      * body), so every face sets its UVs explicitly.
      */
     private BlockModelBuilder flangedModel(String name, String sideTexture, String endTexture) {
-        BlockModelBuilder resistor = models().getBuilder(name)
+        BlockModelBuilder flanged = models().getBuilder(name)
                 .parent(models().getExistingFile(mcLoc("block/block")))
                 .texture("side", modLoc("block/" + sideTexture))
                 .texture("end", modLoc("block/" + endTexture))
                 .texture("particle", modLoc("block/" + endTexture));
-        collar(resistor, true);
-        collar(resistor, false);
-        resistor.element()
+        collar(flanged, true);
+        collar(flanged, false);
+        flanged.element()
                 .from(4, 3, 4).to(12, 13, 12)
                 .face(Direction.NORTH).texture("#side").uvs(4, 4, 12, 14).end()
                 .face(Direction.SOUTH).texture("#side").uvs(4, 4, 12, 14).end()
                 .face(Direction.EAST).texture("#side").uvs(4, 4, 12, 14).end()
                 .face(Direction.WEST).texture("#side").uvs(4, 4, 12, 14).end()
                 .end();
-        return resistor;
+        return flanged;
     }
 
     /**
@@ -409,7 +378,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         return b;
     }
     /**
-     * The Stress Gate shares the resistor's flanged silhouette; its padlock
+     * The Stress Gate wears the flanged inline silhouette; its padlock
      * body swaps between the locked (red pip) and open (teal pip) art.
      */
     private void registerStressGate() {

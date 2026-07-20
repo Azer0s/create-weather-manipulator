@@ -6,10 +6,9 @@ import at.simulevski.weatherinducer.content.charger.SUChargerBlockEntity;
 import at.simulevski.weatherinducer.content.gate.StressGateBlock;
 import at.simulevski.weatherinducer.content.gate.StressGateBlockEntity;
 import at.simulevski.weatherinducer.content.util.SUValueLadder;
+import at.simulevski.weatherinducer.content.inducer.ChargeTimeScrollBehaviour;
 import at.simulevski.weatherinducer.content.inducer.WeatherInducerBlockEntity;
 import at.simulevski.weatherinducer.content.inducer.WeatherMode;
-import at.simulevski.weatherinducer.content.resistor.SUResistorBlock;
-import at.simulevski.weatherinducer.content.resistor.SUResistorBlockEntity;
 import at.simulevski.weatherinducer.content.sensor.WeatherSensorBlock;
 import at.simulevski.weatherinducer.registry.ModBlocks;
 import at.simulevski.weatherinducer.content.lightning.ThrownBottleOLightning;
@@ -133,6 +132,37 @@ public class ModGameTests {
                 .thenExecute(() -> helper.assertTrue(
                         inducer(helper).getCharge() == WeatherInducerBlockEntity.MAX_CHARGE,
                         "Inducer without sky access must not fire or discharge"))
+                .thenSucceed();
+    }
+
+    /**
+     * The charge time slider paces the intake: at the slowest setting
+     * (1,280 s) the inducer sips about 41 SU per tick, so after a second
+     * it must hold only a few hundred SU even on an oversized network.
+     */
+    @GameTest(template = "empty", timeoutTicks = 200)
+    public static void chargeTimeSliderPacesIntake(GameTestHelper helper) {
+        BlockPos motorPos = new BlockPos(2, 2, 3);
+        helper.startSequence()
+                .thenExecute(() -> {
+                    placeFloor(helper);
+                    Block motor = BuiltInRegistries.BLOCK
+                            .get(ResourceLocation.parse("create:creative_motor"));
+                    helper.setBlock(motorPos, motor.defaultBlockState()
+                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
+                    helper.setBlock(INDUCER, ModBlocks.WEATHER_INDUCER.get().defaultBlockState()
+                            .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.EAST));
+                    WeatherInducerBlockEntity be = inducer(helper);
+                    be.setChargeTimeIndexForTesting(ChargeTimeScrollBehaviour.SECONDS.length - 1);
+                })
+                .thenIdle(20)
+                .thenExecute(() -> {
+                    double charge = inducer(helper).getCharge();
+                    helper.assertTrue(charge > 0,
+                            "The inducer should charge from the motor's spare SU");
+                    helper.assertTrue(charge <= 41 * 24,
+                            "The slider must pace the intake, got " + charge + " SU");
+                })
                 .thenSucceed();
     }
 
@@ -324,219 +354,51 @@ public class ModGameTests {
                 .thenSucceed();
     }
 
-    /**
-     * The breaker on real Create kinetics: a creative motor drives an encased
-     * fan through a resistor whose cap is 0 SU, so any demand at all must
-     * trip it and cut the fan off, while the resistor itself keeps spinning
-     * on the source side.
-     */
-    @GameTest(template = "empty", timeoutTicks = 200)
-    public static void resistorTripsOnOverload(GameTestHelper helper) {
-        BlockPos motorPos = new BlockPos(2, 2, 3);
-        BlockPos resistorPos = new BlockPos(3, 2, 3);
-        BlockPos fanPos = new BlockPos(4, 2, 3);
-        helper.startSequence()
-                .thenExecute(() -> {
-                    placeFloor(helper);
-                    Block motor = BuiltInRegistries.BLOCK
-                            .get(ResourceLocation.parse("create:creative_motor"));
-                    Block fan = BuiltInRegistries.BLOCK
-                            .get(ResourceLocation.parse("create:encased_fan"));
-                    helper.setBlock(motorPos, motor.defaultBlockState()
-                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
-                    helper.setBlock(resistorPos, ModBlocks.SU_RESISTOR.get().defaultBlockState()
-                            .setValue(SUResistorBlock.AXIS, Direction.Axis.X));
-                    helper.setBlock(fanPos, fan.defaultBlockState()
-                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
-                    SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
-                    resistor.setLimitIndexForTesting(0); // cap: 0 SU
-                })
-                .thenWaitUntil(() -> {
-                    SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
-                    helper.assertTrue(resistor.isTripped(),
-                            "The resistor should trip when downstream draw exceeds the cap");
-                })
-                .thenWaitUntil(() -> {
-                    KineticBlockEntity fanBe = helper.getBlockEntity(fanPos);
-                    SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
-                    helper.assertTrue(resistor.isTripped() && fanBe.getSpeed() == 0,
-                            "Expected a tripped resistor with the fan cut off");
-                })
-                .thenSucceed();
-    }
 
-    /**
-     * The resistor's original job, for the mod's own consumers: a Weather
-     * Inducer whose only path to the generator crosses a resistor may draw
-     * at most the resistor's limit per tick, instead of gulping 131,072.
-     */
-    @GameTest(template = "empty", timeoutTicks = 300)
-    public static void resistorCapsInducerIntake(GameTestHelper helper) {
-        BlockPos motorPos = new BlockPos(1, 2, 3);
-        BlockPos resistorPos = new BlockPos(2, 2, 3);
-        BlockPos inducerPos = new BlockPos(3, 2, 3);
-        helper.startSequence()
-                .thenExecute(() -> {
-                    placeFloor(helper);
-                    Block motor = BuiltInRegistries.BLOCK
-                            .get(ResourceLocation.parse("create:creative_motor"));
-                    helper.setBlock(motorPos, motor.defaultBlockState()
-                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
-                    helper.setBlock(resistorPos, ModBlocks.SU_RESISTOR.get().defaultBlockState()
-                            .setValue(SUResistorBlock.AXIS, Direction.Axis.X));
-                    helper.setBlock(inducerPos, ModBlocks.WEATHER_INDUCER.get().defaultBlockState()
-                            .setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.EAST));
-                    SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
-                    // 1,024 SU: above the inducer's mechanical demand (so the
-                    // breaker stays closed), far below the uncapped intake.
-                    resistor.setLimitIndexForTesting(5);
-                })
-                .thenIdle(10)
-                .thenExecute(() -> {
-                    WeatherInducerBlockEntity inducer = helper.getBlockEntity(inducerPos);
-                    double charge = inducer.getCharge();
-                    helper.assertTrue(charge > 0,
-                            "The inducer should charge through a closed resistor");
-                    // 10 ticks at 1,024 SU each, give or take settling ticks;
-                    // uncapped it would be north of 100,000 by now.
-                    helper.assertTrue(charge <= 1_024 * 12,
-                            "The resistor must cap the charge rate, got " + charge + " SU");
-                })
-                .thenSucceed();
-    }
 
-    /**
-     * The demand measurement runs on Create's propagation tree, so machines
-     * hooked up through a diagonal cogwheel mesh (which no block-adjacency
-     * scan can see) still count against the breaker. A fan driven through a
-     * large-to-small cog step behind the resistor must trip a 0 SU cap.
-     */
-    @GameTest(template = "empty", timeoutTicks = 200)
-    public static void resistorSeesDemandThroughCogwheels(GameTestHelper helper) {
-        BlockPos motorPos = new BlockPos(1, 2, 3);
-        BlockPos resistorPos = new BlockPos(2, 2, 3);
-        BlockPos largeCogPos = new BlockPos(3, 2, 3);
-        BlockPos smallCogPos = new BlockPos(3, 3, 4);
-        BlockPos fanPos = new BlockPos(4, 3, 4);
-        helper.startSequence()
-                .thenExecute(() -> {
-                    placeFloor(helper);
-                    Block motor = BuiltInRegistries.BLOCK
-                            .get(ResourceLocation.parse("create:creative_motor"));
-                    Block largeCog = BuiltInRegistries.BLOCK
-                            .get(ResourceLocation.parse("create:large_cogwheel"));
-                    Block smallCog = BuiltInRegistries.BLOCK
-                            .get(ResourceLocation.parse("create:cogwheel"));
-                    Block fan = BuiltInRegistries.BLOCK
-                            .get(ResourceLocation.parse("create:encased_fan"));
-                    helper.setBlock(motorPos, motor.defaultBlockState()
-                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
-                    helper.setBlock(resistorPos, ModBlocks.SU_RESISTOR.get().defaultBlockState()
-                            .setValue(SUResistorBlock.AXIS, Direction.Axis.X));
-                    helper.setBlock(largeCogPos, largeCog.defaultBlockState()
-                            .setValue(RotatedPillarKineticBlock.AXIS, Direction.Axis.X));
-                    helper.setBlock(smallCogPos, smallCog.defaultBlockState()
-                            .setValue(RotatedPillarKineticBlock.AXIS, Direction.Axis.X));
-                    helper.setBlock(fanPos, fan.defaultBlockState()
-                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
-                    SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
-                    resistor.setLimitIndexForTesting(0); // cap: 0 SU
-                })
-                .thenWaitUntil(() -> {
-                    SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
-                    KineticBlockEntity fanBe = helper.getBlockEntity(fanPos);
-                    helper.assertTrue(resistor.isTripped() && fanBe.getSpeed() == 0,
-                            "The breaker must trip on demand routed through cogwheels");
-                })
-                .thenSucceed();
-    }
 
-    /**
-     * The breaker latch: a tripped resistor closes again on its own once its
-     * limit is raised to cover the demand recorded at break time, and the
-     * downstream machines spin back up.
-     */
-    @GameTest(template = "empty", timeoutTicks = 200)
-    public static void resistorReclosesWhenLimitRaised(GameTestHelper helper) {
-        BlockPos motorPos = new BlockPos(2, 2, 3);
-        BlockPos resistorPos = new BlockPos(3, 2, 3);
-        BlockPos fanPos = new BlockPos(4, 2, 3);
-        helper.startSequence()
-                .thenExecute(() -> {
-                    placeFloor(helper);
-                    Block motor = BuiltInRegistries.BLOCK
-                            .get(ResourceLocation.parse("create:creative_motor"));
-                    Block fan = BuiltInRegistries.BLOCK
-                            .get(ResourceLocation.parse("create:encased_fan"));
-                    helper.setBlock(motorPos, motor.defaultBlockState()
-                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
-                    helper.setBlock(resistorPos, ModBlocks.SU_RESISTOR.get().defaultBlockState()
-                            .setValue(SUResistorBlock.AXIS, Direction.Axis.X));
-                    helper.setBlock(fanPos, fan.defaultBlockState()
-                            .setValue(DirectionalKineticBlock.FACING, Direction.EAST));
-                    SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
-                    resistor.setLimitIndexForTesting(0); // cap: 0 SU, guaranteed trip
-                })
-                .thenWaitUntil(() -> {
-                    SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
-                    helper.assertTrue(resistor.isTripped(),
-                            "The resistor should trip when downstream draw exceeds the cap");
-                })
-                .thenExecute(() -> {
-                    SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
-                    // Highest rung: 1,048,576 SU, far above the recorded demand.
-                    resistor.setLimitIndexForTesting(SUValueLadder.STEPS.length - 1);
-                })
-                .thenWaitUntil(() -> {
-                    KineticBlockEntity fanBe = helper.getBlockEntity(fanPos);
-                    SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
-                    helper.assertTrue(!resistor.isTripped() && fanBe.getSpeed() != 0,
-                            "Expected the breaker to close and the fan to spin again");
-                })
-                .thenSucceed();
-    }
 
     /**
      * Guards the value box plumbing the player actually clicks, which an
      * earlier version broke without any server-logic test noticing: Create
-     * keeps behaviours in a type-keyed map, so the inducer's three scroll
+     * keeps behaviours in a type-keyed map, so the inducer's four scroll
      * boxes must register under distinct types (and distinct packet ids for
      * click routing), and each box must accept a click on the face it sits
      * on. The hit test only tolerates a quarter block, so the recessed
-     * resistor body needs its box on the actual surface, not at full-cube
+     * gate body needs its box on the actual surface, not at full-cube
      * depth.
      */
     @GameTest(template = "empty")
     public static void valueBoxesAreDistinctAndClickable(GameTestHelper helper) {
         BlockPos inducerPos = new BlockPos(3, 2, 3);
-        BlockPos resistorPos = new BlockPos(2, 2, 2);
+        BlockPos gatePos = new BlockPos(2, 2, 2);
         helper.setBlock(inducerPos, ModBlocks.WEATHER_INDUCER.get().defaultBlockState());
-        helper.setBlock(resistorPos, ModBlocks.SU_RESISTOR.get().defaultBlockState()
-                .setValue(SUResistorBlock.AXIS, Direction.Axis.X));
+        helper.setBlock(gatePos, ModBlocks.STRESS_GATE.get().defaultBlockState()
+                .setValue(StressGateBlock.AXIS, Direction.Axis.X));
 
         WeatherInducerBlockEntity inducer = helper.getBlockEntity(inducerPos);
         List<ScrollValueBehaviour> boxes = inducer.getAllBehaviours().stream()
                 .filter(ScrollValueBehaviour.class::isInstance)
                 .map(ScrollValueBehaviour.class::cast)
                 .toList();
-        helper.assertTrue(boxes.size() == 3,
-                "Expected 3 value boxes on the inducer, found " + boxes.size());
+        helper.assertTrue(boxes.size() == 4,
+                "Expected 4 value boxes on the inducer, found " + boxes.size());
         long distinctIds = boxes.stream().map(ValueSettingsBehaviour::netId).distinct().count();
-        helper.assertTrue(distinctIds == 3, "Value box packet ids must be distinct");
+        helper.assertTrue(distinctIds == 4, "Value box packet ids must be distinct");
 
         // A click on the middle of the top cap must land in the mode selector.
         boolean modeHit = boxes.stream().anyMatch(box ->
                 hits(helper, box, inducerPos, Direction.UP, new Vec3(0.5, 1.0, 0.5)));
         helper.assertTrue(modeHit, "No value box catches a click on the inducer top");
 
-        // Same for the resistor: its body surface sits at 12 of 16.
-        SUResistorBlockEntity resistor = helper.getBlockEntity(resistorPos);
-        boolean limitHit = resistor.getAllBehaviours().stream()
+        // Same for the gate: its flanged body surface sits at 12 of 16.
+        StressGateBlockEntity gate = helper.getBlockEntity(gatePos);
+        boolean thresholdHit = gate.getAllBehaviours().stream()
                 .filter(ScrollValueBehaviour.class::isInstance)
                 .map(ScrollValueBehaviour.class::cast)
                 .anyMatch(box ->
-                        hits(helper, box, resistorPos, Direction.UP, new Vec3(0.5, 0.75, 0.5)));
-        helper.assertTrue(limitHit, "The resistor limit box must catch a click on its body surface");
+                        hits(helper, box, gatePos, Direction.UP, new Vec3(0.5, 0.75, 0.5)));
+        helper.assertTrue(thresholdHit, "The gate threshold box must catch a click on its body surface");
         helper.succeed();
     }
 

@@ -21,7 +21,6 @@ public class ModLanguageProvider extends LanguageProvider {
         add("itemGroup." + WeatherInducerMod.MOD_ID, "Weather Inducer");
 
         add(ModBlocks.WEATHER_INDUCER.get(), "Weather Inducer");
-        add(ModBlocks.SU_RESISTOR.get(), "SU Resistor");
         add(ModBlocks.WEATHER_SENSOR.get(), "Weather Sensor");
         add(ModBlocks.SU_CHARGER.get(), "SU Charger");
         add(ModBlocks.STRESS_GATE.get(), "Stress Gate");
@@ -43,9 +42,10 @@ public class ModLanguageProvider extends LanguageProvider {
         add("weatherinducer.value.mode", "Weather Mode");
         add("weatherinducer.value.offset_x", "Lightning Offset X");
         add("weatherinducer.value.offset_z", "Lightning Offset Z");
-        add("weatherinducer.value.su_limit", "Max SU Draw");
         add("weatherinducer.value.threshold", "SU Threshold");
         add("weatherinducer.value.su_row", "SU");
+        add("weatherinducer.value.charge_time", "Charge Time");
+        add("weatherinducer.value.charge_time_row", "Seconds");
 
         add("weatherinducer.mode.rain", "Rain");
         add("weatherinducer.mode.clear", "Clear");
@@ -53,11 +53,8 @@ public class ModLanguageProvider extends LanguageProvider {
 
         add("weatherinducer.tooltip.title", "Weather Inducer");
         add("weatherinducer.tooltip.charge", "Charge: %s / %s SU (%s%%)");
+        add("weatherinducer.tooltip.charge_time", "Full charge in %s s (%s SU per second)");
         add("weatherinducer.tooltip.mode", "Mode: %s");
-        add("weatherinducer.tooltip.su_resistor", "SU Resistor");
-        add("weatherinducer.tooltip.su_limit", "Limit: %s SU");
-        add("weatherinducer.tooltip.demand", "Downstream draw: %s SU");
-        add("weatherinducer.tooltip.tripped", "Tripped at %s SU, resets when limit and supply cover it");
         add("weatherinducer.tooltip.stress_gate", "Stress Gate");
         add("weatherinducer.tooltip.threshold", "Unlocks at: %s SU provided");
         add("weatherinducer.tooltip.provided", "Network provides: %s SU");
@@ -85,13 +82,6 @@ public class ModLanguageProvider extends LanguageProvider {
                         + "beyond what the machines use), up to 1,048,576 SU at 131,072 SU per tick at most. While "
                         + "it can see the sky, a redstone pulse then applies the selected weather - rain, clear, or "
                         + "a lightning strike at a configurable offset - and discharges it.");
-        add("weatherinducer.info.su_resistor",
-                "The SU Resistor is a circuit breaker for kinetic stress. If the machines downstream demand "
-                        + "more SU than its limit, or more than the network provides, it trips and cuts rotation "
-                        + "to that side, remembering the demand that broke it. It closes again on its own once "
-                        + "both the limit and the network's supply cover that demand - build more generators or "
-                        + "raise the limit. It also caps how much SU per tick the Weather Inducer and SU Charger "
-                        + "may draw through it.");
         add("weatherinducer.info.weather_sensor",
                 "The Weather Sensor reads the sky like a daylight detector reads the sun: it emits redstone "
                         + "signal 0 under clear skies, 7 in rain and 15 during a thunderstorm. It needs to see "

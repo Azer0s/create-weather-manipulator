@@ -55,8 +55,7 @@ public class SUChargerBlock extends HorizontalKineticBlock
 
     /**
      * Rips the block out of the rotation graph so it re-propagates with the
-     * current DISCHARGING connections; same trick as Create's GearshiftBlock
-     * (and our SU Resistor).
+     * current DISCHARGING connections; same trick as Create's GearshiftBlock.
      */
     public void detachKinetics(Level level, BlockPos pos, boolean reAttachNextTick) {
         if (!(level.getBlockEntity(pos) instanceof KineticBlockEntity be)) {
