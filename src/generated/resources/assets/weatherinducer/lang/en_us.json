@@ -5,6 +5,7 @@
   "block.weatherinducer.su_resistor": "SU Resistor",
   "block.weatherinducer.weather_inducer": "Weather Inducer",
   "block.weatherinducer.weather_sensor": "Weather Sensor",
+  "entity.weatherinducer.thrown_bottle_o_lightning": "Bottle o' Lightning",
   "item.weatherinducer.bottle_o_lightning": "Bottle o' Lightning",
   "item.weatherinducer.lightning_axe": "Lightning Axe",
   "item.weatherinducer.lightning_bolt": "Lightning Bolt",

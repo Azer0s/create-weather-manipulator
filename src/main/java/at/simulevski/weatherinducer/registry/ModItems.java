@@ -1,6 +1,7 @@
 package at.simulevski.weatherinducer.registry;
 
 import at.simulevski.weatherinducer.WeatherInducerMod;
+import at.simulevski.weatherinducer.content.lightning.BottleOLightningItem;
 import at.simulevski.weatherinducer.content.lightning.LightningGear;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.AxeItem;
@@ -39,8 +40,9 @@ public final class ModItems {
 
     // --- The lightning gear chain ---------------------------------------
 
-    public static final DeferredItem<Item> BOTTLE_O_LIGHTNING = ITEMS.registerSimpleItem(
-            "bottle_o_lightning", new Item.Properties().stacksTo(16));
+    public static final DeferredItem<Item> BOTTLE_O_LIGHTNING = ITEMS.registerItem(
+            "bottle_o_lightning", BottleOLightningItem::new,
+            new Item.Properties().stacksTo(16));
 
     public static final DeferredItem<Item> LIGHTNING_BOLT = ITEMS.registerSimpleItem(
             "lightning_bolt", new Item.Properties());

@@ -3,6 +3,7 @@ package at.simulevski.weatherinducer;
 import at.simulevski.weatherinducer.registry.ModArmorMaterials;
 import at.simulevski.weatherinducer.registry.ModBlockEntities;
 import at.simulevski.weatherinducer.registry.ModBlocks;
+import at.simulevski.weatherinducer.registry.ModEntityTypes;
 import at.simulevski.weatherinducer.registry.ModCreativeTabs;
 import at.simulevski.weatherinducer.registry.ModItems;
 import net.minecraft.resources.ResourceLocation;
@@ -42,6 +43,7 @@ public class WeatherInducerMod {
         ModBlocks.register(modEventBus);
         ModArmorMaterials.register(modEventBus);
         ModBlockEntities.register(modEventBus);
+        ModEntityTypes.register(modEventBus);
         ModItems.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
     }

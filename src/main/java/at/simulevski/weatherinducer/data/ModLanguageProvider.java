@@ -3,6 +3,7 @@ package at.simulevski.weatherinducer.data;
 import at.simulevski.weatherinducer.WeatherInducerMod;
 import at.simulevski.weatherinducer.content.ponder.ModPonderPlugin;
 import at.simulevski.weatherinducer.registry.ModBlocks;
+import at.simulevski.weatherinducer.registry.ModEntityTypes;
 import at.simulevski.weatherinducer.registry.ModItems;
 import net.createmod.ponder.foundation.PonderIndex;
 import net.createmod.ponder.foundation.registration.PonderLocalization;
@@ -27,6 +28,7 @@ public class ModLanguageProvider extends LanguageProvider {
         add(ModBlocks.LIGHTNING_MEDIUM.get(), "Lightning Medium");
 
         add(ModItems.BOTTLE_O_LIGHTNING.get(), "Bottle o' Lightning");
+        add(ModEntityTypes.THROWN_BOTTLE_O_LIGHTNING.get(), "Bottle o' Lightning");
         add(ModItems.LIGHTNING_BOLT.get(), "Lightning Bolt");
         add(ModItems.LIGHTNING_SWORD.get(), "Lightning Sword");
         add(ModItems.LIGHTNING_PICKAXE.get(), "Lightning Pickaxe");

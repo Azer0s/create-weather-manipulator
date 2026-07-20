@@ -53,6 +53,9 @@ A [Create](https://github.com/Creators-of-Create/Create) addon for **Minecraft 1
 ### Lightning gear
 The endgame chain, powered by the Weather Inducer's own lightning:
 
+0. **Bottle o' Lightning**: also a throwable. Snowball physics, except the
+   point of impact gets struck by lightning. Throwing one at another
+   Lightning Medium bottles the strike right back.
 1. **Lightning Medium**: craft a beacon and an end crystal into a glass shell
    (recipe below). Place it under open sky and strike it with lightning; the
    block is consumed and drops a **Bottle o' Lightning**. An inducer in

@@ -3,9 +3,11 @@ package at.simulevski.weatherinducer.client;
 import at.simulevski.weatherinducer.WeatherInducerMod;
 import at.simulevski.weatherinducer.content.ponder.ModPonderPlugin;
 import at.simulevski.weatherinducer.registry.ModBlockEntities;
+import at.simulevski.weatherinducer.registry.ModEntityTypes;
 import com.simibubi.create.content.kinetics.base.ShaftRenderer;
 import com.simibubi.create.content.kinetics.transmission.SplitShaftRenderer;
 import net.createmod.ponder.foundation.PonderIndex;
+import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -39,6 +41,8 @@ public final class WeatherInducerClient {
                 context -> new ShaftRenderer<>(context));
         event.registerBlockEntityRenderer(ModBlockEntities.STRESS_GATE.get(),
                 context -> new SplitShaftRenderer(context));
+        event.registerEntityRenderer(ModEntityTypes.THROWN_BOTTLE_O_LIGHTNING.get(),
+                ThrownItemRenderer::new);
     }
 
     @SubscribeEvent

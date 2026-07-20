@@ -12,6 +12,8 @@ import at.simulevski.weatherinducer.content.resistor.SUResistorBlock;
 import at.simulevski.weatherinducer.content.resistor.SUResistorBlockEntity;
 import at.simulevski.weatherinducer.content.sensor.WeatherSensorBlock;
 import at.simulevski.weatherinducer.registry.ModBlocks;
+import at.simulevski.weatherinducer.content.lightning.ThrownBottleOLightning;
+import at.simulevski.weatherinducer.registry.ModEntityTypes;
 import at.simulevski.weatherinducer.registry.ModItems;
 import com.simibubi.create.content.kinetics.base.DirectionalKineticBlock;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
@@ -304,6 +306,27 @@ public class ModGameTests {
                             .anyMatch(e -> e.getItem().is(ModItems.BOTTLE_O_LIGHTNING.get()));
                     helper.assertTrue(found,
                             "The strike should bottle into a Bottle o' Lightning");
+                })
+                .thenSucceed();
+    }
+
+    /** A thrown Bottle o' Lightning strikes lightning where it lands. */
+    @GameTest(template = "empty")
+    public static void thrownBottleSummonsLightning(GameTestHelper helper) {
+        helper.startSequence()
+                .thenExecute(() -> {
+                    placeFloor(helper);
+                    ThrownBottleOLightning bottle = new ThrownBottleOLightning(
+                            ModEntityTypes.THROWN_BOTTLE_O_LIGHTNING.get(), helper.getLevel());
+                    bottle.setPos(Vec3.atCenterOf(helper.absolutePos(new BlockPos(3, 4, 3))));
+                    bottle.setDeltaMovement(0, -1, 0);
+                    helper.getLevel().addFreshEntity(bottle);
+                })
+                .thenWaitUntil(() -> {
+                    AABB area = new AABB(helper.absolutePos(INDUCER)).inflate(8);
+                    helper.assertTrue(!helper.getLevel()
+                                    .getEntitiesOfClass(LightningBolt.class, area).isEmpty(),
+                            "A thrown bottle should summon lightning on impact");
                 })
                 .thenSucceed();
     }
