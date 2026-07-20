@@ -434,24 +434,25 @@ public class ModBlockStateProvider extends BlockStateProvider {
     }
 
     /**
-     * The Charger Link, built straight from Create's display link: same
-     * textures (link_base_unpowered for the plate, link_details for the
-     * antenna assembly) and the same geometry, so it reads as a sibling of
-     * the display link at a glance. The model is authored in the display
-     * link's native floor-mounted pose (host charger below, feet poking
-     * into it), which is exactly the facing=up identity that
-     * directionalBlock rotates onto all six faces.
+     * The Charger Link, styled after Create's display link without
+     * borrowing its files: the same plate-and-antenna anatomy and the same
+     * atlas layout, but the two sheets are this mod's own art. Dark smoked
+     * wood and brass on the plate with a teal stripe where the display
+     * link wears its red one, copper coils, a steel housing with a teal
+     * gauge, a little brass lightning bolt for an antenna and a teal glass
+     * bulb. The model is authored in the display link's native
+     * floor-mounted pose (host charger below, feet poking into it), which
+     * is exactly the facing=up identity that directionalBlock rotates onto
+     * all six faces.
      *
-     * <p>Like Create's original this is a composite: the plate and antenna
-     * render cutout while the green glass bulb over the coil renders
-     * translucent. The bulb doubles as the teal accent that marks it as a
-     * charger-network device.
+     * <p>Like the display link this is a composite: plate and antenna
+     * render cutout while the glass bulb renders translucent.
      */
     private void registerChargerLink() {
         BlockModelBuilder base = models().nested()
                 .renderType("cutout_mipped")
-                .texture("0", "create:block/link_base_unpowered")
-                .texture("1", "create:block/link_details");
+                .texture("0", modLoc("block/charger_link_base"))
+                .texture("1", modLoc("block/charger_link_details"));
         // The mounting plate.
         base.element()
                 .from(1, 1, 1).to(15, 5, 15)
@@ -506,10 +507,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .face(Direction.SOUTH).texture("#1").uvs(11.5f, 6, 13, 8).end()
                 .end();
 
-        // The green glass bulb, rendered translucent like Create's.
+        // The teal glass bulb, rendered translucent like the display
+        // link's.
         BlockModelBuilder bulb = models().nested()
                 .renderType("translucent")
-                .texture("1", "create:block/link_details");
+                .texture("1", modLoc("block/charger_link_details"));
         bulb.element()
                 .from(8.5f, 7, 2.5f).to(13.5f, 12, 7.5f)
                 .face(Direction.NORTH).texture("#1").uvs(16, 2.5f, 13.5f, 5).end()
@@ -522,7 +524,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         BlockModelBuilder link = models().getBuilder("charger_link")
                 .parent(models().getExistingFile(mcLoc("block/block")))
-                .texture("particle", "create:block/brass_casing")
+                .texture("particle", modLoc("block/charger_link_base"))
                 .customLoader(CompositeModelBuilder::begin)
                 .child("base", base)
                 .child("bulb", bulb)

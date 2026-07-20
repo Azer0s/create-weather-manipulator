@@ -36,7 +36,7 @@ A [Create](https://github.com/Creators-of-Create/Create) addon for **Minecraft 1
 - **Taking turns:** several chargers on one kinetic network never fight over the shaft; exactly one (the lowest position with energy) generates, and when it runs dry the next in line takes over seamlessly.
 
 ### Charger Link
-- **A panel on the battery:** bolts flat onto any face of a Kinetic Charger. The model is built straight from Create's display link textures (plate, antenna, coils and the green glass bulb), so it reads as a sibling of that block.
+- **A panel on the battery:** bolts flat onto any face of a Kinetic Charger. The model is styled after Create's display link (same plate-and-antenna anatomy) with its own art: smoked wood and brass, a teal stripe, copper coils, a bolt antenna and a teal glass bulb.
 - **Founding a network:** placing a link from a fresh item founds a new charger network. Right-click any placed link with more link items in hand to bind that stack; every link placed from a bound stack joins the same network.
 - **One big battery:** chargers wearing links of one network balance their buffers every second (weighted by their flywheel banks), so they fill, drain and read as a single store. Goggles on any link or member show the pooled numbers.
 - **Redstone output:** the block emits a signal of 0 to 15 proportional to the buffer fill; a comparator reads the same value, and goggles show the exact numbers, the wheel count and the current mode.

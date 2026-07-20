@@ -344,8 +344,8 @@
       ],
       "render_type": "minecraft:cutout_mipped",
       "textures": {
-        "0": "create:block/link_base_unpowered",
-        "1": "create:block/link_details"
+        "0": "weatherinducer:block/charger_link_base",
+        "1": "weatherinducer:block/charger_link_details"
       }
     },
     "bulb": {
@@ -421,7 +421,7 @@
       ],
       "render_type": "minecraft:translucent",
       "textures": {
-        "1": "create:block/link_details"
+        "1": "weatherinducer:block/charger_link_details"
       }
     }
   },
@@ -537,6 +537,6 @@
   ],
   "loader": "neoforge:composite",
   "textures": {
-    "particle": "create:block/brass_casing"
+    "particle": "weatherinducer:block/charger_link_base"
   }
 }
