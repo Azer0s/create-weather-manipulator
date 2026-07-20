@@ -21,10 +21,19 @@ import java.util.List;
  */
 public class SUResistorBlockEntity extends KineticBlockEntity implements IHaveGoggleInformation {
 
-    /** Default draw cap in SU. */
-    public static final int DEFAULT_LIMIT = 1_000;
-    /** Upper bound of the configurable cap. */
-    public static final int MAX_LIMIT = 1_000_000;
+    /**
+     * The selectable draw caps, a logarithmic 1-2.5-5 ladder in SU. Scrolling
+     * linearly over a 0..1,000,000 range was hopeless; the scroll behaviour
+     * stores an index into this table instead and the formatter shows the SU
+     * value it stands for.
+     */
+    public static final int[] STEPS = {
+            0, 100, 250, 500, 1_000, 2_500, 5_000, 10_000,
+            25_000, 50_000, 100_000, 250_000, 500_000, 1_000_000,
+    };
+
+    /** Index of the 1,000 SU default in {@link #STEPS}. */
+    private static final int DEFAULT_INDEX = 4;
 
     private ScrollValueBehaviour suLimit;
 
@@ -41,16 +50,23 @@ public class SUResistorBlockEntity extends KineticBlockEntity implements IHaveGo
                 Component.translatable("weatherinducer.value.su_limit"),
                 this,
                 new SideValueBoxTransform((state, dir) -> dir.getAxis() != state.getValue(SUResistorBlock.AXIS)));
-        suLimit.between(0, MAX_LIMIT);
-        suLimit.setValue(DEFAULT_LIMIT);
+        suLimit.between(0, STEPS.length - 1);
+        suLimit.withFormatter(index -> String.format("%,d", STEPS[clampIndex(index)]));
+        suLimit.setValue(DEFAULT_INDEX);
         behaviours.add(suLimit);
+    }
+
+    private static int clampIndex(int index) {
+        return Math.max(0, Math.min(index, STEPS.length - 1));
     }
 
     /** The configured SU draw cap this resistor allows to pass. */
     public int getSuLimit() {
-        return suLimit != null ? suLimit.getValue() : DEFAULT_LIMIT;
+        return suLimit != null ? STEPS[clampIndex(suLimit.getValue())] : STEPS[DEFAULT_INDEX];
     }
 
+    // @Override intentionally present: if Create ever changes this signature,
+    // the compile breaks here instead of goggles silently going blank.
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
         tooltip.add(Component.literal("    ").append(

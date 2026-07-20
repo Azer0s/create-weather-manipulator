@@ -13,10 +13,11 @@ public class ModItemModelProvider extends ItemModelProvider {
 
     @Override
     protected void registerModels() {
-        // Item models simply inherit the block model.
-        withExistingParent("weather_inducer", modLoc("block/weather_inducer"));
+        // Item models simply inherit the block model; the inducer and charger
+        // use their empty (level 0) variant.
+        withExistingParent("weather_inducer", modLoc("block/weather_inducer_0"));
         withExistingParent("su_resistor", modLoc("block/su_resistor"));
         withExistingParent("weather_sensor", modLoc("block/weather_sensor"));
-        withExistingParent("su_charger", modLoc("block/su_charger"));
+        withExistingParent("su_charger", modLoc("block/su_charger_0"));
     }
 }

@@ -141,6 +141,8 @@ public class SUChargerBlockEntity extends KineticBlockEntity implements IHaveGog
         buffer = compound.getDouble("Buffer");
     }
 
+    // @Override intentionally present: if Create ever changes this signature,
+    // the compile breaks here instead of goggles silently going blank.
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
         tooltip.add(Component.literal("    ").append(

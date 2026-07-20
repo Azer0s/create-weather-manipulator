@@ -19,14 +19,15 @@ A [Create](https://github.com/Creators-of-Create/Create) addon for **Minecraft 1
 - **Kinetic input:** a shaft on the front/back faces (the facing axis).
 - **Charging:** while the shaft is turning, the inducer absorbs SU from its kinetic network each tick until it holds 1,000,000 SU. It takes whatever it can get: `min(network capacity, inline resistor cap, 100,000)`. With no inline resistor, a big enough network fills it in ten ticks.
 - **Sky line-of-sight:** the block directly above must be able to see the sky, or firing is blocked.
-- **Mode (top value box):** scroll to pick `Rain` / `Clear` / `Lightning`.
+- **Mode (top value box):** Create's option menu with an icon and label per entry; scroll or drag to pick `Rain` / `Clear` / `Lightning`.
 - **Lightning offset (side value boxes):** two scrolls set the X/Z offset (-64 to +64) of the lightning strike, measured from the inducer. The strike lands on the surface at that column.
 - **Trigger:** a **rising redstone edge** fires the selected effect when fully charged, then discharges the block back to 0 SU (it must recharge before firing again).
+- **Charge indicator:** the bolt emblem on the sides lights up gold from the tip upward in sixths of a full charge, so the fill level is readable at a glance. Goggles show the exact SU numbers.
 - **Comparator:** emits a redstone signal (0 to 15) proportional to charge.
 
 ### SU Resistor
 - **Inline shaft:** rotation passes straight through along its axis, exactly like a shaft.
-- **SU draw cap (value box on the four side faces):** scroll to set the limit (0 to 1,000,000, default 1,000). Whatever is hooked up behind the resistor can draw at most this much SU from the network, regardless of what the network could deliver.
+- **SU draw cap (value box on the four side faces):** the limit scrolls through a logarithmic ladder (0, 100, 250, 500, 1k, 2.5k, 5k, 10k, 25k, 50k, 100k, 250k, 500k, 1M; default 1,000) instead of counting single SU. Whatever is hooked up behind the resistor can draw at most this much SU from the network, regardless of what the network could deliver.
 - Place one (or several) on the shaft feeding an inducer to throttle its charging. In series the tightest resistor wins; in parallel the caps add.
 
 ### SU Charger
@@ -34,6 +35,7 @@ A [Create](https://github.com/Creators-of-Create/Create) addon for **Minecraft 1
 - **Charge mode (shaft turning):** the charger draws SU from whatever feeds its **input** face (respecting resistors) into a 1,000,000 SU buffer, at up to 100,000 SU per tick.
 - **Discharge mode (shaft stopped):** stop the input (a clutch works nicely) and consumers on the **output** face may drain the buffer at up to 100,000 SU per tick. An inducer fed only by a charger fires exactly once per buffer fill.
 - **Redstone output:** the block itself emits a signal of 0 to 15 proportional to the buffer fill, so wires (or the clutch feeding it) can react to the charge level directly. A comparator reads the same value, and goggles show the exact numbers and the current mode.
+- **Fill indicator:** the gap between the capacitor plates on the side faces fills with teal as the buffer charges.
 
 ### Weather Sensor
 - **Daylight detector, but for weather:** a 6px slab that must see the sky.
@@ -85,7 +87,10 @@ Weather Sensor and SU Charger do not have scenes yet; their JEI/EMI info
 pages cover the mechanics). See them via the item tooltip's Ponder key or in
 JEI/EMI. They demonstrate a creative motor driving a shaft through an SU
 Resistor into a Weather Inducer, and explain SU charging, the sky
-requirement, redstone firing, and the resistor throttle.
+requirement, redstone firing, and the resistor throttle. The scene text is
+authored inline in `ModPonderScenes`; datagen runs Ponder's registration and
+writes the generated lang entries into `en_us.json` (`ModLanguageProvider`),
+which is what makes the text actually show up in game.
 
 ### JEI & EMI
 Both recipe viewers show the crafting recipes automatically, plus an **information
@@ -163,24 +168,32 @@ easy to follow and maintain:
    `KineticNetwork.members` / `KineticNetwork.sources` maps used for the
    inline-resistor traversal.
 
-2. **Value boxes**: `ScrollValueBehaviour` (`between`, `withFormatter`,
-   `getValue`, `setValue`) in the two block entities, positioned via
-   `CenteredSideValueBoxTransform` (`content/util/SideValueBoxTransform.java`).
+2. **Value boxes**: the inducer's mode selector is a
+   `ScrollOptionBehaviour<WeatherMode>` (the enum implements
+   `INamedIconOptions`, so Create renders its option menu with icons); the
+   offsets and the resistor cap are `ScrollValueBehaviour`s, the latter
+   scrolling over an index into the logarithmic `STEPS` table rather than
+   raw SU. All are positioned via `CenteredSideValueBoxTransform`
+   (`content/util/SideValueBoxTransform.java`).
 
 3. **Rendering**: `client/WeatherInducerClient.java` registers Create's
-   generic `ShaftRenderer<>`. Block models are casing-only by design; the
-   renderer draws the spinning shaft on the connecting faces.
+   generic `ShaftRenderer<>`. The block models leave a 2px deep socket
+   around every shaft connection, so the spinning shaft the renderer draws
+   is actually visible, like on other Create machines.
 
 4. **Models and textures**: the mod ships its own 16x16 pixel art under
    `assets/weatherinducer/textures/block/`, styled after Create's brass and
    andesite casings (frame bars with corner brackets, plank interiors, a
-   top-left light source and light dithering). Both blocks use element
-   models built in datagen, with matching voxel shapes and noOcclusion. The
-   Weather Inducer is a stepped machine: a 13px casing base with shaft
-   bearings, topped by a raised copper emitter cap with a teal aperture,
-   and the bolt emblem embossed half a pixel proud of both side faces (the
-   raised geometry samples the same texture pixels as the flat art, so the
-   two always line up). A little copper lightning rod stands centered
+   top-left light source and light dithering). The kinetic blocks use
+   element models built in datagen, with matching voxel shapes and
+   noOcclusion. The Weather Inducer is a stepped machine: a 13px casing
+   base with socketed shaft bearings, topped by a raised copper emitter cap
+   with a teal aperture, and the bolt emblem embossed half a pixel proud of
+   both side faces (the raised geometry samples the same texture pixels as
+   the flat art, so the two always line up). The inducer and the charger
+   bake their fill level into the blockstate: six models each, pointing at
+   side-texture variants where the bolt lights up gold (inducer) or the
+   capacitor gap fills with teal (charger). A little copper lightning rod stands centered
    on the cap, plugged into the emitter aperture: a 2x2 pole with the
    vanilla rod's thicker tip. The SU Resistor is shaped like its namesake: two
    andesite collar flanges at the shaft ends with the banded ceramic body

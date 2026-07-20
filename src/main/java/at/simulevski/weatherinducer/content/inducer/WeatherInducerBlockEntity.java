@@ -6,6 +6,7 @@ import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.content.kinetics.base.HorizontalKineticBlock;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
+import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollOptionBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -16,6 +17,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -55,11 +57,9 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
     private boolean wasPowered;
 
     // --- Value box behaviours -------------------------------------------
-    // NOTE (verify against your Create build): ScrollValueBehaviour's fluent
-    // methods used below are `between`, `withFormatter` and `getValue`. If a
-    // signature differs in your Create 6.0.10 artifact, these three call sites
-    // are the only ones to adjust.
-    private ScrollValueBehaviour modeScroll;
+    // The mode selector is a ScrollOptionBehaviour, which gives Create's
+    // option menu (icon plus label per entry) instead of a bare number.
+    private ScrollOptionBehaviour<WeatherMode> modeScroll;
     private ScrollValueBehaviour offsetXScroll;
     private ScrollValueBehaviour offsetZScroll;
 
@@ -71,14 +71,10 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
         super.addBehaviours(behaviours);
 
-        modeScroll = new ScrollValueBehaviour(
+        modeScroll = new ScrollOptionBehaviour<>(WeatherMode.class,
                 Component.translatable("weatherinducer.value.mode"),
                 this,
                 new SideValueBoxTransform((state, dir) -> dir == Direction.UP));
-        modeScroll.between(0, WeatherMode.values().length - 1);
-        modeScroll.withFormatter(value ->
-                Component.translatable("weatherinducer.mode." + WeatherMode.fromIndex(value).translationKey())
-                        .getString());
         behaviours.add(modeScroll);
 
         offsetXScroll = new ScrollValueBehaviour(
@@ -118,6 +114,7 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
                     setChanged();
                     // Keep the comparator output in step with the charge level.
                     level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
+                    updateChargeIndicator();
                     if (charge >= MAX_CHARGE) {
                         sendData();
                     }
@@ -159,7 +156,25 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
         setChanged();
         sendData();
         level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
+        updateChargeIndicator();
         return true;
+    }
+
+    /**
+     * Mirrors the charge into the {@link WeatherInducerBlock#CHARGE} property
+     * (sixths of a full charge) so the bolt emblem on the block lights up with
+     * the fill level.
+     */
+    private void updateChargeIndicator() {
+        if (level == null || level.isClientSide) {
+            return;
+        }
+        BlockState state = getBlockState();
+        int target = (int) Math.floor(5.0 * Math.min(1.0, charge / MAX_CHARGE));
+        if (state.getValue(WeatherInducerBlock.CHARGE) != target) {
+            level.setBlock(worldPosition, state.setValue(WeatherInducerBlock.CHARGE, target),
+                    Block.UPDATE_ALL);
+        }
     }
 
     private void applyWeather(ServerLevel server, WeatherMode mode) {
@@ -231,6 +246,7 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
     public void setChargeForTesting(double value) {
         this.charge = Math.max(0, Math.min(MAX_CHARGE, value));
         setChanged();
+        updateChargeIndicator();
     }
 
     public void setModeForTesting(int mode) {
@@ -261,6 +277,8 @@ public class WeatherInducerBlockEntity extends KineticBlockEntity implements IHa
         wasPowered = compound.getBoolean("WasPowered");
     }
 
+    // @Override intentionally present: if Create ever changes this signature,
+    // the compile breaks here instead of goggles silently going blank.
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
         tooltip.add(Component.literal("    ").append(

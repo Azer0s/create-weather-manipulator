@@ -1,7 +1,10 @@
 package at.simulevski.weatherinducer.data;
 
 import at.simulevski.weatherinducer.WeatherInducerMod;
+import at.simulevski.weatherinducer.content.ponder.ModPonderPlugin;
 import at.simulevski.weatherinducer.registry.ModBlocks;
+import net.createmod.ponder.foundation.PonderIndex;
+import net.createmod.ponder.foundation.registration.PonderLocalization;
 import net.minecraft.data.PackOutput;
 import net.neoforged.neoforge.common.data.LanguageProvider;
 
@@ -41,9 +44,15 @@ public class ModLanguageProvider extends LanguageProvider {
         add("weatherinducer.charger_mode.discharging", "Discharging");
         add("weatherinducer.charger_mode.idle", "Idle");
 
-        // Ponder
-        add("weatherinducer.ponder.weather_inducer.header", "Controlling the weather with the Weather Inducer");
-        add("weatherinducer.ponder.su_resistor.header", "Throttling SU with the SU Resistor");
+        // Ponder scene text is authored inline in ModPonderScenes; Ponder looks
+        // it up from the lang file at runtime, so run its registration here and
+        // dump every generated entry (headers and text steps) into en_us.json.
+        // Without this the scenes show raw translation keys.
+        PonderIndex.addPlugin(new ModPonderPlugin());
+        PonderIndex.registerAll();
+        PonderLocalization ponderLang = (PonderLocalization) PonderIndex.getLangAccess();
+        ponderLang.generateSceneLang();
+        ponderLang.provideLang(WeatherInducerMod.MOD_ID, this::add);
 
         // JEI / EMI information pages
         add("weatherinducer.info.weather_inducer",

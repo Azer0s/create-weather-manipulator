@@ -12,6 +12,8 @@ import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -25,6 +27,12 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 public class WeatherInducerBlock extends HorizontalKineticBlock
         implements IBE<WeatherInducerBlockEntity> {
 
+    /**
+     * Charge fill indicator in sixths, driven by the block entity. The bolt
+     * emblem on the side textures lights up with it.
+     */
+    public static final IntegerProperty CHARGE = IntegerProperty.create("charge", 0, 5);
+
     /** Casing base with the raised emitter cap; same for every facing. */
     private static final VoxelShape SHAPE = Shapes.or(
             Block.box(0, 0, 0, 16, 13, 16),
@@ -32,6 +40,13 @@ public class WeatherInducerBlock extends HorizontalKineticBlock
 
     public WeatherInducerBlock(Properties properties) {
         super(properties);
+        registerDefaultState(defaultBlockState().setValue(CHARGE, 0));
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder);
+        builder.add(CHARGE);
     }
 
     @Override
