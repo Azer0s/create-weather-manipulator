@@ -1,11 +1,9 @@
 package at.simulevski.weatherinducer.content.lightning;
 
 import at.simulevski.weatherinducer.WeatherInducerMod;
-import at.simulevski.weatherinducer.registry.ModItems;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -17,14 +15,13 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * The armor's storm theatrics, all real Minecraft lightning marked
+ * The armor's storm theatrics, real Minecraft lightning marked
  * visual-only: vanilla gates both fire spawning and the thunder-hit
  * damage on that flag, so the bolts look and sound the part without
  * hurting anything or lighting anything up.
  *
  * <p>Completing the full set under a clear open sky calls down a short
- * roll of strikes around the wearer. While flying with the boots under
- * clear sky, bolts trail out below them every second or two.
+ * roll of strikes around the wearer.
  */
 @EventBusSubscriber(modid = WeatherInducerMod.MOD_ID)
 public final class LightningArmorEvents {
@@ -78,16 +75,6 @@ public final class LightningArmorEvents {
             }
         }
 
-        // Boot lightning: real bolts trailing out below the flight path.
-        if ((player.isFallFlying() || player.getAbilities().flying)
-                && player.getItemBySlot(EquipmentSlot.FEET).is(ModItems.LIGHTNING_BOOTS.get())
-                && clearSky
-                && level.getGameTime() % 32 == 0) {
-            spawnVisualBolt(level,
-                    player.getX() + (random.nextDouble() - 0.5) * 3,
-                    player.getY() - 14,
-                    player.getZ() + (random.nextDouble() - 0.5) * 3);
-        }
     }
 
     private static void spawnVisualBolt(ServerLevel level, double x, double y, double z) {

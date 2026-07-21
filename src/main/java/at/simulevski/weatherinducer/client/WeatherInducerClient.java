@@ -138,22 +138,25 @@ public final class WeatherInducerClient {
                 if (player != null) {
                     swing = Math.max(swing, player.getAttackAnim(partialTick));
                 }
-                // A full crescent: the hand travels across the screen
-                // while the blade rolls through the cut, so the slash
-                // physically crosses the view instead of flicking.
-                float sweep = 0;
-                float wind = 0;
-                if (swing > 0) {
-                    sweep = Mth.sin(swing * (float) Math.PI);
-                    wind = Mth.sin(Mth.sqrt(swing) * (float) Math.PI);
-                    poseStack.mulPose(Axis.YP.rotationDegrees(side * wind * -100));
-                    poseStack.mulPose(Axis.XP.rotationDegrees(sweep * 20));
-                    poseStack.mulPose(Axis.ZP.rotationDegrees(side * sweep * -90));
-                }
+                // The slash, built around one rule learned the hard way:
+                // rotating the whole hand space hurls the blade out of the
+                // view frustum, so the swing is invisible. Instead the
+                // ANCHOR travels: it sweeps from its rest on the right
+                // across the screen centre while dipping and punching
+                // forward, and the blade rotations come after the
+                // translate, so they pivot around the anchor and the
+                // katana stays in frame for the whole cut. A single bell
+                // curve drives everything and is zero at both ends, so the
+                // pose starts and finishes exactly at rest.
+                float travel = swing > 0 ? Mth.sin(swing * (float) Math.PI) : 0;
                 poseStack.translate(
-                        side * (0.42f - sweep * 0.55f),
-                        -0.48f + equipProcess * -0.6f + sweep * 0.08f,
-                        -0.86f);
+                        side * (0.42f - travel * 0.85f),
+                        -0.48f + equipProcess * -0.6f - travel * 0.18f,
+                        -0.86f - travel * 0.1f);
+                if (travel > 0) {
+                    poseStack.mulPose(Axis.ZP.rotationDegrees(side * -travel * 75));
+                    poseStack.mulPose(Axis.YP.rotationDegrees(side * -travel * 30));
+                }
                 return true;
             }
         }, ModItems.LIGHTNING_SWORD.get());

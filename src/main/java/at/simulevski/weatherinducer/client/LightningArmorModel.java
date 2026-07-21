@@ -10,22 +10,31 @@ import net.minecraft.client.model.geom.builders.CubeListBuilder;
 import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.PartDefinition;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 
+import java.util.NoSuchElementException;
+
 /**
- * The worn lightning armor, ornate in the way the big screen dresses its
- * thunder god: a winged silver helm with a tall gold crest, cheek guards
- * and double wing feathers, six raised discs across the chest, layered
- * pauldrons, ridged vambraces, a gold belt with hanging tassets, a red
- * cape, thigh plates and knees on the leggings, and cuffed boots with
- * toe caps and heel fins.
+ * The worn lightning armor: a winged silver helm with a tall gold crest,
+ * cheek guards and double wing feathers, six raised discs across the
+ * chest, layered pauldrons, ridged vambraces, a gold belt with hanging
+ * tassets, a fluttering red cape, thigh plates and knees on the
+ * leggings, and cuffed boots with toe caps and swept Hermes wings at the
+ * ankles.
+ *
+ * <p>The base humanoid boxes are inflated (a full pixel on the outer
+ * bake, half on the inner), so every decoration carries its own
+ * {@link CubeDeformation} sized to clear that surface; decorations
+ * placed at raw coordinates end up buried inside the inflated base or
+ * coplanar with it, which is where z-fighting comes from.
  *
  * <p>Two bakes exist, mirroring vanilla armor: the outer model (helmet,
- * chest, boots, 1px inflation, drawn with {@code lightning_layer_1}) and
- * the inner model (leggings, half-pixel inflation, {@code
- * lightning_layer_2}). Decorations live as children of the standard
- * humanoid parts, so they follow the pose and the per-slot visibility
- * that {@code HumanoidArmorLayer} applies without any extra code.
+ * chest, boots, {@code lightning_layer_1}) and the inner model
+ * (leggings, {@code lightning_layer_2}). Decorations live as children of
+ * the standard humanoid parts, so they follow the pose and per-slot
+ * visibility for free; the cape gets an extra sway in
+ * {@link #setupAnim}.
  */
 public class LightningArmorModel extends HumanoidModel<LivingEntity> {
 
@@ -34,8 +43,30 @@ public class LightningArmorModel extends HumanoidModel<LivingEntity> {
     public static final ModelLayerLocation OUTER = new ModelLayerLocation(
             WeatherInducerMod.asResource("lightning_armor"), "outer");
 
+    private final ModelPart cape;
+
     public LightningArmorModel(ModelPart root) {
         super(root);
+        ModelPart foundCape;
+        try {
+            foundCape = root.getChild("body").getChild("cape");
+        } catch (NoSuchElementException e) {
+            foundCape = null;
+        }
+        this.cape = foundCape;
+    }
+
+    @Override
+    public void setupAnim(LivingEntity entity, float limbSwing, float limbSwingAmount,
+                          float ageInTicks, float netHeadYaw, float headPitch) {
+        super.setupAnim(entity, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
+        if (cape != null) {
+            // A slow idle billow plus a strong lift while moving.
+            float idle = Mth.sin(ageInTicks * 0.12f) * 0.05f;
+            float stride = Mth.sin(limbSwing * 0.4f) * 0.04f * limbSwingAmount;
+            cape.xRot = 0.1f + idle + stride
+                    + Mth.clamp(limbSwingAmount, 0, 1) * 0.65f;
+        }
     }
 
     public static LayerDefinition createInnerLayer() {
@@ -62,47 +93,46 @@ public class LightningArmorModel extends HumanoidModel<LivingEntity> {
     }
 
     private static void addHelmetDetail(PartDefinition head) {
-        // Tall gold crest running front to back over the crown, with a
-        // second lower ridge so it reads layered from the side.
+        // Tall gold crest with a second ridge overlapping into it, so the
+        // stack shows no coplanar seam.
         head.addOrReplaceChild("crest", CubeListBuilder.create()
                 .texOffs(0, 36)
                 .addBox(-1.0f, -12.6f, -4.5f, 2, 3, 9), PartPose.ZERO);
         head.addOrReplaceChild("crest_top", CubeListBuilder.create()
                 .texOffs(0, 36)
-                .addBox(-0.5f, -13.6f, -3.5f, 1, 1, 7), PartPose.ZERO);
-        // Brow plate above the face opening.
+                .addBox(-0.5f, -13.6f, -3.5f, 1, 1.2f, 7), PartPose.ZERO);
         head.addOrReplaceChild("brow", CubeListBuilder.create()
                 .texOffs(0, 32)
-                .addBox(-4.5f, -9.4f, -5.4f, 9, 2, 1), PartPose.ZERO);
-        // Cheek guards framing the face.
+                .addBox(-4.5f, -9.4f, -5.4f, 9, 2, 1, new CubeDeformation(0.6f)),
+                PartPose.ZERO);
         head.addOrReplaceChild("cheek_right", CubeListBuilder.create()
                 .texOffs(48, 32)
-                .addBox(-5.4f, -7.4f, -4.9f, 1, 3, 3), PartPose.ZERO);
+                .addBox(-5.4f, -7.4f, -4.9f, 1, 3, 3, new CubeDeformation(0.3f)),
+                PartPose.ZERO);
         head.addOrReplaceChild("cheek_left", CubeListBuilder.create()
                 .texOffs(48, 32).mirror()
-                .addBox(4.4f, -7.4f, -4.9f, 1, 3, 3), PartPose.ZERO);
-        // Swept-back wings on the temples, two feathers each side.
+                .addBox(4.4f, -7.4f, -4.9f, 1, 3, 3, new CubeDeformation(0.3f)),
+                PartPose.ZERO);
         head.addOrReplaceChild("wing_right", CubeListBuilder.create()
                         .texOffs(24, 36)
                         .addBox(-1.0f, -2.5f, -3.0f, 1, 5, 6),
-                PartPose.offsetAndRotation(-4.8f, -6.0f, 0.5f, 0.0f, 0.35f, 0.22f));
+                PartPose.offsetAndRotation(-5.2f, -6.0f, 0.5f, 0.0f, 0.35f, 0.22f));
         head.addOrReplaceChild("wing_left", CubeListBuilder.create()
                         .texOffs(24, 36).mirror()
                         .addBox(0.0f, -2.5f, -3.0f, 1, 5, 6),
-                PartPose.offsetAndRotation(4.8f, -6.0f, 0.5f, 0.0f, -0.35f, -0.22f));
+                PartPose.offsetAndRotation(5.2f, -6.0f, 0.5f, 0.0f, -0.35f, -0.22f));
         head.addOrReplaceChild("feather_right", CubeListBuilder.create()
                         .texOffs(56, 16)
                         .addBox(-1.0f, -3.4f, -1.2f, 1, 3, 3),
-                PartPose.offsetAndRotation(-4.9f, -6.2f, 1.6f, 0.0f, 0.5f, 0.35f));
+                PartPose.offsetAndRotation(-5.3f, -6.2f, 1.6f, 0.0f, 0.5f, 0.35f));
         head.addOrReplaceChild("feather_left", CubeListBuilder.create()
                         .texOffs(56, 16).mirror()
                         .addBox(0.0f, -3.4f, -1.2f, 1, 3, 3),
-                PartPose.offsetAndRotation(4.9f, -6.2f, 1.6f, 0.0f, -0.5f, -0.35f));
+                PartPose.offsetAndRotation(5.3f, -6.2f, 1.6f, 0.0f, -0.5f, -0.35f));
     }
 
     private static void addChestDetail(PartDefinition body) {
-        // Six raised silver discs across the chest, the thunder god's
-        // signature, two columns of three, shrinking downward.
+        // Six raised discs, two shrinking columns.
         float[][] discs = {
                 {-3.4f, 0.6f}, {1.4f, 0.6f},
                 {-3.0f, 3.4f}, {1.0f, 3.4f},
@@ -113,72 +143,87 @@ public class LightningArmorModel extends HumanoidModel<LivingEntity> {
                     .texOffs(40, 32)
                     .addBox(discs[i][0], discs[i][1], -3.7f, 2, 2, 1), PartPose.ZERO);
         }
-        // Belt wrapping the waist, with three hanging tassets.
+        // Belt grown clear of the inflated torso, tassets in front of it.
         body.addOrReplaceChild("belt", CubeListBuilder.create()
                 .texOffs(0, 49)
-                .addBox(-4.6f, 10.0f, -3.1f, 9, 2, 6), PartPose.ZERO);
+                .addBox(-4.6f, 10.0f, -3.1f, 9, 2, 6, new CubeDeformation(0.7f)),
+                PartPose.ZERO);
         float[] tassetX = {-3.6f, -1.0f, 1.6f};
         for (int i = 0; i < tassetX.length; i++) {
             body.addOrReplaceChild("tasset_" + i, CubeListBuilder.create()
                     .texOffs(56, 24)
-                    .addBox(tassetX[i], 12.0f, -3.4f, 2, 3, 1), PartPose.ZERO);
+                    .addBox(tassetX[i], 12.4f, -4.2f, 2, 3, 1), PartPose.ZERO);
         }
-        // The red cape hanging off the back.
+        // The red cape, pivoted at the shoulders so it can flutter.
         body.addOrReplaceChild("cape", CubeListBuilder.create()
-                .texOffs(30, 49)
-                .addBox(-4.5f, 0.6f, 3.1f, 9, 12, 1), PartPose.ZERO);
+                        .texOffs(30, 49)
+                        .addBox(-4.5f, 0, -0.5f, 9, 12, 1),
+                PartPose.offset(0, 0.6f, 3.8f));
     }
 
     private static void addArmDetail(PartDefinition root) {
-        // Layered pauldrons: the main plate plus a raised ridge on top.
+        // Grown clear of the arm's one pixel inflation.
+        CubeDeformation pad = new CubeDeformation(0.9f);
         root.getChild("right_arm").addOrReplaceChild("pauldron", CubeListBuilder.create()
                 .texOffs(44, 39)
-                .addBox(-3.8f, -3.4f, -2.5f, 5, 4, 5), PartPose.ZERO);
+                .addBox(-3.8f, -3.4f, -2.5f, 5, 4, 5, pad), PartPose.ZERO);
         root.getChild("right_arm").addOrReplaceChild("pauldron_ridge", CubeListBuilder.create()
                 .texOffs(44, 39)
-                .addBox(-3.4f, -4.2f, -2.0f, 4, 1, 4), PartPose.ZERO);
+                .addBox(-3.4f, -4.6f, -2.0f, 4, 1, 4, new CubeDeformation(0.4f)),
+                PartPose.ZERO);
         root.getChild("left_arm").addOrReplaceChild("pauldron", CubeListBuilder.create()
                 .texOffs(44, 39).mirror()
-                .addBox(-1.2f, -3.4f, -2.5f, 5, 4, 5), PartPose.ZERO);
+                .addBox(-1.2f, -3.4f, -2.5f, 5, 4, 5, pad), PartPose.ZERO);
         root.getChild("left_arm").addOrReplaceChild("pauldron_ridge", CubeListBuilder.create()
                 .texOffs(44, 39).mirror()
-                .addBox(-0.6f, -4.2f, -2.0f, 4, 1, 4), PartPose.ZERO);
-        // Ridged vambraces at the wrists.
+                .addBox(-0.6f, -4.6f, -2.0f, 4, 1, 4, new CubeDeformation(0.4f)),
+                PartPose.ZERO);
         root.getChild("right_arm").addOrReplaceChild("vambrace", CubeListBuilder.create()
                 .texOffs(34, 57)
-                .addBox(-3.6f, 7.6f, -2.4f, 5, 2, 5), PartPose.ZERO);
+                .addBox(-3.6f, 7.6f, -2.4f, 5, 2, 5, pad), PartPose.ZERO);
         root.getChild("left_arm").addOrReplaceChild("vambrace", CubeListBuilder.create()
                 .texOffs(34, 57).mirror()
-                .addBox(-1.4f, 7.6f, -2.4f, 5, 2, 5), PartPose.ZERO);
+                .addBox(-1.4f, 7.6f, -2.4f, 5, 2, 5, pad), PartPose.ZERO);
     }
 
     private static void addBootsDetail(PartDefinition root) {
+        CubeDeformation pad = new CubeDeformation(0.9f);
         for (String side : new String[]{"right_leg", "left_leg"}) {
             boolean mirror = side.startsWith("left");
             PartDefinition leg = root.getChild(side);
             CubeListBuilder cuff = CubeListBuilder.create().texOffs(0, 57);
             CubeListBuilder toe = CubeListBuilder.create().texOffs(20, 57);
-            CubeListBuilder heel = CubeListBuilder.create().texOffs(56, 29);
+            CubeListBuilder wing = CubeListBuilder.create().texOffs(24, 36);
+            CubeListBuilder feather = CubeListBuilder.create().texOffs(56, 16);
             if (mirror) {
                 cuff.mirror();
                 toe.mirror();
-                heel.mirror();
+                wing.mirror();
+                feather.mirror();
             }
             leg.addOrReplaceChild("cuff",
-                    cuff.addBox(-2.5f, 7.4f, -2.5f, 5, 2, 5), PartPose.ZERO);
+                    cuff.addBox(-2.5f, 7.4f, -2.5f, 5, 2, 5, pad), PartPose.ZERO);
             leg.addOrReplaceChild("toe",
-                    toe.addBox(-2.5f, 10.2f, -3.6f, 5, 2, 2), PartPose.ZERO);
-            // A little winged fin off the heel.
-            leg.addOrReplaceChild("heel",
-                    heel.addBox(-0.5f, 8.6f, 2.4f, 1, 2, 3), PartPose.ZERO);
+                    toe.addBox(-2.5f, 10.2f, -3.6f, 5, 2, 2, new CubeDeformation(0.6f)),
+                    PartPose.ZERO);
+            // Hermes wings: a swept feather fan off the outer ankle,
+            // angled up and back, with a smaller trailing feather.
+            float out = mirror ? 3.1f : -4.1f;
+            float yaw = mirror ? -0.35f : 0.35f;
+            leg.addOrReplaceChild("wing",
+                    wing.addBox(0, -5, 0, 1, 5, 6),
+                    PartPose.offsetAndRotation(out, 10.0f, 0.5f, -0.85f, yaw, 0));
+            leg.addOrReplaceChild("wing_feather",
+                    feather.addBox(0, -3, 0, 1, 3, 3),
+                    PartPose.offsetAndRotation(out, 9.4f, 1.6f, -1.1f, yaw, 0));
         }
     }
 
     private static void addLeggingsDetail(PartDefinition root) {
-        // Hip wrap under the belt line.
         root.getChild("body").addOrReplaceChild("hip", CubeListBuilder.create()
                 .texOffs(12, 34)
-                .addBox(-4.5f, 10.6f, -2.6f, 9, 3, 5), PartPose.ZERO);
+                .addBox(-4.5f, 10.6f, -2.6f, 9, 3, 5, new CubeDeformation(0.6f)),
+                PartPose.ZERO);
         for (String side : new String[]{"right_leg", "left_leg"}) {
             boolean mirror = side.startsWith("left");
             CubeListBuilder knee = CubeListBuilder.create().texOffs(0, 34);
@@ -191,11 +236,14 @@ public class LightningArmorModel extends HumanoidModel<LivingEntity> {
             }
             PartDefinition leg = root.getChild(side);
             leg.addOrReplaceChild("knee",
-                    knee.addBox(-2.0f, 5.6f, -3.0f, 4, 3, 1), PartPose.ZERO);
+                    knee.addBox(-2.0f, 5.6f, -3.0f, 4, 3, 1, new CubeDeformation(0.3f)),
+                    PartPose.ZERO);
             leg.addOrReplaceChild("thigh",
-                    thigh.addBox(-2.0f, 1.0f, -3.2f, 4, 4, 1), PartPose.ZERO);
+                    thigh.addBox(-2.0f, 1.0f, -3.2f, 4, 4, 1, new CubeDeformation(0.3f)),
+                    PartPose.ZERO);
             leg.addOrReplaceChild("shin",
-                    shin.addBox(-1.0f, 9.0f, -3.0f, 2, 3, 1), PartPose.ZERO);
+                    shin.addBox(-1.0f, 9.0f, -3.0f, 2, 3, 1, new CubeDeformation(0.3f)),
+                    PartPose.ZERO);
         }
     }
 }

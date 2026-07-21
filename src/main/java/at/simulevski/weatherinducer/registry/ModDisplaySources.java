@@ -19,6 +19,8 @@ public final class ModDisplaySources {
             new ChargerDisplaySource.Charge();
     public static final ChargerDisplaySource.Status CHARGER_STATUS =
             new ChargerDisplaySource.Status();
+    public static final ChargerDisplaySource.Network CHARGER_NETWORK =
+            new ChargerDisplaySource.Network();
 
     private ModDisplaySources() {
     }
@@ -32,6 +34,7 @@ public final class ModDisplaySources {
         event.register(CreateRegistries.DISPLAY_SOURCE, helper -> {
             helper.register(WeatherInducerMod.asResource("charger_charge"), CHARGER_CHARGE);
             helper.register(WeatherInducerMod.asResource("charger_status"), CHARGER_STATUS);
+            helper.register(WeatherInducerMod.asResource("charger_network"), CHARGER_NETWORK);
         });
     }
 
@@ -41,6 +44,8 @@ public final class ModDisplaySources {
                     CHARGER_CHARGE);
             DisplaySource.BY_BLOCK_ENTITY.add(ModBlockEntities.KINETIC_CHARGER.get(),
                     CHARGER_STATUS);
+            DisplaySource.BY_BLOCK_ENTITY.add(ModBlockEntities.KINETIC_CHARGER.get(),
+                    CHARGER_NETWORK);
         });
     }
 }

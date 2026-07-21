@@ -72,6 +72,8 @@ public class ModLanguageProvider extends LanguageProvider {
         add("weatherinducer.screen.charger_link.name", "Name");
         add("weatherinducer.display_source.charger_charge", "Charger Charge Level");
         add("weatherinducer.display_source.charger_status", "Charger Status");
+        add("weatherinducer.display_source.charger_network", "Charger Network");
+        add("weatherinducer.display.charger_network", "%s / %s SU-s (%s%%), %s chargers");
         add("weatherinducer.display.charger_status", "%s, %s wheels");
         add("weatherinducer.display.charger_mode.charging", "Charging");
         add("weatherinducer.display.charger_mode.discharging", "Discharging");

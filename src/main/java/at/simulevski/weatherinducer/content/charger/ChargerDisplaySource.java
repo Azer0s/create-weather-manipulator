@@ -37,6 +37,31 @@ public final class ChargerDisplaySource {
         }
     }
 
+    /** The whole link network: pooled fill and member count. */
+    public static class Network extends SingleLineDisplaySource {
+
+        @Override
+        protected MutableComponent provideLine(DisplayLinkContext context,
+                                               DisplayTargetStats stats) {
+            if (!(context.getSourceBlockEntity() instanceof KineticChargerBlockEntity charger)
+                    || charger.getGroupSize() <= 0) {
+                return EMPTY_LINE;
+            }
+            double capacity = Math.max(1, charger.getGroupCapacity());
+            int percent = (int) Math.floor(100.0
+                    * Math.min(1.0, charger.getGroupEnergy() / capacity));
+            return Component.translatable("weatherinducer.display.charger_network",
+                    String.format("%,.0f", charger.getGroupEnergy()),
+                    String.format("%,.0f", charger.getGroupCapacity()),
+                    percent, charger.getGroupSize());
+        }
+
+        @Override
+        protected boolean allowsLabeling(DisplayLinkContext context) {
+            return true;
+        }
+    }
+
     /** The charger's mode and its flywheel bank on one line. */
     public static class Status extends SingleLineDisplaySource {
 

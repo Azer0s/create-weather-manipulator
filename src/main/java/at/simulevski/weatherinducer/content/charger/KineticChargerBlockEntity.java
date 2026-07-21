@@ -716,7 +716,8 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
                             String.format("%,.0f", drainPerSecond))
                             .withStyle(ChatFormatting.GRAY)));
         }
-        // The flywheel bank as a bar, one block per wheel slot.
+        // The flywheel bank as a bar, one block per wheel slot, then the
+        // charger's status right under it.
         int banked = Math.min(flywheels, MAX_FLYWHEELS);
         tooltip.add(Component.literal("    ")
                 .append(Component.literal("█".repeat(banked))
@@ -727,10 +728,15 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
                 .append(Component.translatable("weatherinducer.tooltip.flywheels",
                         flywheels, MAX_FLYWHEELS)
                         .withStyle(ChatFormatting.GRAY)));
+        tooltip.add(Component.literal("    ").append(
+                Component.translatable("weatherinducer.tooltip.charger_mode",
+                        Component.translatable("weatherinducer.charger_mode." + modeKey()))
+                        .withStyle(ChatFormatting.GRAY)));
         if (linkNetwork != null) {
-            // The whole link network: its own fill bar, the pooled numbers
-            // (display only, energy never moves between members) and who
-            // holds the discharge lead, by link name.
+            // A blank spacer, then the whole link network: its own fill
+            // bar, the pooled numbers (display only, energy never moves
+            // between members) and who holds the discharge lead, by name.
+            tooltip.add(Component.literal(""));
             double groupFraction = groupCapacity > 0
                     ? Math.min(1.0, groupEnergy / groupCapacity) : 0;
             int groupFilled = (int) Math.round(BAR_SEGMENTS * groupFraction);
@@ -771,11 +777,6 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
                             groupSize, leadComponent)
                             .withStyle(ChatFormatting.AQUA)));
         }
-
-        tooltip.add(Component.literal("    ").append(
-                Component.translatable("weatherinducer.tooltip.charger_mode",
-                        Component.translatable("weatherinducer.charger_mode." + modeKey()))
-                        .withStyle(ChatFormatting.GRAY)));
 
         return true;
     }
