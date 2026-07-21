@@ -143,26 +143,42 @@ public final class WeatherInducerClient {
                     swing = Math.max(swing, Math.min(1f,
                             (player.swingTime + partialTick) / dur));
                 }
-                // The anchor travels: rotating the whole hand space hurls
-                // the blade out of the view frustum (an invisible swing),
-                // so instead the anchor sweeps from its rest on the right
-                // across the screen centre while dipping and punching
-                // forward, and the blade rotations come after the
-                // translate so they pivot around the anchor and the katana
-                // stays in frame. One bell curve, zero at both ends, so
-                // the pose starts and finishes at rest.
-                float travel = swing > 0 ? Mth.sin(swing * (float) Math.PI) : 0;
+                // A real katana cut in three phases instead of a symmetric
+                // bell (which just bounces out and back along one path):
+                //   wind-up  (0 .. 0.25) the blade cocks up and to the right
+                //   sweep    (0.25 .. 0.7) it draws across and through, tip
+                //            leading, the hand crossing the whole view
+                //   recover  (0.7 .. 1) everything eases back to rest
+                // Rotations come after the translate so the blade pivots
+                // around the anchor and stays in frame; the yaw sweep is
+                // what actually reads as the slash crossing the screen.
+                float wind = smooth(clamp01(swing / 0.25f));
+                float sweep = smooth(clamp01((swing - 0.25f) / 0.45f));
+                float recover = smooth(clamp01((swing - 0.7f) / 0.3f));
+                float active = 1f - recover;
+
+                float acrossX = (wind * 0.28f - sweep * 0.95f) * active;
+                float riseY = (-wind * 0.16f + sweep * 0.12f) * active;
                 poseStack.translate(
-                        side * (0.42f - travel * 0.85f),
-                        -0.48f + equipProcess * -0.6f - travel * 0.18f,
-                        -0.86f - travel * 0.1f);
-                if (travel > 0) {
-                    poseStack.mulPose(Axis.ZP.rotationDegrees(side * -travel * 75));
-                    poseStack.mulPose(Axis.YP.rotationDegrees(side * -travel * 30));
-                }
+                        side * (0.42f + acrossX),
+                        -0.48f + equipProcess * -0.6f + riseY,
+                        -0.86f - sweep * active * 0.12f);
+                float yaw = (wind * 30f - sweep * 105f) * active;
+                float roll = (-wind * 22f - sweep * 48f) * active;
+                poseStack.mulPose(Axis.YP.rotationDegrees(side * yaw));
+                poseStack.mulPose(Axis.ZP.rotationDegrees(side * roll));
                 return true;
             }
         }, ModItems.LIGHTNING_SWORD.get());
+    }
+
+    private static float clamp01(float v) {
+        return v < 0 ? 0 : v > 1 ? 1 : v;
+    }
+
+    /** Smoothstep easing, so each phase accelerates in and out of rest. */
+    private static float smooth(float t) {
+        return t * t * (3f - 2f * t);
     }
 
     @SubscribeEvent
