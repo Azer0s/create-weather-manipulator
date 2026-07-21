@@ -54,11 +54,7 @@ public final class LightningGear {
     }
 
     public static boolean isLightningTool(ItemStack stack) {
-        return stack.is(ModItems.LIGHTNING_SWORD.get())
-                || stack.is(ModItems.LIGHTNING_PICKAXE.get())
-                || stack.is(ModItems.LIGHTNING_AXE.get())
-                || stack.is(ModItems.LIGHTNING_SHOVEL.get())
-                || stack.is(ModItems.LIGHTNING_HOE.get());
+        return stack.is(ModItems.LIGHTNING_SWORD.get());
     }
 
     public static boolean hasFullSet(Player player) {

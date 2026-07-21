@@ -31,10 +31,6 @@ public class ModLanguageProvider extends LanguageProvider {
         add(ModEntityTypes.THROWN_BOTTLE_O_LIGHTNING.get(), "Bottle o' Lightning");
         add(ModItems.LIGHTNING_BOLT.get(), "Lightning Bolt");
         add(ModItems.LIGHTNING_SWORD.get(), "Lightning Sword");
-        add(ModItems.LIGHTNING_PICKAXE.get(), "Lightning Pickaxe");
-        add(ModItems.LIGHTNING_AXE.get(), "Lightning Axe");
-        add(ModItems.LIGHTNING_SHOVEL.get(), "Lightning Shovel");
-        add(ModItems.LIGHTNING_HOE.get(), "Lightning Hoe");
         add(ModItems.LIGHTNING_HELMET.get(), "Lightning Helmet");
         add(ModItems.LIGHTNING_CHESTPLATE.get(), "Lightning Chestplate");
         add(ModItems.LIGHTNING_LEGGINGS.get(), "Lightning Leggings");

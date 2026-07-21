@@ -29,10 +29,6 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.BOTTLE_O_LIGHTNING.get());
                         output.accept(ModItems.LIGHTNING_BOLT.get());
                         output.accept(ModItems.LIGHTNING_SWORD.get());
-                        output.accept(ModItems.LIGHTNING_PICKAXE.get());
-                        output.accept(ModItems.LIGHTNING_AXE.get());
-                        output.accept(ModItems.LIGHTNING_SHOVEL.get());
-                        output.accept(ModItems.LIGHTNING_HOE.get());
                         output.accept(ModItems.LIGHTNING_HELMET.get());
                         output.accept(ModItems.LIGHTNING_CHESTPLATE.get());
                         output.accept(ModItems.LIGHTNING_LEGGINGS.get());
