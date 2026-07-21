@@ -107,64 +107,92 @@ public final class WeatherInducerClient {
         // rebuilt here; the blocking pose still runs through vanilla's
         // separate use-animation path.
         event.registerItem(new IClientItemExtensions() {
+            // The slash runs on its own clock so it can be slower than the
+            // six-tick attack swing, which flicked past too fast. A new
+            // swing (re)starts it; it then plays over SLASH_TICKS.
+            private static final float SLASH_TICKS = 10f;
+            private float slashStart = -1f;
+            private int prevSwingTime = -1;
+            private boolean prevSwinging = false;
+
             @Override
             public boolean applyForgeHandTransform(PoseStack poseStack, LocalPlayer player,
                                                    HumanoidArm arm, ItemStack itemInHand,
                                                    float partialTick, float equipProcess,
                                                    float swingProcess) {
                 int side = arm == HumanoidArm.RIGHT ? 1 : -1;
-                // The guard: the blade held at a forty five degree angle
-                // in front of the face, leaning left, spun half a turn
-                // about its own diagonal so the cutting edge faces the
-                // threat instead of the wielder.
+                // The guard: the blade raised across the face on the
+                // bottom-right to top-left diagonal, tip up. No end-over
+                // flip (that turned it upside down); the edge sits forward
+                // from the diagonal alone. The stance is alive: it snaps
+                // up into guard over a few ticks, then breathes with a slow
+                // idle sway and a faster ready-tremor so it never freezes.
                 if (player != null && player.isUsingItem()
                         && player.getUseItem().is(ModItems.LIGHTNING_SWORD.get())) {
-                    poseStack.translate(side * 0.02f, -0.18f, -0.58f);
-                    // The blade's natural pose runs about seventy degrees
-                    // up-right; another sixty five of roll mirrors it onto
-                    // the bottom-right to top-left diagonal.
-                    poseStack.mulPose(Axis.ZP.rotationDegrees(side * 65));
-                    poseStack.mulPose(Axis.YP.rotationDegrees(side * 10));
-                    // Half a turn about the blade's own diagonal (now the
-                    // up-left one) keeps the cutting edge facing forward.
-                    poseStack.mulPose(new Quaternionf().rotationAxis(
-                            (float) Math.PI, side * -0.7071f, 0.7071f, 0));
+                    float held = player.getTicksUsingItem() + partialTick;
+                    float raise = smooth(clamp01(held / 4f));
+                    float time = player.tickCount + partialTick;
+                    float breathe = Mth.sin(time * 0.12f) * 2.5f;
+                    float tremor = Mth.sin(time * 0.55f) * 0.9f;
+                    float sway = breathe + tremor;
+
+                    // Parry recoil: when a blow actually lands on the
+                    // guard the client flags it with hurtTime, so the blade
+                    // kicks back and shudders, a distinct second animation
+                    // on top of the idle stance.
+                    float parry = player.hurtTime > 0
+                            ? player.hurtTime / (float) Math.max(1, player.hurtDuration) : 0;
+                    float kick = smooth(parry);
+                    float shake = Mth.sin(time * 1.6f) * kick * 6f;
+
+                    poseStack.translate(
+                            side * (0.02f - kick * 0.12f),
+                            -0.18f - (1f - raise) * 0.5f + kick * 0.06f,
+                            -0.58f + (1f - raise) * 0.3f + kick * 0.14f);
+                    // Roll onto the diagonal (tip up-left), easing in with
+                    // the raise, then the living sway and any parry shake.
+                    poseStack.mulPose(Axis.ZP.rotationDegrees(
+                            side * (-58f * raise + sway + kick * 24f + shake)));
+                    poseStack.mulPose(Axis.XP.rotationDegrees(
+                            -10f * raise + sway * 0.4f - kick * 18f));
+                    poseStack.mulPose(Axis.YP.rotationDegrees(side * (18f * raise + shake)));
                     return true;
                 }
-                // The swing progress read from the most reliable source:
-                // the entity's own swing fields. The renderer's passed
-                // swingProcess (and getAttackAnim) come back zero in this
-                // hook, which is why every earlier slash sat frozen; while
-                // swinging, swingTime counts 0..swingDuration each attack,
-                // so this is never stale.
-                float swing = swingProcess;
-                if (player != null && player.swinging) {
-                    float dur = Math.max(1, player.getCurrentSwingDuration());
-                    swing = Math.max(swing, Math.min(1f,
-                            (player.swingTime + partialTick) / dur));
+                // The slash runs on its own clock. A fresh swing (rising
+                // edge of swinging, or swingTime resetting during rapid
+                // clicks) starts it; the renderer's swingProcess comes back
+                // zero here, so the entity swing fields drive detection.
+                float now = player == null ? 0 : player.tickCount + partialTick;
+                if (player != null) {
+                    boolean newSwing = player.swinging
+                            && (!prevSwinging || player.swingTime < prevSwingTime);
+                    if (newSwing && (slashStart < 0 || now - slashStart >= SLASH_TICKS)) {
+                        slashStart = now;
+                    }
+                    prevSwinging = player.swinging;
+                    prevSwingTime = player.swinging ? player.swingTime : -1;
                 }
-                // A real katana cut in three phases instead of a symmetric
-                // bell (which just bounces out and back along one path):
-                //   wind-up  (0 .. 0.25) the blade cocks up and to the right
-                //   sweep    (0.25 .. 0.7) it draws across and through, tip
-                //            leading, the hand crossing the whole view
-                //   recover  (0.7 .. 1) everything eases back to rest
-                // Rotations come after the translate so the blade pivots
-                // around the anchor and stays in frame; the yaw sweep is
-                // what actually reads as the slash crossing the screen.
-                float wind = smooth(clamp01(swing / 0.25f));
-                float sweep = smooth(clamp01((swing - 0.25f) / 0.45f));
-                float recover = smooth(clamp01((swing - 0.7f) / 0.3f));
+                float swing = slashStart < 0 ? 1f
+                        : clamp01((now - slashStart) / SLASH_TICKS);
+
+                // Three eased phases, kept well inside the view so the
+                // blade never leaves frame:
+                //   wind-up (0 .. 0.3) cocks up and to the right
+                //   sweep   (0.3 .. 0.75) draws across and through
+                //   recover (0.75 .. 1) eases back to rest
+                float wind = smooth(clamp01(swing / 0.3f));
+                float sweep = smooth(clamp01((swing - 0.3f) / 0.45f));
+                float recover = smooth(clamp01((swing - 0.75f) / 0.25f));
                 float active = 1f - recover;
 
-                float acrossX = (wind * 0.28f - sweep * 0.95f) * active;
-                float riseY = (-wind * 0.16f + sweep * 0.12f) * active;
+                float acrossX = (wind * 0.18f - sweep * 0.5f) * active;
+                float riseY = (-wind * 0.12f + sweep * 0.08f) * active;
                 poseStack.translate(
                         side * (0.42f + acrossX),
                         -0.48f + equipProcess * -0.6f + riseY,
-                        -0.86f - sweep * active * 0.12f);
-                float yaw = (wind * 30f - sweep * 105f) * active;
-                float roll = (-wind * 22f - sweep * 48f) * active;
+                        -0.86f - sweep * active * 0.08f);
+                float yaw = (wind * 20f - sweep * 55f) * active;
+                float roll = (-wind * 16f - sweep * 34f) * active;
                 poseStack.mulPose(Axis.YP.rotationDegrees(side * yaw));
                 poseStack.mulPose(Axis.ZP.rotationDegrees(side * roll));
                 return true;
