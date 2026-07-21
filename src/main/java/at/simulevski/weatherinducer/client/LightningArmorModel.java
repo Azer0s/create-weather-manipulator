@@ -187,12 +187,14 @@ public class LightningArmorModel extends HumanoidModel<LivingEntity> {
                     .addBox(tassetX[i], 12.4f, -4.2f, 2, 3, 1), PartPose.ZERO);
         }
         // A vanilla cape: the game's own cape geometry (10 wide, 16 tall)
-        // pivoted at the shoulders, driven by the vanilla cape animation
-        // in setupAnim.
+        // pivoted at the shoulders. The offset must clear the inflated
+        // body box (whose back face sits near z 3.5) or the cape renders
+        // buried inside the torso and shows nothing, so it hangs a little
+        // further back.
         body.addOrReplaceChild("cape", CubeListBuilder.create()
                         .texOffs(30, 42)
-                        .addBox(-5.0f, 0, -1.0f, 10, 16, 1),
-                PartPose.offset(0, 0.0f, 2.6f));
+                        .addBox(-5.0f, 0, 0.0f, 10, 16, 1),
+                PartPose.offset(0, 0.0f, 3.6f));
     }
 
     private static void addArmDetail(PartDefinition root) {

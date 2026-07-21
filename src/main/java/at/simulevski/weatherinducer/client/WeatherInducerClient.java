@@ -110,7 +110,7 @@ public final class WeatherInducerClient {
             // The slash runs on its own clock so it can be slower than the
             // six-tick attack swing, which flicked past too fast. A new
             // swing (re)starts it; it then plays over SLASH_TICKS.
-            private static final float SLASH_TICKS = 10f;
+            private static final float SLASH_TICKS = 7f;
             private float slashStart = -1f;
             private int prevSwingTime = -1;
             private boolean prevSwinging = false;
@@ -121,42 +121,53 @@ public final class WeatherInducerClient {
                                                    float partialTick, float equipProcess,
                                                    float swingProcess) {
                 int side = arm == HumanoidArm.RIGHT ? 1 : -1;
-                // The guard: the blade raised across the face on the
-                // bottom-right to top-left diagonal, tip up. No end-over
-                // flip (that turned it upside down); the edge sits forward
-                // from the diagonal alone. The stance is alive: it snaps
-                // up into guard over a few ticks, then breathes with a slow
-                // idle sway and a faster ready-tremor so it never freezes.
+                // The guard has three stances, chosen by where the wearer
+                // looks: aim up for an overhead top-down block, level for a
+                // centred vertical block, down for the diagonal block. Each
+                // presents the blade's wide flat face to the threat, sits
+                // smaller and more central than before, snaps up over a few
+                // ticks, breathes with a living sway, and shudders on a
+                // parried hit.
                 if (player != null && player.isUsingItem()
                         && player.getUseItem().is(ModItems.LIGHTNING_SWORD.get())) {
                     float held = player.getTicksUsingItem() + partialTick;
                     float raise = smooth(clamp01(held / 4f));
                     float time = player.tickCount + partialTick;
-                    float breathe = Mth.sin(time * 0.12f) * 2.5f;
-                    float tremor = Mth.sin(time * 0.55f) * 0.9f;
-                    float sway = breathe + tremor;
-
-                    // Parry recoil: when a blow actually lands on the
-                    // guard the client flags it with hurtTime, so the blade
-                    // kicks back and shudders, a distinct second animation
-                    // on top of the idle stance.
+                    float sway = Mth.sin(time * 0.12f) * 2.5f + Mth.sin(time * 0.55f) * 0.9f;
                     float parry = player.hurtTime > 0
                             ? player.hurtTime / (float) Math.max(1, player.hurtDuration) : 0;
                     float kick = smooth(parry);
                     float shake = Mth.sin(time * 1.6f) * kick * 6f;
+                    float pitch = player.getViewXRot(partialTick);
 
+                    // Held in a bit and shrunk so the long blade reads as a
+                    // guard instead of filling the screen.
                     poseStack.translate(
-                            side * (0.02f - kick * 0.12f),
-                            -0.18f - (1f - raise) * 0.5f + kick * 0.06f,
-                            -0.58f + (1f - raise) * 0.3f + kick * 0.14f);
-                    // Roll onto the diagonal, tip up-left (grip bottom
-                    // right), easing in with the raise, then the living
-                    // sway and any parry shake.
-                    poseStack.mulPose(Axis.ZP.rotationDegrees(
-                            side * (58f * raise + sway + kick * 24f + shake)));
-                    poseStack.mulPose(Axis.XP.rotationDegrees(
-                            -10f * raise + sway * 0.4f - kick * 18f));
-                    poseStack.mulPose(Axis.YP.rotationDegrees(side * (18f * raise + shake)));
+                            side * (0.18f - kick * 0.1f),
+                            -0.2f - (1f - raise) * 0.5f + kick * 0.06f,
+                            -0.5f + (1f - raise) * 0.3f + kick * 0.14f);
+                    poseStack.scale(0.72f, 0.72f, 0.72f);
+
+                    if (pitch < -25f) {
+                        // Top-down: blade held level overhead, flat down.
+                        poseStack.mulPose(Axis.ZP.rotationDegrees(side * (90f * raise + sway)));
+                        poseStack.mulPose(Axis.XP.rotationDegrees(
+                                -60f * raise + sway * 0.4f - kick * 20f));
+                        poseStack.mulPose(Axis.YP.rotationDegrees(side * (90f * raise) + shake));
+                    } else if (pitch > 25f) {
+                        // Diagonal: grip bottom-right, tip top-left.
+                        poseStack.mulPose(Axis.ZP.rotationDegrees(
+                                side * (58f * raise + sway + kick * 24f + shake)));
+                        poseStack.mulPose(Axis.XP.rotationDegrees(
+                                -8f * raise + sway * 0.4f - kick * 18f));
+                        poseStack.mulPose(Axis.YP.rotationDegrees(side * (100f * raise) + shake));
+                    } else {
+                        // Centre: blade vertical, tip up, in front of face.
+                        poseStack.mulPose(Axis.ZP.rotationDegrees(side * (2f * raise + sway)));
+                        poseStack.mulPose(Axis.XP.rotationDegrees(
+                                -4f * raise + sway * 0.4f - kick * 18f));
+                        poseStack.mulPose(Axis.YP.rotationDegrees(side * (100f * raise) + shake));
+                    }
                     return true;
                 }
                 // The slash runs on its own clock. A fresh swing (rising
@@ -189,15 +200,20 @@ public final class WeatherInducerClient {
                 float active = 1f - recover;
 
                 // acrossX is never positive: rest x = 0.42, so it can only
-                // shrink toward and past centre, staying in frame.
-                float acrossX = (-wind * 0.04f - sweep * 0.44f) * active;
-                float riseY = (wind * 0.03f + sweep * 0.04f) * active;
+                // shrink toward and past centre, staying in frame. The long
+                // tip is what left frame under rotation, so the blade also
+                // shrinks and pulls down-and-in at the peak of the cut, and
+                // the rotations are small, keeping the whole blade visible.
+                float acrossX = (-wind * 0.04f - sweep * 0.34f) * active;
+                float riseY = (wind * 0.02f + sweep * 0.06f) * active;
                 poseStack.translate(
                         side * (0.42f + acrossX),
                         -0.48f + equipProcess * -0.6f + riseY,
-                        -0.86f - sweep * active * 0.06f);
-                float yaw = (wind * 12f - sweep * 42f) * active;
-                float roll = (-wind * 14f - sweep * 30f) * active;
+                        -0.86f - sweep * active * 0.05f);
+                float shrink = 1f - sweep * active * 0.22f;
+                poseStack.scale(shrink, shrink, shrink);
+                float yaw = (wind * 10f - sweep * 30f) * active;
+                float roll = (-wind * 12f - sweep * 24f) * active;
                 poseStack.mulPose(Axis.YP.rotationDegrees(side * yaw));
                 poseStack.mulPose(Axis.ZP.rotationDegrees(side * roll));
                 return true;
