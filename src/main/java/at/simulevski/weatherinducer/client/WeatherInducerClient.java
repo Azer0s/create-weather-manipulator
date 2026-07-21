@@ -149,10 +149,11 @@ public final class WeatherInducerClient {
                             side * (0.02f - kick * 0.12f),
                             -0.18f - (1f - raise) * 0.5f + kick * 0.06f,
                             -0.58f + (1f - raise) * 0.3f + kick * 0.14f);
-                    // Roll onto the diagonal (tip up-left), easing in with
-                    // the raise, then the living sway and any parry shake.
+                    // Roll onto the diagonal, tip up-left (grip bottom
+                    // right), easing in with the raise, then the living
+                    // sway and any parry shake.
                     poseStack.mulPose(Axis.ZP.rotationDegrees(
-                            side * (-58f * raise + sway + kick * 24f + shake)));
+                            side * (58f * raise + sway + kick * 24f + shake)));
                     poseStack.mulPose(Axis.XP.rotationDegrees(
                             -10f * raise + sway * 0.4f - kick * 18f));
                     poseStack.mulPose(Axis.YP.rotationDegrees(side * (18f * raise + shake)));
@@ -175,24 +176,28 @@ public final class WeatherInducerClient {
                 float swing = slashStart < 0 ? 1f
                         : clamp01((now - slashStart) / SLASH_TICKS);
 
-                // Three eased phases, kept well inside the view so the
-                // blade never leaves frame:
-                //   wind-up (0 .. 0.3) cocks up and to the right
-                //   sweep   (0.3 .. 0.75) draws across and through
+                // Three eased phases. The blade is long and already sits
+                // at the right edge at rest, so the motion only ever moves
+                // it INWARD (never further out, which is what threw the tip
+                // off screen) and keeps the vertical travel tiny:
+                //   wind-up (0 .. 0.3) cocks back with a small rotation
+                //   sweep   (0.3 .. 0.75) draws inward across the view
                 //   recover (0.75 .. 1) eases back to rest
                 float wind = smooth(clamp01(swing / 0.3f));
                 float sweep = smooth(clamp01((swing - 0.3f) / 0.45f));
                 float recover = smooth(clamp01((swing - 0.75f) / 0.25f));
                 float active = 1f - recover;
 
-                float acrossX = (wind * 0.18f - sweep * 0.5f) * active;
-                float riseY = (-wind * 0.12f + sweep * 0.08f) * active;
+                // acrossX is never positive: rest x = 0.42, so it can only
+                // shrink toward and past centre, staying in frame.
+                float acrossX = (-wind * 0.04f - sweep * 0.44f) * active;
+                float riseY = (wind * 0.03f + sweep * 0.04f) * active;
                 poseStack.translate(
                         side * (0.42f + acrossX),
                         -0.48f + equipProcess * -0.6f + riseY,
-                        -0.86f - sweep * active * 0.08f);
-                float yaw = (wind * 20f - sweep * 55f) * active;
-                float roll = (-wind * 16f - sweep * 34f) * active;
+                        -0.86f - sweep * active * 0.06f);
+                float yaw = (wind * 12f - sweep * 42f) * active;
+                float roll = (-wind * 14f - sweep * 30f) * active;
                 poseStack.mulPose(Axis.YP.rotationDegrees(side * yaw));
                 poseStack.mulPose(Axis.ZP.rotationDegrees(side * roll));
                 return true;
