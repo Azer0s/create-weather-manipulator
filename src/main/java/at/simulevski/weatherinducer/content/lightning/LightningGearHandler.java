@@ -99,16 +99,24 @@ public final class LightningGearHandler {
         if (!(event.getEntity() instanceof LightningBolt bolt) || event.getLevel().isClientSide) {
             return;
         }
+        // The armor's cosmetic bolts must not bottle (or eat) a medium.
+        if (bolt.getTags().contains(LightningArmorEvents.COSMETIC_TAG)) {
+            return;
+        }
         Level level = event.getLevel();
         BlockPos base = bolt.blockPosition();
         for (BlockPos pos : new BlockPos[]{base, base.below()}) {
             if (level.getBlockState(pos).is(ModBlocks.LIGHTNING_MEDIUM.get())) {
                 level.destroyBlock(pos, false);
+                // A strike bottles one to three: usually one, sometimes
+                // two, now and then a lucky third.
+                float roll = level.random.nextFloat();
+                int count = roll < 0.6f ? 1 : roll < 0.9f ? 2 : 3;
                 // The drop lands right at the strike point, so it must be
                 // invulnerable or the very bolt that bottled it burns it up.
                 ItemEntity drop = new ItemEntity(level,
                         pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                        new ItemStack(ModItems.BOTTLE_O_LIGHTNING.get()));
+                        new ItemStack(ModItems.BOTTLE_O_LIGHTNING.get(), count));
                 drop.setInvulnerable(true);
                 drop.setDefaultPickUpDelay();
                 level.addFreshEntity(drop);

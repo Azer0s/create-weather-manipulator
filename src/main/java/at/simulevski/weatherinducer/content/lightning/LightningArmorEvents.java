@@ -29,6 +29,9 @@ import java.util.UUID;
 @EventBusSubscriber(modid = WeatherInducerMod.MOD_ID)
 public final class LightningArmorEvents {
 
+    /** Marks the armor's cosmetic bolts so nothing treats them as real. */
+    public static final String COSMETIC_TAG = "weatherinducer.cosmetic";
+
     /** Strikes still owed to a freshly suited-up wearer. */
     private static final Map<UUID, Integer> PENDING_SALUTE = new HashMap<>();
     private static final Map<UUID, Boolean> HAD_FULL_SET = new HashMap<>();
@@ -93,6 +96,7 @@ public final class LightningArmorEvents {
             return;
         }
         bolt.setVisualOnly(true);
+        bolt.addTag(COSMETIC_TAG);
         bolt.moveTo(x, y, z);
         level.addFreshEntity(bolt);
     }
