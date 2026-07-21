@@ -78,8 +78,11 @@ The endgame chain, powered by the Weather Inducer's own lightning:
    the full set grants water breathing, fire resistance, Resistance IV,
    Strength II, Speed II, Regeneration, creative flight, and no fall damage.
    With 40 armor points, toughness 16, and full knockback resistance on top,
-   it is practically invincible. While flying under a clear sky, the boots
-   trail harmless lightning.
+   it is practically invincible. Completing the full set under a clear open
+   sky calls down a short roll of real but harmless lightning around the
+   wearer, and while flying under clear sky the boots trail visual-only
+   bolts below the flight path on top of their spark streaks. None of it
+   deals damage or starts fires.
 
 ---
 
