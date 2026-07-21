@@ -2,6 +2,7 @@ package at.simulevski.weatherinducer.client;
 
 import at.simulevski.weatherinducer.WeatherInducerMod;
 import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
@@ -60,12 +61,43 @@ public class LightningArmorModel extends HumanoidModel<LivingEntity> {
     public void setupAnim(LivingEntity entity, float limbSwing, float limbSwingAmount,
                           float ageInTicks, float netHeadYaw, float headPitch) {
         super.setupAnim(entity, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
-        if (cape != null) {
-            // A slow idle billow plus a strong lift while moving.
-            float idle = Mth.sin(ageInTicks * 0.12f) * 0.05f;
-            float stride = Mth.sin(limbSwing * 0.4f) * 0.04f * limbSwingAmount;
-            cape.xRot = 0.1f + idle + stride
-                    + Mth.clamp(limbSwingAmount, 0, 1) * 0.65f;
+        if (cape == null) {
+            return;
+        }
+        // The genuine Minecraft cape: driven by how far the wearer has
+        // actually moved and turned since last tick, exactly like
+        // CapeLayer, so it trails and settles instead of pivoting on a
+        // sine wave. Only players carry the cloak-lag fields; anything
+        // else just gets the resting hang.
+        if (entity instanceof AbstractClientPlayer player) {
+            float partial = Mth.clamp(ageInTicks - player.tickCount, 0.0f, 1.0f);
+            double dx = Mth.lerp(partial, player.xCloakO, player.xCloak)
+                    - Mth.lerp(partial, player.xo, player.getX());
+            double dy = Mth.lerp(partial, player.yCloakO, player.yCloak)
+                    - Mth.lerp(partial, player.yo, player.getY());
+            double dz = Mth.lerp(partial, player.zCloakO, player.zCloak)
+                    - Mth.lerp(partial, player.zo, player.getZ());
+            float bodyRot = Mth.rotLerp(partial, player.yBodyRotO, player.yBodyRot);
+            double sin = Mth.sin(bodyRot * ((float) Math.PI / 180f));
+            double cos = -Mth.cos(bodyRot * ((float) Math.PI / 180f));
+            float lift = (float) dy * 10f;
+            lift = Mth.clamp(lift, -6f, 32f);
+            float swing = (float) (dx * sin + dz * cos) * 100f;
+            swing = Mth.clamp(swing, 0f, 150f);
+            float sway = (float) (dx * cos - dz * sin) * 100f;
+            sway = Mth.clamp(sway, -20f, 20f);
+            float bob = Mth.lerp(partial, player.oBob, player.bob);
+            lift += Mth.sin(Mth.lerp(partial, player.walkDistO, player.walkDist) * 6f) * 32f * bob;
+            if (player.isCrouching()) {
+                lift += 25f;
+            }
+            cape.xRot = (6f + swing / 2f + lift) * ((float) Math.PI / 180f);
+            cape.zRot = (sway / 2f) * ((float) Math.PI / 180f);
+            cape.yRot = 0f;
+        } else {
+            cape.xRot = 6f * ((float) Math.PI / 180f);
+            cape.zRot = 0f;
+            cape.yRot = 0f;
         }
     }
 
@@ -154,11 +186,13 @@ public class LightningArmorModel extends HumanoidModel<LivingEntity> {
                     .texOffs(56, 24)
                     .addBox(tassetX[i], 12.4f, -4.2f, 2, 3, 1), PartPose.ZERO);
         }
-        // The red cape, pivoted at the shoulders so it can flutter.
+        // A vanilla cape: the game's own cape geometry (10 wide, 16 tall)
+        // pivoted at the shoulders, driven by the vanilla cape animation
+        // in setupAnim.
         body.addOrReplaceChild("cape", CubeListBuilder.create()
-                        .texOffs(30, 49)
-                        .addBox(-4.5f, 0, -0.5f, 9, 12, 1),
-                PartPose.offset(0, 0.6f, 3.8f));
+                        .texOffs(30, 42)
+                        .addBox(-5.0f, 0, -1.0f, 10, 16, 1),
+                PartPose.offset(0, 0.0f, 2.6f));
     }
 
     private static void addArmDetail(PartDefinition root) {

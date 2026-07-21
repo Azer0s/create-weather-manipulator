@@ -131,23 +131,26 @@ public final class WeatherInducerClient {
                             (float) Math.PI, side * -0.7071f, 0.7071f, 0));
                     return true;
                 }
-                // Don't trust the passed swing value; read the attack
-                // animation straight off the player so the slash always
-                // has the real curve to work with.
+                // The swing progress read from the most reliable source:
+                // the entity's own swing fields. The renderer's passed
+                // swingProcess (and getAttackAnim) come back zero in this
+                // hook, which is why every earlier slash sat frozen; while
+                // swinging, swingTime counts 0..swingDuration each attack,
+                // so this is never stale.
                 float swing = swingProcess;
-                if (player != null) {
-                    swing = Math.max(swing, player.getAttackAnim(partialTick));
+                if (player != null && player.swinging) {
+                    float dur = Math.max(1, player.getCurrentSwingDuration());
+                    swing = Math.max(swing, Math.min(1f,
+                            (player.swingTime + partialTick) / dur));
                 }
-                // The slash, built around one rule learned the hard way:
-                // rotating the whole hand space hurls the blade out of the
-                // view frustum, so the swing is invisible. Instead the
-                // ANCHOR travels: it sweeps from its rest on the right
+                // The anchor travels: rotating the whole hand space hurls
+                // the blade out of the view frustum (an invisible swing),
+                // so instead the anchor sweeps from its rest on the right
                 // across the screen centre while dipping and punching
                 // forward, and the blade rotations come after the
-                // translate, so they pivot around the anchor and the
-                // katana stays in frame for the whole cut. A single bell
-                // curve drives everything and is zero at both ends, so the
-                // pose starts and finishes exactly at rest.
+                // translate so they pivot around the anchor and the katana
+                // stays in frame. One bell curve, zero at both ends, so
+                // the pose starts and finishes at rest.
                 float travel = swing > 0 ? Mth.sin(swing * (float) Math.PI) : 0;
                 poseStack.translate(
                         side * (0.42f - travel * 0.85f),

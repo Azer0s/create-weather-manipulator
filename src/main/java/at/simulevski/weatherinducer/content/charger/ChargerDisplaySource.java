@@ -1,85 +1,178 @@
 package at.simulevski.weatherinducer.content.charger;
 
+import at.simulevski.weatherinducer.client.ChargerDisplayConfig;
 import com.simibubi.create.content.redstone.displayLink.DisplayLinkContext;
-import com.simibubi.create.content.redstone.displayLink.source.SingleLineDisplaySource;
-import com.simibubi.create.content.redstone.displayLink.target.DisplayTargetStats;
+import com.simibubi.create.content.redstone.displayLink.source.PercentOrProgressBarDisplaySource;
+import com.simibubi.create.foundation.gui.ModularGuiLineBuilder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.loading.FMLEnvironment;
 
 /**
- * Display sources for the Kinetic Charger, so Create's display link can
- * be bolted onto one and report it to any display target: the charge
- * level as numbers, or the running status in words.
+ * The charger's display sources, built exactly like Create's own
+ * Stressometer source ({@code KineticStressDisplaySource}): a single
+ * source with a "Displayed Info" dropdown, so one display link offers a
+ * progress bar, a percentage, the stored SU, the total capacity or the
+ * remaining time, plus the attached-label text box the base class adds.
+ * One source reads this charger, the other reads its whole link network.
  */
-public final class ChargerDisplaySource {
+public abstract class ChargerDisplaySource extends PercentOrProgressBarDisplaySource {
 
-    private ChargerDisplaySource() {
+    protected static final int PROGRESS = 0;
+    protected static final int PERCENT = 1;
+    protected static final int STORED = 2;
+    protected static final int CAPACITY = 3;
+    protected static final int REMAINING = 4;
+
+    protected int getMode(DisplayLinkContext context) {
+        return context.sourceConfig().getInt("Mode");
     }
 
-    /** One line of stored / capacity SU-seconds with the fill percent. */
-    public static class Charge extends SingleLineDisplaySource {
+    protected KineticChargerBlockEntity charger(DisplayLinkContext context) {
+        return context.getSourceBlockEntity() instanceof KineticChargerBlockEntity c ? c : null;
+    }
+
+    /** SU-seconds stored right now for this source's scope. */
+    protected abstract double stored(KineticChargerBlockEntity charger);
+
+    /** Capacity in SU-seconds for this source's scope. */
+    protected abstract double capacity(KineticChargerBlockEntity charger);
+
+    /** SU-seconds leaving per second, for the remaining-time readout. */
+    protected abstract double drain(KineticChargerBlockEntity charger);
+
+    /** False when the scope has nothing to show (e.g. no link network). */
+    protected boolean present(KineticChargerBlockEntity charger) {
+        return charger != null;
+    }
+
+    @Override
+    protected Float getProgress(DisplayLinkContext context) {
+        KineticChargerBlockEntity charger = charger(context);
+        if (!present(charger)) {
+            return 0f;
+        }
+        double cap = Math.max(1, capacity(charger));
+        return (float) Math.min(1.0, stored(charger) / cap);
+    }
+
+    @Override
+    protected boolean progressBarActive(DisplayLinkContext context) {
+        return getMode(context) == PROGRESS;
+    }
+
+    @Override
+    protected MutableComponent formatNumeric(DisplayLinkContext context, Float progress) {
+        KineticChargerBlockEntity charger = charger(context);
+        if (!present(charger)) {
+            return Component.literal("-");
+        }
+        int mode = getMode(context);
+        return switch (mode) {
+            case STORED -> suSeconds(stored(charger));
+            case CAPACITY -> suSeconds(capacity(charger));
+            case REMAINING -> {
+                double drain = drain(charger);
+                yield drain > 0 && stored(charger) > 0
+                        ? Component.literal(duration(stored(charger) / drain))
+                        : Component.literal("-");
+            }
+            // PERCENT and anything else fall through to the base percentage.
+            default -> super.formatNumeric(context, progress);
+        };
+    }
+
+    @Override
+    public void initConfigurationWidgets(DisplayLinkContext context,
+                                         ModularGuiLineBuilder builder, boolean isFirstLine) {
+        super.initConfigurationWidgets(context, builder, isFirstLine);
+        if (isFirstLine) {
+            return;
+        }
+        // Only ever runs on the client (the config screen); the widget
+        // classes live in a client-only helper so this common class stays
+        // server-safe.
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            ChargerDisplayConfig.addModeDropdown(builder);
+        }
+    }
+
+    protected static MutableComponent suSeconds(double value) {
+        return Component.literal(String.format("%,.0f SU-s", value));
+    }
+
+    protected static String duration(double seconds) {
+        long s = (long) Math.floor(seconds);
+        if (s < 120) {
+            return s + " s";
+        }
+        if (s < 7200) {
+            return (s / 60) + " min " + (s % 60) + " s";
+        }
+        return (s / 3600) + " h " + (s % 3600 / 60) + " min";
+    }
+
+    // --- The two concrete scopes ---------------------------------------
+
+    /** Reads the charger the link is bolted to. */
+    public static class ThisCharger extends ChargerDisplaySource {
+        @Override
+        protected double stored(KineticChargerBlockEntity c) {
+            return c.getBuffer();
+        }
 
         @Override
-        protected MutableComponent provideLine(DisplayLinkContext context,
-                                               DisplayTargetStats stats) {
-            if (!(context.getSourceBlockEntity() instanceof KineticChargerBlockEntity charger)) {
-                return EMPTY_LINE;
-            }
-            int percent = (int) Math.floor(100.0
-                    * Math.min(1.0, charger.getBuffer() / charger.getMaxBuffer()));
-            return Component.literal(String.format("%,.0f / %,.0f SU-s (%d%%)",
-                    charger.getBuffer(), charger.getMaxBuffer(), percent));
+        protected double capacity(KineticChargerBlockEntity c) {
+            return c.getMaxBuffer();
+        }
+
+        @Override
+        protected double drain(KineticChargerBlockEntity c) {
+            return c.isDischarging() ? c.getDrainPerSecond() : 0;
         }
 
         @Override
         protected boolean allowsLabeling(DisplayLinkContext context) {
             return true;
         }
-    }
-
-    /** The whole link network: pooled fill and member count. */
-    public static class Network extends SingleLineDisplaySource {
 
         @Override
-        protected MutableComponent provideLine(DisplayLinkContext context,
-                                               DisplayTargetStats stats) {
-            if (!(context.getSourceBlockEntity() instanceof KineticChargerBlockEntity charger)
-                    || charger.getGroupSize() <= 0) {
-                return EMPTY_LINE;
-            }
-            double capacity = Math.max(1, charger.getGroupCapacity());
-            int percent = (int) Math.floor(100.0
-                    * Math.min(1.0, charger.getGroupEnergy() / capacity));
-            return Component.translatable("weatherinducer.display.charger_network",
-                    String.format("%,.0f", charger.getGroupEnergy()),
-                    String.format("%,.0f", charger.getGroupCapacity()),
-                    percent, charger.getGroupSize());
+        protected String getTranslationKey() {
+            return "charger";
+        }
+    }
+
+    /** Reads the whole link network the charger belongs to. */
+    public static class Network extends ChargerDisplaySource {
+        @Override
+        protected boolean present(KineticChargerBlockEntity c) {
+            return c != null && c.getGroupSize() > 0;
+        }
+
+        @Override
+        protected double stored(KineticChargerBlockEntity c) {
+            return c.getGroupEnergy();
+        }
+
+        @Override
+        protected double capacity(KineticChargerBlockEntity c) {
+            return c.getGroupCapacity();
+        }
+
+        @Override
+        protected double drain(KineticChargerBlockEntity c) {
+            return c.getGroupDrain();
         }
 
         @Override
         protected boolean allowsLabeling(DisplayLinkContext context) {
             return true;
         }
-    }
-
-    /** The charger's mode and its flywheel bank on one line. */
-    public static class Status extends SingleLineDisplaySource {
 
         @Override
-        protected MutableComponent provideLine(DisplayLinkContext context,
-                                               DisplayTargetStats stats) {
-            if (!(context.getSourceBlockEntity() instanceof KineticChargerBlockEntity charger)) {
-                return EMPTY_LINE;
-            }
-            return Component.translatable("weatherinducer.display.charger_status",
-                    Component.translatable("weatherinducer.display.charger_mode."
-                            + charger.modeKey()),
-                    charger.getFlywheels());
-        }
-
-        @Override
-        protected boolean allowsLabeling(DisplayLinkContext context) {
-            return true;
+        protected String getTranslationKey() {
+            return "charger_network";
         }
     }
 }

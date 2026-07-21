@@ -520,6 +520,10 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         return groupSize;
     }
 
+    public double getGroupDrain() {
+        return groupDrain;
+    }
+
     /** The synced discharge lead position, or null while the group is empty. */
     public BlockPos getGroupLeadPos() {
         return groupLead == Long.MAX_VALUE ? null : BlockPos.of(groupLead);
