@@ -697,9 +697,9 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
         double fraction = Math.min(1.0, buffer / getMaxBuffer());
         int filled = (int) Math.round(BAR_SEGMENTS * fraction);
         tooltip.add(Component.literal("    ")
-                .append(Component.literal("█".repeat(filled))
+                .append(Component.literal("|".repeat(filled))
                         .withStyle(buffer >= getMaxBuffer() ? ChatFormatting.GREEN : ChatFormatting.AQUA))
-                .append(Component.literal("░".repeat(BAR_SEGMENTS - filled))
+                .append(Component.literal("|".repeat(BAR_SEGMENTS - filled))
                         .withStyle(ChatFormatting.DARK_GRAY)));
 
         int percent = (int) Math.floor(100.0 * fraction);
@@ -735,10 +735,10 @@ public class KineticChargerBlockEntity extends GeneratingKineticBlockEntity
                     ? Math.min(1.0, groupEnergy / groupCapacity) : 0;
             int groupFilled = (int) Math.round(BAR_SEGMENTS * groupFraction);
             tooltip.add(Component.literal("    ")
-                    .append(Component.literal("█".repeat(groupFilled))
+                    .append(Component.literal("|".repeat(groupFilled))
                             .withStyle(groupEnergy >= groupCapacity && groupCapacity > 0
                                     ? ChatFormatting.GREEN : ChatFormatting.BLUE))
-                    .append(Component.literal("░".repeat(BAR_SEGMENTS - groupFilled))
+                    .append(Component.literal("|".repeat(BAR_SEGMENTS - groupFilled))
                             .withStyle(ChatFormatting.DARK_GRAY)));
             // How long the whole network's charge lasts, only while its
             // lead actually discharges.

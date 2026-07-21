@@ -138,17 +138,22 @@ public final class WeatherInducerClient {
                 if (player != null) {
                     swing = Math.max(swing, player.getAttackAnim(partialTick));
                 }
-                // Rotate first, then move to the hand: the whole blade
-                // orbits the view in a wide flat arc across the screen
-                // instead of pivoting invisibly around its own grip.
+                // A full crescent: the hand travels across the screen
+                // while the blade rolls through the cut, so the slash
+                // physically crosses the view instead of flicking.
+                float sweep = 0;
+                float wind = 0;
                 if (swing > 0) {
-                    float sweep = Mth.sin(swing * (float) Math.PI);
-                    float wind = Mth.sin(Mth.sqrt(swing) * (float) Math.PI);
-                    poseStack.mulPose(Axis.YP.rotationDegrees(side * wind * -50));
-                    poseStack.mulPose(Axis.XP.rotationDegrees(sweep * 12));
-                    poseStack.mulPose(Axis.ZP.rotationDegrees(side * sweep * -55));
+                    sweep = Mth.sin(swing * (float) Math.PI);
+                    wind = Mth.sin(Mth.sqrt(swing) * (float) Math.PI);
+                    poseStack.mulPose(Axis.YP.rotationDegrees(side * wind * -100));
+                    poseStack.mulPose(Axis.XP.rotationDegrees(sweep * 20));
+                    poseStack.mulPose(Axis.ZP.rotationDegrees(side * sweep * -90));
                 }
-                poseStack.translate(side * 0.42f, -0.48f + equipProcess * -0.6f, -0.86f);
+                poseStack.translate(
+                        side * (0.42f - sweep * 0.55f),
+                        -0.48f + equipProcess * -0.6f + sweep * 0.08f,
+                        -0.86f);
                 return true;
             }
         }, ModItems.LIGHTNING_SWORD.get());
