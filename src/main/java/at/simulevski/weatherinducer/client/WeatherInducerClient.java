@@ -120,10 +120,15 @@ public final class WeatherInducerClient {
                 if (player != null && player.isUsingItem()
                         && player.getUseItem().is(ModItems.LIGHTNING_SWORD.get())) {
                     poseStack.translate(side * 0.02f, -0.18f, -0.58f);
-                    poseStack.mulPose(Axis.ZP.rotationDegrees(side * 30));
+                    // The blade's natural pose runs about seventy degrees
+                    // up-right; another sixty five of roll mirrors it onto
+                    // the bottom-right to top-left diagonal.
+                    poseStack.mulPose(Axis.ZP.rotationDegrees(side * 65));
                     poseStack.mulPose(Axis.YP.rotationDegrees(side * 10));
+                    // Half a turn about the blade's own diagonal (now the
+                    // up-left one) keeps the cutting edge facing forward.
                     poseStack.mulPose(new Quaternionf().rotationAxis(
-                            (float) Math.PI, side * 0.7071f, 0.7071f, 0));
+                            (float) Math.PI, side * -0.7071f, 0.7071f, 0));
                     return true;
                 }
                 // Don't trust the passed swing value; read the attack
