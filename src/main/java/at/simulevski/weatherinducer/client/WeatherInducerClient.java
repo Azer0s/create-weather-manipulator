@@ -30,6 +30,7 @@ import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
+import org.joml.Quaternionf;
 
 /**
  * Client-only setup for the kinetic blocks' spinning shafts.
@@ -113,20 +114,31 @@ public final class WeatherInducerClient {
                                                    float swingProcess) {
                 int side = arm == HumanoidArm.RIGHT ? 1 : -1;
                 // The guard: the blade held at a forty five degree angle
-                // right in front of the face.
+                // in front of the face, leaning left, spun half a turn
+                // about its own diagonal so the cutting edge faces the
+                // threat instead of the wielder.
                 if (player != null && player.isUsingItem()
-                        && player.getUseItem() == itemInHand) {
+                        && player.getUseItem().is(ModItems.LIGHTNING_SWORD.get())) {
                     poseStack.translate(side * 0.02f, -0.18f, -0.58f);
-                    poseStack.mulPose(Axis.ZP.rotationDegrees(side * -30));
+                    poseStack.mulPose(Axis.ZP.rotationDegrees(side * 30));
                     poseStack.mulPose(Axis.YP.rotationDegrees(side * 10));
+                    poseStack.mulPose(new Quaternionf().rotationAxis(
+                            (float) Math.PI, side * 0.7071f, 0.7071f, 0));
                     return true;
+                }
+                // Don't trust the passed swing value; read the attack
+                // animation straight off the player so the slash always
+                // has the real curve to work with.
+                float swing = swingProcess;
+                if (player != null) {
+                    swing = Math.max(swing, player.getAttackAnim(partialTick));
                 }
                 // Rotate first, then move to the hand: the whole blade
                 // orbits the view in a wide flat arc across the screen
                 // instead of pivoting invisibly around its own grip.
-                if (swingProcess > 0) {
-                    float sweep = Mth.sin(swingProcess * (float) Math.PI);
-                    float wind = Mth.sin(Mth.sqrt(swingProcess) * (float) Math.PI);
+                if (swing > 0) {
+                    float sweep = Mth.sin(swing * (float) Math.PI);
+                    float wind = Mth.sin(Mth.sqrt(swing) * (float) Math.PI);
                     poseStack.mulPose(Axis.YP.rotationDegrees(side * wind * -50));
                     poseStack.mulPose(Axis.XP.rotationDegrees(sweep * 12));
                     poseStack.mulPose(Axis.ZP.rotationDegrees(side * sweep * -55));
