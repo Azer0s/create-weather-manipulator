@@ -112,14 +112,26 @@ public final class WeatherInducerClient {
                                                    float partialTick, float equipProcess,
                                                    float swingProcess) {
                 int side = arm == HumanoidArm.RIGHT ? 1 : -1;
-                poseStack.translate(side * 0.42f, -0.48f + equipProcess * -0.6f, -0.86f);
+                // The guard: the blade held at a forty five degree angle
+                // right in front of the face.
+                if (player != null && player.isUsingItem()
+                        && player.getUseItem() == itemInHand) {
+                    poseStack.translate(side * 0.02f, -0.18f, -0.58f);
+                    poseStack.mulPose(Axis.ZP.rotationDegrees(side * -30));
+                    poseStack.mulPose(Axis.YP.rotationDegrees(side * 10));
+                    return true;
+                }
+                // Rotate first, then move to the hand: the whole blade
+                // orbits the view in a wide flat arc across the screen
+                // instead of pivoting invisibly around its own grip.
                 if (swingProcess > 0) {
                     float sweep = Mth.sin(swingProcess * (float) Math.PI);
                     float wind = Mth.sin(Mth.sqrt(swingProcess) * (float) Math.PI);
-                    poseStack.mulPose(Axis.YP.rotationDegrees(side * wind * -65));
-                    poseStack.mulPose(Axis.ZP.rotationDegrees(side * sweep * -35));
-                    poseStack.mulPose(Axis.XP.rotationDegrees(sweep * -12));
+                    poseStack.mulPose(Axis.YP.rotationDegrees(side * wind * -50));
+                    poseStack.mulPose(Axis.XP.rotationDegrees(sweep * 12));
+                    poseStack.mulPose(Axis.ZP.rotationDegrees(side * sweep * -55));
                 }
+                poseStack.translate(side * 0.42f, -0.48f + equipProcess * -0.6f, -0.86f);
                 return true;
             }
         }, ModItems.LIGHTNING_SWORD.get());
